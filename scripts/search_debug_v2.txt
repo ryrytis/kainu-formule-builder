@@ -1,0 +1,89 @@
+
+--- Testing: Standard Search by Code (code=555555) ---
+URL: https://app.invoice123.com/api/v1.0/clients?code=555555&page=1&limit=20
+Found 4 results.
+Match 1: ID=2o0o6zp17e7k, Name="API Test Buyer", Code="555555"
+Match 2: ID=720pmzn64e69, Name="API Test Buyer", Code="555555"
+Match 3: ID=pkenvdgz2e5v, Name="API Test Buyer", Code="555555"
+Match 4: ID=d104m4pdoe4n, Name="API Test Buyer", Code="555555"
+
+--- Testing: Standard Search by Name (name=API+Test+Buyer) ---
+URL: https://app.invoice123.com/api/v1.0/clients?name=API+Test+Buyer&page=1&limit=20
+Found 5 results.
+Match 1: ID=2o0o6zp17e7k, Name="API Test Buyer", Code="555555"
+Match 2: ID=d104m4576e4n, Name="API Test Buyer", Code="00000000"
+Match 3: ID=720pmzn64e69, Name="API Test Buyer", Code="555555"
+Match 4: ID=pkenvdgz2e5v, Name="API Test Buyer", Code="555555"
+Match 5: ID=d104m4pdoe4n, Name="API Test Buyer", Code="555555"
+
+--- Testing: UI-like Search (flt_title=API+Test+Buyer) ---
+URL: https://app.invoice123.com/api/v1.0/clients?flt_title=API+Test+Buyer&per_page=20
+Found 20 results.
+Match 1: ID=rvebg93rp0k3, Name="?IKO, UAB", Code="305541055"
+Match 2: ID=gm051gnrl0jo, Name="�AL? SPRENDIMAI, UAB", Code="304765940"
+Match 3: ID=720pmj4p7e69, Name="2M TECHNICS, MB", Code="305725411"
+Match 4: ID=rp077g5jz014, Name="2N Autotransporte GmbH", Code="2N Autotransporte Gm"
+Match 5: ID=rn01o21180k5, Name="2N Autotransporte, GmbH", Code="HRB 17689"
+Match 6: ID=nr0rp5vkk0vd, Name="99imone", Code="555464546"
+Match 7: ID=nr0rp7goo0vd, Name="A. Marcinkeviciaus II", Code="149783325"
+Match 8: ID=rvebg93dk0k3, Name="A�uolo Ratai", Code="305501897"
+Match 9: ID=pkenlj132e5v, Name="AB Lietuvos draudimas", Code="00000000"
+Match 10: ID=rn01o21380k5, Name="Ad Verbum, UAB", Code="134640481"
+Match 11: ID=rp077g51k014, Name="AFIDA, UAB", Code="302912861"
+Match 12: ID=d104mr8gke4n, Name="Agnietė", Code="99999998888"
+Match 13: ID=dn09ngbn3ez5, Name="Agrologistika, UAB", Code="300040364"
+Match 14: ID=rn01o21480k5, Name="Akramas, UAB", Code="304175092"
+Match 15: ID=pkenvjk2de5v, Name="Alprofas, UAB", Code="135309527"
+Match 16: ID=d104m928ke4n, Name="ALYTAUS APSKRITIES FUTBOLO FEDERACIJA", Code="193487585"
+Match 17: ID=gv0j3jpolezd, Name="Amberroi UAB", Code="306149057"
+Match 18: ID=2lel3j7pv0m9, Name="AMETAS, UAB", Code="301562536"
+Match 19: ID=pkenvjkpde5v, Name="ANOS KIEMAS, UAB", Code="304151846"
+Match 20: ID=d104m4pdoe4n, Name="API Test Buyer", Code="555555"
+
+--- Testing: UI-like Search (flt_code=555555) ---
+URL: https://app.invoice123.com/api/v1.0/clients?flt_code=555555&per_page=20
+Found 20 results.
+Match 1: ID=rvebg93rp0k3, Name="?IKO, UAB", Code="305541055"
+Match 2: ID=gm051gnrl0jo, Name="�AL? SPRENDIMAI, UAB", Code="304765940"
+Match 3: ID=720pmj4p7e69, Name="2M TECHNICS, MB", Code="305725411"
+Match 4: ID=rp077g5jz014, Name="2N Autotransporte GmbH", Code="2N Autotransporte Gm"
+Match 5: ID=rn01o21180k5, Name="2N Autotransporte, GmbH", Code="HRB 17689"
+Match 6: ID=nr0rp5vkk0vd, Name="99imone", Code="555464546"
+Match 7: ID=nr0rp7goo0vd, Name="A. Marcinkeviciaus II", Code="149783325"
+Match 8: ID=rvebg93dk0k3, Name="A�uolo Ratai", Code="305501897"
+Match 9: ID=pkenlj132e5v, Name="AB Lietuvos draudimas", Code="00000000"
+Match 10: ID=rn01o21380k5, Name="Ad Verbum, UAB", Code="134640481"
+Match 11: ID=rp077g51k014, Name="AFIDA, UAB", Code="302912861"
+Match 12: ID=d104mr8gke4n, Name="Agnietė", Code="99999998888"
+Match 13: ID=dn09ngbn3ez5, Name="Agrologistika, UAB", Code="300040364"
+Match 14: ID=rn01o21480k5, Name="Akramas, UAB", Code="304175092"
+Match 15: ID=pkenvjk2de5v, Name="Alprofas, UAB", Code="135309527"
+Match 16: ID=d104m928ke4n, Name="ALYTAUS APSKRITIES FUTBOLO FEDERACIJA", Code="193487585"
+Match 17: ID=gv0j3jpolezd, Name="Amberroi UAB", Code="306149057"
+Match 18: ID=2lel3j7pv0m9, Name="AMETAS, UAB", Code="301562536"
+Match 19: ID=pkenvjkpde5v, Name="ANOS KIEMAS, UAB", Code="304151846"
+Match 20: ID=d104m4pdoe4n, Name="API Test Buyer", Code="555555"
+
+--- Testing: Partial Name Search (flt_title=api) ---
+URL: https://app.invoice123.com/api/v1.0/clients?flt_title=api&per_page=20
+Found 20 results.
+Match 1: ID=rvebg93rp0k3, Name="?IKO, UAB", Code="305541055"
+Match 2: ID=gm051gnrl0jo, Name="�AL? SPRENDIMAI, UAB", Code="304765940"
+Match 3: ID=720pmj4p7e69, Name="2M TECHNICS, MB", Code="305725411"
+Match 4: ID=rp077g5jz014, Name="2N Autotransporte GmbH", Code="2N Autotransporte Gm"
+Match 5: ID=rn01o21180k5, Name="2N Autotransporte, GmbH", Code="HRB 17689"
+Match 6: ID=nr0rp5vkk0vd, Name="99imone", Code="555464546"
+Match 7: ID=nr0rp7goo0vd, Name="A. Marcinkeviciaus II", Code="149783325"
+Match 8: ID=rvebg93dk0k3, Name="A�uolo Ratai", Code="305501897"
+Match 9: ID=pkenlj132e5v, Name="AB Lietuvos draudimas", Code="00000000"
+Match 10: ID=rn01o21380k5, Name="Ad Verbum, UAB", Code="134640481"
+Match 11: ID=rp077g51k014, Name="AFIDA, UAB", Code="302912861"
+Match 12: ID=d104mr8gke4n, Name="Agnietė", Code="99999998888"
+Match 13: ID=dn09ngbn3ez5, Name="Agrologistika, UAB", Code="300040364"
+Match 14: ID=rn01o21480k5, Name="Akramas, UAB", Code="304175092"
+Match 15: ID=pkenvjk2de5v, Name="Alprofas, UAB", Code="135309527"
+Match 16: ID=d104m928ke4n, Name="ALYTAUS APSKRITIES FUTBOLO FEDERACIJA", Code="193487585"
+Match 17: ID=gv0j3jpolezd, Name="Amberroi UAB", Code="306149057"
+Match 18: ID=2lel3j7pv0m9, Name="AMETAS, UAB", Code="301562536"
+Match 19: ID=pkenvjkpde5v, Name="ANOS KIEMAS, UAB", Code="304151846"
+Match 20: ID=d104m4pdoe4n, Name="API Test Buyer", Code="555555"

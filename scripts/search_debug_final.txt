@@ -1,0 +1,24 @@
+
+--- Testing: Standard Search by Code (code=555555) ---
+URL: https://app.invoice123.com/api/v1.0/clients?code=555555&page=1&limit=20
+Found 0 results.
+
+--- Testing: Standard Search by Name (name=API+Test+Buyer) ---
+URL: https://app.invoice123.com/api/v1.0/clients?name=API+Test+Buyer&page=1&limit=20
+Found 0 results.
+
+--- Testing: UI-like Search (flt_title=api) ---
+URL: https://app.invoice123.com/api/v1.0/clients?flt_title=api&per_page=20
+Found 0 results.
+
+--- Testing: UI-like Search (flt_code=555555) ---
+URL: https://app.invoice123.com/api/v1.0/clients?flt_code=555555&per_page=20
+Found 0 results.
+
+--- Testing: Query param (q=555555) ---
+URL: https://app.invoice123.com/api/v1.0/clients?q=555555
+Found 0 results.
+
+--- Testing: No Filters (Page 1) ---
+URL: https://app.invoice123.com/api/v1.0/clients?page=1&limit=5
+Found 0 results.

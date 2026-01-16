@@ -1,0 +1,374 @@
+import { useState, useEffect } from 'react';
+import { clsx } from 'clsx';
+import { PricingService } from '../lib/PricingService';
+import { supabase } from '../lib/supabase';
+import { X, Loader2 } from 'lucide-react';
+
+interface CreateOrderItemModalProps {
+    isOpen: boolean;
+    onClose: () => void;
+    onItemAdded: () => void;
+    orderId: string;
+    item?: any; // Optional item for editing
+}
+
+const CreateOrderItemModal: React.FC<CreateOrderItemModalProps> = ({ isOpen, onClose, onItemAdded, orderId, item }) => {
+    const [loading, setLoading] = useState(false);
+    const [products, setProducts] = useState<any[]>([]);
+    const [materials, setMaterials] = useState<any[]>([]);
+
+    // Form State
+    const [productId, setProductId] = useState('');
+    const [materialId, setMaterialId] = useState('');
+    const [quantity, setQuantity] = useState<number>(1);
+    const [width, setWidth] = useState('');
+    const [height, setHeight] = useState('');
+    const [printType, setPrintType] = useState('Vienpusis');
+
+    // Pricing State
+    const [unitPrice, setUnitPrice] = useState(0);
+    const [totalPrice, setTotalPrice] = useState(0);
+    const [appliedRules, setAppliedRules] = useState<string[]>([]);
+    const [isManualPrice, setIsManualPrice] = useState(false);
+
+    const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (isOpen) {
+            fetchProducts();
+            fetchMaterials();
+
+            if (item) {
+                // If editing, fill form
+                setQuantity(item.quantity);
+                setWidth(item.width || '');
+                setHeight(item.height || '');
+                setPrintType(item.print_type || 'Vienpusis');
+                setMaterialId(item.material_id || '');
+                setUnitPrice(item.unit_price || 0);
+                setTotalPrice(item.total_price || 0);
+                setIsManualPrice(true); // Default to manual if it has saved price
+            } else {
+                // Reset form for create
+                setQuantity(1);
+                setProductId('');
+                setMaterialId('');
+                setWidth('');
+                setHeight('');
+                setUnitPrice(0);
+                setTotalPrice(0);
+                setAppliedRules([]);
+                setIsManualPrice(false);
+            }
+        }
+    }, [isOpen, item]);
+
+    useEffect(() => {
+        if (item && products.length > 0) {
+            const found = products.find(p => p.name === item.product_type);
+            if (found) setProductId(found.id);
+        }
+    }, [products, item]);
+
+    // Auto-calculate price when dependencies change
+    useEffect(() => {
+        const calculate = async () => {
+            if (!productId || isManualPrice) return;
+
+            const result = await PricingService.calculatePrice({
+                product_id: productId,
+                quantity: quantity,
+                material_id: materialId,
+                width: width ? parseFloat(width) : undefined,
+                height: height ? parseFloat(height) : undefined
+            });
+
+            setUnitPrice(result.unit_price);
+            setTotalPrice(result.total_price);
+            setAppliedRules(result.applied_rules);
+        };
+
+        const debounce = setTimeout(calculate, 500);
+        return () => clearTimeout(debounce);
+    }, [productId, quantity, materialId, width, height, printType, isManualPrice]);
+
+    // Recalculate total if manual price changes
+    useEffect(() => {
+        if (isManualPrice) {
+            setTotalPrice(unitPrice * quantity);
+        }
+    }, [unitPrice, quantity, isManualPrice]);
+
+    const fetchProducts = async () => {
+        const { data } = await (supabase as any).from('products').select('*').order('name');
+        if (data) setProducts(data);
+    };
+
+    const fetchMaterials = async () => {
+        const { data } = await supabase.from('materials').select('*').order('name');
+        if (data) setMaterials(data);
+    };
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setLoading(true);
+        setError(null);
+
+        try {
+            const selectedProduct = products.find(p => p.id === productId);
+            const itemData = {
+                order_id: orderId,
+                product_type: selectedProduct?.name || 'Unknown',
+                material_id: materialId || null,
+                quantity: quantity,
+                width: width ? parseFloat(width) : null,
+                height: height ? parseFloat(height) : null,
+                print_type: printType,
+                unit_price: unitPrice,
+                total_price: totalPrice
+            };
+
+            if (item?.id) {
+                // UPDATE
+                const { error: updateError } = await (supabase as any)
+                    .from('order_items')
+                    .update(itemData)
+                    .eq('id', item.id);
+                if (updateError) throw updateError;
+            } else {
+                // INSERT
+                const { error: insertError } = await (supabase as any)
+                    .from('order_items')
+                    .insert([itemData]);
+                if (insertError) throw insertError;
+            }
+
+            // Recalculate Order Total Price
+            const { data: allItems } = await (supabase as any)
+                .from('order_items')
+                .select('total_price')
+                .eq('order_id', orderId);
+
+            const newOrderTotal = allItems?.reduce((sum: number, item: any) => sum + (item.total_price || 0), 0) || 0;
+
+            await (supabase as any)
+                .from('orders')
+                .update({ total_price: newOrderTotal })
+                .eq('id', orderId);
+
+            onItemAdded();
+            onClose();
+        } catch (err: any) {
+            setError(err.message || 'Failed to save item');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    if (!isOpen) return null;
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+            <div className="bg-white rounded-lg shadow-xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in duration-200">
+                <div className="flex items-center justify-between p-4 border-b bg-gray-50">
+                    <h2 className="text-lg font-semibold text-gray-800">
+                        {item ? 'Edit Order Item' : 'Add Order Item'}
+                    </h2>
+                    <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors" aria-label="Close">
+                        <X size={20} />
+                    </button>
+                </div>
+
+                <form onSubmit={handleSubmit} className="p-6 space-y-4">
+                    {error && (
+                        <div className="bg-red-50 text-red-600 p-3 rounded text-sm mb-4">
+                            {error}
+                        </div>
+                    )}
+
+                    <div>
+                        <label htmlFor="order-product-type" className="block text-sm font-medium text-gray-700 mb-1">
+                            Product Type
+                        </label>
+                        <select
+                            id="order-product-type"
+                            value={productId}
+                            onChange={(e) => setProductId(e.target.value)}
+                            className="input-field"
+                            required
+                        >
+                            <option value="">Select Product...</option>
+                            {products.map(p => (
+                                <option key={p.id} value={p.id}>{p.name}</option>
+                            ))}
+                        </select>
+                    </div>
+
+                    <div>
+                        <label htmlFor="order-material" className="block text-sm font-medium text-gray-700 mb-1">
+                            Material / Paper
+                        </label>
+                        <select
+                            id="order-material"
+                            value={materialId}
+                            onChange={(e) => setMaterialId(e.target.value)}
+                            className="input-field"
+                        >
+                            <option value="">Select Material...</option>
+                            {materials.map(m => (
+                                <option key={m.id} value={m.id}>{m.name}</option>
+                            ))}
+                        </select>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label htmlFor="order-width" className="block text-sm font-medium text-gray-700 mb-1">
+                                Width (mm)
+                            </label>
+                            <input
+                                id="order-width"
+                                type="text"
+                                value={width}
+                                onChange={(e) => setWidth(e.target.value)}
+                                className="input-field"
+                                placeholder="e.g. 210"
+                            />
+                        </div>
+                        <div>
+                            <label htmlFor="order-height" className="block text-sm font-medium text-gray-700 mb-1">
+                                Height (mm)
+                            </label>
+                            <input
+                                id="order-height"
+                                type="text"
+                                value={height}
+                                onChange={(e) => setHeight(e.target.value)}
+                                className="input-field"
+                                placeholder="e.g. 297"
+                            />
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label htmlFor="order-quantity" className="block text-sm font-medium text-gray-700 mb-1">
+                                Quantity
+                            </label>
+                            <input
+                                id="order-quantity"
+                                type="number"
+                                min="1"
+                                value={quantity}
+                                onChange={(e) => setQuantity(parseInt(e.target.value))}
+                                className="input-field"
+                                required
+                            />
+                        </div>
+                        <div>
+                            <label htmlFor="order-print-type" className="block text-sm font-medium text-gray-700 mb-1">
+                                Print Type
+                            </label>
+                            <select
+                                id="order-print-type"
+                                value={printType}
+                                onChange={(e) => setPrintType(e.target.value)}
+                                className="input-field"
+                            >
+                                <option value="Vienpusis">One-sided</option>
+                                <option value="Dvipusis">Two-sided</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    {/* Price Preview & Adjustment Section */}
+                    <div className="bg-gray-50 p-4 rounded-md border border-gray-200 mt-4 space-y-4">
+                        <div className="flex items-center justify-between">
+                            <label className="text-xs font-bold text-gray-500 uppercase flex items-center gap-2">
+                                <input
+                                    type="checkbox"
+                                    checked={isManualPrice}
+                                    onChange={(e) => setIsManualPrice(e.target.checked)}
+                                    className="rounded border-gray-300 text-accent-teal focus:ring-accent-teal"
+                                    aria-label="Toggle custom price override"
+                                    title="Toggle custom price override"
+                                />
+                                Custom Price Override
+                            </label>
+                            {isManualPrice && (
+                                <button
+                                    type="button"
+                                    onClick={() => setIsManualPrice(false)}
+                                    className="text-[10px] text-accent-teal hover:underline font-bold"
+                                >
+                                    Reset to Auto
+                                </button>
+                            )}
+                        </div>
+
+                        <div className="flex justify-between items-center gap-4">
+                            <div className="flex-1">
+                                <label htmlFor="unit-price" className="block text-[10px] font-bold text-gray-400 uppercase mb-1">Unit Price (€)</label>
+                                <input
+                                    id="unit-price"
+                                    type="number"
+                                    step="0.0001"
+                                    value={unitPrice}
+                                    onChange={(e) => {
+                                        setUnitPrice(parseFloat(e.target.value) || 0);
+                                        if (!isManualPrice) setIsManualPrice(true);
+                                    }}
+                                    placeholder="0.00"
+                                    className={clsx(
+                                        "w-full bg-white border rounded px-3 py-2 text-sm focus:outline-none focus:ring-1",
+                                        isManualPrice ? "border-accent-teal ring-accent-teal" : "border-gray-200"
+                                    )}
+                                />
+                            </div>
+                            <div className="text-right">
+                                <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">Total</label>
+                                <span className="block text-2xl font-bold text-primary">€{totalPrice.toFixed(2)}</span>
+                            </div>
+                        </div>
+
+                        {!isManualPrice && appliedRules.length > 0 && (
+                            <div className="text-xs text-gray-500 border-t border-gray-200 pt-3">
+                                <p className="font-semibold mb-1">Calculated via Rules:</p>
+                                <ul className="list-disc pl-4 space-y-0.5 opacity-70">
+                                    {appliedRules.map((rule: string, idx: number) => (
+                                        <li key={idx}>{rule}</li>
+                                    ))}
+                                </ul>
+                            </div>
+                        )}
+                        {isManualPrice && (
+                            <div className="text-[10px] text-amber-600 font-medium bg-amber-50 p-2 rounded border border-amber-100 italic">
+                                Manual price override active. Rules are ignored.
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="flex justify-end gap-3 pt-4 border-t mt-6">
+                        <button
+                            type="button"
+                            onClick={onClose}
+                            className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 font-medium"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            type="submit"
+                            disabled={loading || totalPrice === 0}
+                            className="btn-accent flex items-center gap-2"
+                        >
+                            {loading && <Loader2 className="animate-spin" size={16} />}
+                            {item ? 'Save Changes' : 'Add Item'}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    );
+};
+
+export default CreateOrderItemModal;

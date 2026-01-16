@@ -1,0 +1,155 @@
+﻿
+> kainu-crm@0.0.0 lint
+> eslint .
+
+
+C:\Users\User\.gemini\antigravity\scratch\kainu_crm\scripts\migrate.js
+  10:32  error  'process' is not defined  no-undef
+  11:22  error  'process' is not defined  no-undef
+  12:35  error  'process' is not defined  no-undef
+  16:5   error  'process' is not defined  no-undef
+
+C:\Users\User\.gemini\antigravity\scratch\kainu_crm\src\components\CreateClientModal.tsx
+   9:20  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  88:67  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  94:67  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\User\.gemini\antigravity\scratch\kainu_crm\src\components\CreateMaterialModal.tsx
+   9:22  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  58:67  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  64:67  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\User\.gemini\antigravity\scratch\kainu_crm\src\components\CreateOrderItemModal.tsx
+   11:12  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   16:46  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   17:48  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   92:45  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  122:67  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  129:67  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  136:59  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  141:72  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  143:32  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  150:23  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\User\.gemini\antigravity\scratch\kainu_crm\src\components\CreateOrderModal.tsx
+   84:56  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  102:65  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  130:48  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  146:23  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\User\.gemini\antigravity\scratch\kainu_crm\src\components\CreateProductModal.tsx
+  53:54  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  59:54  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\User\.gemini\antigravity\scratch\kainu_crm\src\components\CreateRuleModal.tsx
+   42:29   error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   43:29   error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   52:60   error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   92:28   error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   99:54   error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  105:54   error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  222:111  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  232:111  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\User\.gemini\antigravity\scratch\kainu_crm\src\components\InvoicePreviewModal.tsx
+    7:12  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  120:64  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\User\.gemini\antigravity\scratch\kainu_crm\src\components\OrderFiles.tsx
+  18:8   warning  React Hook useEffect has a missing dependency: 'loadFiles'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  45:23  error    Unexpected any. Specify a different type                                                                      @typescript-eslint/no-explicit-any
+  62:23  error    Unexpected any. Specify a different type                                                                      @typescript-eslint/no-explicit-any
+
+C:\Users\User\.gemini\antigravity\scratch\kainu_crm\src\contexts\AuthContext.tsx
+  19:14  warning  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+
+C:\Users\User\.gemini\antigravity\scratch\kainu_crm\src\lib\PricingService.ts
+   26:13  error  'appliedRules' is never reassigned. Use 'const' instead  prefer-const
+   37:26  error  Unexpected any. Specify a different type                 @typescript-eslint/no-explicit-any
+   38:26  error  Unexpected any. Specify a different type                 @typescript-eslint/no-explicit-any
+   39:26  error  Unexpected any. Specify a different type                 @typescript-eslint/no-explicit-any
+   40:26  error  Unexpected any. Specify a different type                 @typescript-eslint/no-explicit-any
+   41:26  error  Unexpected any. Specify a different type                 @typescript-eslint/no-explicit-any
+  128:57  error  Unexpected any. Specify a different type                 @typescript-eslint/no-explicit-any
+  135:52  error  Unexpected any. Specify a different type                 @typescript-eslint/no-explicit-any
+  146:49  error  Unexpected any. Specify a different type                 @typescript-eslint/no-explicit-any
+
+C:\Users\User\.gemini\antigravity\scratch\kainu_crm\src\lib\SaskaitaService.ts
+   8:18  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  83:25  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\User\.gemini\antigravity\scratch\kainu_crm\src\lib\SharePointService.ts
+  54:25  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\User\.gemini\antigravity\scratch\kainu_crm\src\lib\StorageService.ts
+  9:30  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\User\.gemini\antigravity\scratch\kainu_crm\src\lib\VenipakService.ts
+   37:58  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   48:32  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   55:80  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   62:60  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   70:40  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  104:25  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\User\.gemini\antigravity\scratch\kainu_crm\src\pages\CalculationRules.tsx
+   7:40  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  11:54  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  20:45  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  34:46  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  38:31  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\User\.gemini\antigravity\scratch\kainu_crm\src\pages\Calculator.tsx
+   8:46  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   9:48  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  67:45  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\User\.gemini\antigravity\scratch\kainu_crm\src\pages\Clients.tsx
+   7:44  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  11:58  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  34:33  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\User\.gemini\antigravity\scratch\kainu_crm\src\pages\Login.tsx
+  38:23  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\User\.gemini\antigravity\scratch\kainu_crm\src\pages\Materials.tsx
+   7:48  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  11:62  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  34:35  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\User\.gemini\antigravity\scratch\kainu_crm\src\pages\OrderDetails.tsx
+   16:18  error    Unexpected any. Specify a different type                                                                              @typescript-eslint/no-explicit-any
+   33:8   warning  React Hook useEffect has a missing dependency: 'fetchOrderDetails'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+   39:56  error    Unexpected any. Specify a different type                                                                              @typescript-eslint/no-explicit-any
+   65:78  error    Unexpected any. Specify a different type                                                                              @typescript-eslint/no-explicit-any
+   81:68  error    Unexpected any. Specify a different type                                                                              @typescript-eslint/no-explicit-any
+   93:66  error    Unexpected any. Specify a different type                                                                              @typescript-eslint/no-explicit-any
+  100:36  error    Unexpected any. Specify a different type                                                                              @typescript-eslint/no-explicit-any
+  332:64  error    Unexpected any. Specify a different type                                                                              @typescript-eslint/no-explicit-any
+  371:66  error    Unexpected any. Specify a different type                                                                              @typescript-eslint/no-explicit-any
+
+C:\Users\User\.gemini\antigravity\scratch\kainu_crm\src\pages\Orders.tsx
+   39:54  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   50:56  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   60:31  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   88:78  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  103:68  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  115:36  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  200:59  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  205:64  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  206:32  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\User\.gemini\antigravity\scratch\kainu_crm\src\pages\ProductPricing.tsx
+  27:63  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  42:34  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\User\.gemini\antigravity\scratch\kainu_crm\src\pages\Products.tsx
+   7:46  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  11:60  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  20:33  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  30:46  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  34:34  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+Γ£û 99 problems (96 errors, 3 warnings)
+  1 error and 0 warnings potentially fixable with the `--fix` option.
+

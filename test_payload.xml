@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<description type="4">
+    <manifest title="33451260103999">
+        <shipment>
+            <consignee>
+                <name>TEST CUSTOMER</name>
+                <company_code>3793</company_code>
+                <country>LT</country>
+                <city>Kaunas</city>
+                <address>Karaliaus Mindaugo pr. 38</address>
+                <post_code>44333</post_code>
+                <contact_person>Test Person</contact_person>
+                <contact_tel>+37060000000</contact_tel>
+                <contact_email>test@example.com</contact_email>
+            </consignee>
+            <sender>
+                <name>Keturi print, MB</name>
+                <company_code>0</company_code>
+                <country>LT</country>
+                <city>Ramučiai</city>
+                <address>Pakalnės 8-2</address>
+                <post_code>54464</post_code>
+                <contact_person>Agnietė Suknelevičienė</contact_person>
+                <contact_tel>+37069663915</contact_tel>
+                <contact_email>agniete@keturiprint.lt</contact_email>
+            </sender>
+            <attribute>
+                <delivery_type>nwd</delivery_type>
+                <delivery_mode>0</delivery_mode>
+                <comment_text>Ačiū, kad esate su mumis</comment_text>
+            </attribute>
+            <pack>
+                <pack_no>V33451E9502350</pack_no>
+                <description></description>
+                <weight>0.1</weight>
+                <volume>1</volume>
+            </pack>
+        </shipment>
+    </manifest>
+</description>

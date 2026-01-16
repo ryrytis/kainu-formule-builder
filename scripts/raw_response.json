@@ -1,0 +1,64 @@
+{
+  "data": {
+    "result": [
+      {
+        "id": "rvebg93rp0k3",
+        "name": "?IKO, UAB",
+        "code": "305541055",
+        "client_code": null,
+        "vat_code": "LT100013528016",
+        "address": "Nugal?toj? g. 1B, LT-10105",
+        "country_code": "LT"
+      },
+      {
+        "id": "gm051gnrl0jo",
+        "name": "�AL? SPRENDIMAI, UAB",
+        "code": "304765940",
+        "client_code": null,
+        "vat_code": "LT100012781514",
+        "address": "Vaivos g. 4, LT-62441",
+        "country_code": "LT"
+      },
+      {
+        "id": "720pmj4p7e69",
+        "name": "2M TECHNICS, MB",
+        "code": "305725411",
+        "client_code": null,
+        "vat_code": "LT100013927911",
+        "address": "Janaukos g. 17, LT-69316",
+        "country_code": "LT"
+      },
+      {
+        "id": "rp077g5jz014",
+        "name": "2N Autotransporte GmbH",
+        "code": "2N Autotransporte Gm",
+        "client_code": null,
+        "vat_code": "-",
+        "address": "-",
+        "country_code": "LT"
+      },
+      {
+        "id": "rn01o21180k5",
+        "name": "2N Autotransporte, GmbH",
+        "code": "HRB 17689",
+        "client_code": null,
+        "vat_code": "LT100009566814",
+        "address": "Liep? g. 28, LT-69338",
+        "country_code": "LT"
+      }
+    ],
+    "pagination": {
+      "current_page": 1,
+      "first_page_url": "/?page=1",
+      "from": 1,
+      "last_page": 100,
+      "last_page_url": "/?page=100",
+      "next_page_url": "/?page=2",
+      "path": "/",
+      "per_page": 5,
+      "prev_page_url": null,
+      "to": 5,
+      "total": 500
+    }
+  }
+}

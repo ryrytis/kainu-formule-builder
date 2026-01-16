@@ -1,0 +1,16 @@
+{
+    "client": {
+        "email": "user_test_vercel@example.com",
+        "name": "Vercel Explorer"
+    },
+    "items": [
+        {
+            "product_type": "Vercel Test",
+            "quantity": 1,
+            "unit_price": 10,
+            "total_price": 10
+        }
+    ],
+    "status": "New",
+    "notes": "Order created via curl to Vercel with JSON file."
+}
