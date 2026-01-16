@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { clsx } from 'clsx';
 import { PricingService } from '../lib/PricingService';
 import { supabase } from '../lib/supabase';
-import { X, Loader2, Plus, Trash2, ChevronDown, ChevronRight } from 'lucide-react';
+import { X, Loader2, Trash2, ChevronDown, ChevronRight } from 'lucide-react';
 
 interface CreateOrderItemModalProps {
     isOpen: boolean;

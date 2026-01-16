@@ -81,7 +81,6 @@ export const PricingService = {
             // SRA3 Sheet Dimensions
             const SheetW = 320;
             const SheetH = 450;
-            const SheetAreaM2 = (SheetW * SheetH) / 1000000;
 
             // Geometric Layout
             const perSheetH = Math.floor(SheetW / ItemW) * Math.floor(SheetH / ItemH);
