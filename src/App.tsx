@@ -16,6 +16,7 @@ import Reporting from './pages/Reporting';
 import ProductPricingMatrix from './pages/ProductPricingMatrix';
 import Calculator from './pages/Calculator';
 import ClientOnboarding from './pages/ClientOnboarding';
+import Works from './pages/Works';
 
 function App() {
     return (
@@ -35,6 +36,7 @@ function App() {
                             <Route path="materials" element={<Materials />} />
                             <Route path="products" element={<Products />} />
                             <Route path="products/:id/pricing" element={<ProductPricingMatrix />} />
+                            <Route path="works" element={<Works />} />
                             <Route path="reporting" element={<Reporting />} />
                             <Route path="rules" element={<CalculationRules />} />
                             <Route path="calculator" element={<Calculator />} />

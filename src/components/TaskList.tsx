@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { CheckCircle, Circle, Clock, User as UserIcon, Package } from 'lucide-react';
+import { CheckCircle, Circle, Clock, User as UserIcon, Package, Edit2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 export interface Task {
@@ -11,8 +11,8 @@ export interface Task {
     assigned_to: string | null;
     order_id: string | null;
     due_date: string | null;
-
     estimated_duration: string | null;
+    time_spent: string | null;
     created_at: string;
     assignee?: { email: string };
     creator?: { email: string };
@@ -22,6 +22,7 @@ export interface Task {
 interface TaskListProps {
     tasks: Task[];
     onTaskUpdated: () => void;
+    onEditTask?: (task: Task) => void;
     emptyMessage?: string;
     hideOrderLink?: boolean;
 }
@@ -29,6 +30,7 @@ interface TaskListProps {
 const TaskList: React.FC<TaskListProps> = ({
     tasks,
     onTaskUpdated,
+    onEditTask,
     emptyMessage = "No tasks yet",
     hideOrderLink = false
 }) => {
@@ -71,7 +73,7 @@ const TaskList: React.FC<TaskListProps> = ({
                 return (
                     <div
                         key={task.id}
-                        className={`p-4 rounded-xl border shadow-sm flex items-center gap-4 transition-all ${task.status === 'completed'
+                        className={`group p-4 rounded-xl border shadow-sm flex items-center gap-4 transition-all ${task.status === 'completed'
                             ? 'opacity-60 bg-gray-50 border-gray-100'
                             : isOverdue
                                 ? 'bg-red-50 border-red-200 shadow-sm'
@@ -126,6 +128,12 @@ const TaskList: React.FC<TaskListProps> = ({
                                         <span>{task.estimated_duration}</span>
                                     </div>
                                 )}
+                                {task.time_spent && (
+                                    <div className="flex items-center gap-1 text-emerald-600 font-medium" title="Time Spent">
+                                        <Clock size={14} />
+                                        <span>{task.time_spent}</span>
+                                    </div>
+                                )}
                                 <div className="flex items-center gap-1 text-gray-400">
                                     <Clock size={14} />
                                     <span>{new Date(task.created_at).toISOString().split('T')[0]}</span>
@@ -133,7 +141,7 @@ const TaskList: React.FC<TaskListProps> = ({
                             </div>
                         </div>
 
-                        <div className="flex-shrink-0">
+                        <div className="flex-shrink-0 flex items-center gap-2">
                             <span
                                 className={`px-3 py-1 rounded-full text-xs font-medium ${task.status === 'completed'
                                     ? 'bg-green-100 text-green-800'
@@ -144,6 +152,16 @@ const TaskList: React.FC<TaskListProps> = ({
                             >
                                 {task.status === 'pending' ? 'To Do' : task.status.replace('_', ' ')}
                             </span>
+
+                            {onEditTask && (
+                                <button
+                                    onClick={() => onEditTask(task)}
+                                    className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
+                                    title="Edit Task"
+                                >
+                                    <Edit2 size={16} />
+                                </button>
+                            )}
                         </div>
                     </div>
                 );

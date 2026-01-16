@@ -26,6 +26,7 @@ const Tasks: React.FC = () => {
     const [users, setUsers] = useState<User[]>([]);
     const [orders, setOrders] = useState<Order[]>([]);
     const [showModal, setShowModal] = useState(false);
+    const [editingTask, setEditingTask] = useState<Task | null>(null);
 
     useEffect(() => {
         fetchTasks();
@@ -63,7 +64,7 @@ const Tasks: React.FC = () => {
             filteredTasks.sort((a: any, b: any) => {
                 const aCompleted = a.status === 'completed';
                 const bCompleted = b.status === 'completed';
-                
+
                 if (aCompleted === bCompleted) return 0;
                 return aCompleted ? 1 : -1;
             });
@@ -117,6 +118,16 @@ const Tasks: React.FC = () => {
         return acc;
     }, {} as Record<string, Task[]>);
 
+    const handleEditTask = (task: Task) => {
+        setEditingTask(task);
+        setShowModal(true);
+    };
+
+    const handleCloseModal = () => {
+        setShowModal(false);
+        setEditingTask(null);
+    };
+
     return (
         <div className="p-6 max-w-7xl mx-auto">
             <div className="flex justify-between items-center mb-8">
@@ -125,7 +136,7 @@ const Tasks: React.FC = () => {
                     <p className="text-gray-500 mt-1">Manage your team's todos and assignments</p>
                 </div>
                 <button
-                    onClick={() => setShowModal(true)}
+                    onClick={() => { setEditingTask(null); setShowModal(true); }}
                     className="flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary/90 transition-colors"
                 >
                     <Plus size={20} />
@@ -141,6 +152,7 @@ const Tasks: React.FC = () => {
                             <TaskList
                                 tasks={myTasks}
                                 onTaskUpdated={fetchTasks}
+                                onEditTask={handleEditTask}
                             />
                         </div>
                     )}
@@ -153,6 +165,7 @@ const Tasks: React.FC = () => {
                             <TaskList
                                 tasks={userTasks}
                                 onTaskUpdated={fetchTasks}
+                                onEditTask={handleEditTask}
                             />
                         </div>
                     ))}
@@ -166,10 +179,11 @@ const Tasks: React.FC = () => {
 
             <CreateTaskModal
                 isOpen={showModal}
-                onClose={() => setShowModal(false)}
+                onClose={handleCloseModal}
                 onTaskCreated={fetchTasks}
                 users={users}
                 orders={orders}
+                taskToEdit={editingTask}
             />
         </div>
     );

@@ -361,6 +361,7 @@ export interface Database {
                     id: number
                     operation: string
                     price: number
+                    cost_price: number | null
                     unit: string | null
                     created_at: string
                 }
@@ -368,6 +369,7 @@ export interface Database {
                     id?: number
                     operation: string
                     price: number
+                    cost_price?: number | null
                     unit?: string | null
                     created_at?: string
                 }
@@ -375,6 +377,7 @@ export interface Database {
                     id?: number
                     operation?: string
                     price?: number
+                    cost_price?: number | null
                     unit?: string | null
                     created_at?: string
                 }
@@ -412,6 +415,7 @@ export interface Database {
                     order_id: string | null
                     due_date: string | null
                     estimated_duration: string | null
+                    time_spent: string | null
                     created_at: string
                     updated_at: string
                 }
@@ -424,6 +428,7 @@ export interface Database {
                     order_id?: string | null
                     due_date?: string | null
                     estimated_duration?: string | null
+                    time_spent?: string | null
                     created_at?: string
                     updated_at?: string
                 }
@@ -436,6 +441,7 @@ export interface Database {
                     order_id?: string | null
                     due_date?: string | null
                     estimated_duration?: string | null
+                    time_spent?: string | null
                     created_at?: string
                     updated_at?: string
                 }

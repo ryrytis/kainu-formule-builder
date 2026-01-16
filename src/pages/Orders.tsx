@@ -764,6 +764,21 @@ const Orders: React.FC = () => {
                                                                                         )}
                                                                                     </div>
 
+                                                                                    {/* Cost & Margin Info */}
+                                                                                    <div className="flex flex-col items-end mr-4 text-xs">
+                                                                                        <span className="text-gray-400" title="Unit Cost">
+                                                                                            Cost: €{item.cost_price?.toFixed(2) || '0.00'}
+                                                                                        </span>
+                                                                                        <span className={clsx(
+                                                                                            "font-bold",
+                                                                                            (!item.margin_percent) ? "text-gray-400" :
+                                                                                                (item.margin_percent || 0) >= 30 ? "text-emerald-600" :
+                                                                                                    (item.margin_percent || 0) >= 10 ? "text-amber-600" : "text-red-600"
+                                                                                        )} title="Margin">
+                                                                                            {item.margin_percent?.toFixed(1) || '0.0'}%
+                                                                                        </span>
+                                                                                    </div>
+
                                                                                     <div className="text-right min-w-[80px]">
                                                                                         <div className="text-sm font-bold text-accent-teal">
                                                                                             €{item.total_price?.toFixed(2)}

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Outlet, NavLink } from 'react-router-dom';
-import { LayoutDashboard, Users, ShoppingCart, Box, Settings, LogOut, Ruler, BarChart3, Calculator, ListTodo } from 'lucide-react';
+import { LayoutDashboard, Users, ShoppingCart, Box, Settings, LogOut, Ruler, BarChart3, Calculator, ListTodo, Hammer } from 'lucide-react';
 import clsx from 'clsx';
 import { useAuth } from '../contexts/AuthContext';
 import UpdatePasswordModal from '../components/UpdatePasswordModal';
@@ -76,6 +76,7 @@ const SidebarLayout: React.FC = () => {
         { icon: Users, label: 'Clients', to: '/clients' },
         { icon: ShoppingCart, label: 'Products', to: '/products' },
         { icon: Box, label: 'Materials', to: '/materials' },
+        { icon: Hammer, label: 'Works', to: '/works' },
         { icon: Ruler, label: 'Calc Rules', to: '/rules' },
         { icon: Calculator, label: 'Calculator', to: '/calculator' },
         { icon: BarChart3, label: 'Reporting', to: '/reporting' },
@@ -93,7 +94,7 @@ const SidebarLayout: React.FC = () => {
                     <p className="text-xs text-gray-400 mt-1">CRM System</p>
                 </div>
 
-                <nav className="flex-1 overflow-y-auto py-8">
+                <nav className="flex-1 overflow-y-auto py-4">
                     <ul className="space-y-1">
                         {navItems.map((item) => (
                             <li key={item.label}>
@@ -101,7 +102,7 @@ const SidebarLayout: React.FC = () => {
                                     to={item.to}
                                     className={({ isActive }) =>
                                         clsx(
-                                            'flex items-center gap-4 px-8 py-3 transition-all duration-200 border-l-4 relative',
+                                            'flex items-center gap-4 px-8 py-2 transition-all duration-200 border-l-4 relative',
                                             isActive
                                                 ? 'bg-primary-light border-accent-teal text-white'
                                                 : 'border-transparent text-gray-400 hover:text-white hover:bg-primary-light/50'
