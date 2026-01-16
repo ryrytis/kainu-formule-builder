@@ -379,6 +379,29 @@ export interface Database {
                     created_at?: string
                 }
             }
+            product_works: {
+                Row: {
+                    id: string
+                    product_id: string
+                    work_id: string
+                    default_quantity: number
+                    created_at: string
+                }
+                Insert: {
+                    id?: string
+                    product_id: string
+                    work_id: string
+                    default_quantity?: number
+                    created_at?: string
+                }
+                Update: {
+                    id?: string
+                    product_id?: string
+                    work_id?: string
+                    default_quantity?: number
+                    created_at?: string
+                }
+            }
             tasks: {
                 Row: {
                     id: string

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { Plus, Search, Edit, Trash2, Box, Tag, DollarSign } from 'lucide-react';
 import CreateProductModal from '../components/CreateProductModal';
+import ManageProductWorksModal from '../components/ManageProductWorksModal';
 
 const Products: React.FC = () => {
     const [products, setProducts] = useState<any[]>([]);
@@ -9,6 +10,7 @@ const Products: React.FC = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedProduct, setSelectedProduct] = useState<any | null>(null);
+    const [isWorksModalOpen, setIsWorksModalOpen] = useState(false);
 
     useEffect(() => {
         fetchProducts();
@@ -35,6 +37,11 @@ const Products: React.FC = () => {
         setSelectedProduct(product);
         setIsModalOpen(true);
     };
+
+    const handleManageWorks = (product: any) => {
+        setSelectedProduct(product);
+        setIsWorksModalOpen(true);
+    }
 
     const closeAndRefresh = () => {
         setIsModalOpen(false);
@@ -131,6 +138,13 @@ const Products: React.FC = () => {
                                                     <DollarSign size={16} />
                                                 </button>
                                                 <button
+                                                    onClick={() => handleManageWorks(product)}
+                                                    className="p-1.5 text-gray-400 hover:text-purple-600 hover:bg-purple-50 rounded"
+                                                    title="Default Works"
+                                                >
+                                                    <Box size={16} />
+                                                </button>
+                                                <button
                                                     onClick={() => handleEdit(product)}
                                                     className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded"
                                                     title="Edit Product"
@@ -166,6 +180,12 @@ const Products: React.FC = () => {
                 onClose={() => { setIsModalOpen(false); setSelectedProduct(null); }}
                 onSuccess={closeAndRefresh}
                 productToEdit={selectedProduct}
+            />
+
+            <ManageProductWorksModal
+                isOpen={isWorksModalOpen}
+                onClose={() => { setIsWorksModalOpen(false); setSelectedProduct(null); }}
+                product={selectedProduct}
             />
         </div>
     );

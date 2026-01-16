@@ -90,10 +90,85 @@ const Reporting: React.FC = () => {
 
 
 
+
+    // --- Product Stats Logic (Merged from ProductPricing) ---
+    const [stats, setStats] = useState<any[]>([]);
+    const [searchTerm, setSearchTerm] = useState('');
+
+    useEffect(() => {
+        calculateProductStats();
+    }, [searchTerm, monthlyData]); // Recalc when data loaded
+
+    const calculateProductStats = async () => {
+        // Fetch all order items with client info
+        const { data: items } = await (supabase as any)
+            .from('order_items')
+            .select(`
+             product_type,
+             quantity,
+             total_price,
+             unit_price,
+             cost_price,
+             orders (
+                 status,
+                 clients (name)
+             )
+         `)
+            .neq('orders.status', 'Cancelled');
+
+        if (!items) return;
+
+        const term = searchTerm.toLowerCase();
+
+        // 1. Filter
+        const filtered = items.filter((item: any) => {
+            if (!term) return true;
+            const pName = (item.product_type || '').toLowerCase();
+            const cName = (item.orders?.clients?.name || '').toLowerCase();
+            return pName.includes(term) || cName.includes(term);
+        });
+
+        // 2. Aggregate
+        const aggregation: Record<string, any> = {};
+
+        filtered.forEach((item: any) => {
+            const description = item.product_type || 'Unknown Product';
+            const client = item.orders?.clients?.name || 'Unknown Client';
+            const key = `${client}-${description}`;
+
+            if (!aggregation[key]) {
+                aggregation[key] = {
+                    clientName: client,
+                    productName: description,
+                    totalQuantity: 0,
+                    totalRevenue: 0,
+                    totalCost: 0,
+                    orderCount: 0
+                };
+            }
+
+            aggregation[key].totalQuantity += (item.quantity || 0);
+            aggregation[key].totalRevenue += (item.total_price || 0);
+            aggregation[key].totalCost += (item.cost_price || 0); // aggregated cost
+            aggregation[key].orderCount += 1;
+        });
+
+        // 3. Array & Sort
+        const arr = Object.values(aggregation).map(stat => ({
+            ...stat,
+            avgPrice: stat.totalQuantity > 0 ? stat.totalRevenue / stat.totalQuantity : 0,
+            avgMargin: stat.totalRevenue > 0 ? ((stat.totalRevenue - stat.totalCost) / stat.totalRevenue) * 100 : 0
+        }));
+
+        arr.sort((a, b) => b.totalRevenue - a.totalRevenue);
+        setStats(arr);
+    };
+
+
     if (loading) return <div className="flex justify-center py-10"><Loader2 className="animate-spin text-primary" /></div>;
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-8 animate-in fade-in duration-300">
             <h1 className="text-3xl font-bold text-primary">Profitability & Reporting</h1>
 
             {/* KPI Cards */}
@@ -174,6 +249,77 @@ const Reporting: React.FC = () => {
                             </LineChart>
                         </ResponsiveContainer>
                     </div>
+                </div>
+            </div>
+
+            {/* Product Analytics Table */}
+            <div className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
+                <div className="p-6 border-b border-gray-100 flex flex-col sm:flex-row justify-between items-center gap-4 bg-gray-50">
+                    <div>
+                        <h2 className="text-lg font-bold text-gray-800">Product Analytics</h2>
+                        <p className="text-sm text-gray-500">Breakdown by Client and Product</p>
+                    </div>
+
+                    {/* Search */}
+                    <div className="relative w-full sm:w-64">
+                        <input
+                            type="text"
+                            placeholder="Search Client or Product..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:border-accent-teal outline-none transition-colors text-sm"
+                        />
+                        <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" /></svg>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="overflow-x-auto">
+                    <table className="w-full text-left">
+                        <thead className="bg-gray-50 text-gray-500 uppercase text-xs font-semibold">
+                            <tr>
+                                <th className="px-6 py-3">Client</th>
+                                <th className="px-6 py-3">Product</th>
+                                <th className="px-6 py-3 text-right">Orders</th>
+                                <th className="px-6 py-3 text-right">Qty</th>
+                                <th className="px-6 py-3 text-right">Revenue</th>
+                                <th className="px-6 py-3 text-right">Cost</th>
+                                <th className="px-6 py-3 text-right">Profit</th>
+                                <th className="px-6 py-3 text-right">Margin</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-100">
+                            {stats.map((stat, i) => (
+                                <tr key={i} className="hover:bg-gray-50 transition-colors">
+                                    <td className="px-6 py-3 font-medium text-gray-700">{stat.clientName}</td>
+                                    <td className="px-6 py-3 text-gray-600">{stat.productName}</td>
+                                    <td className="px-6 py-3 text-right text-gray-600">{stat.orderCount}</td>
+                                    <td className="px-6 py-3 text-right text-gray-600">{stat.totalQuantity}</td>
+                                    <td className="px-6 py-3 text-right font-medium text-gray-800">€{stat.totalRevenue.toFixed(2)}</td>
+                                    <td className="px-6 py-3 text-right text-gray-500">€{stat.totalCost.toFixed(2)}</td>
+                                    <td className="px-6 py-3 text-right font-medium text-green-600">€{(stat.totalRevenue - stat.totalCost).toFixed(2)}</td>
+                                    <td className="px-6 py-3 text-right">
+                                        <span className={clsx(
+                                            "px-2 py-1 rounded-full text-xs font-bold",
+                                            stat.avgMargin >= 30 ? "bg-green-100 text-green-700" :
+                                                stat.avgMargin >= 10 ? "bg-amber-100 text-amber-700" :
+                                                    "bg-red-100 text-red-700"
+                                        )}>
+                                            {stat.avgMargin.toFixed(1)}%
+                                        </span>
+                                    </td>
+                                </tr>
+                            ))}
+                            {stats.length === 0 && (
+                                <tr>
+                                    <td colSpan={8} className="px-6 py-8 text-center text-gray-400 italic">
+                                        No data found matching your search.
+                                    </td>
+                                </tr>
+                            )}
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>

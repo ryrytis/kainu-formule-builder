@@ -112,6 +112,36 @@ const CreateOrderItemModal: React.FC<CreateOrderItemModalProps> = ({ isOpen, onC
         }
     }, [unitPrice, quantity, isManualPrice]);
 
+    // Auto-load default works when product changes
+    useEffect(() => {
+        const loadDefaultWorks = async () => {
+            if (!productId) return;
+
+            // Get product default works
+            const { data: defaults } = await supabase
+                .from('product_works')
+                .select(`
+                    default_quantity,
+                    works (operation)
+                `)
+                .eq('product_id', productId);
+
+            if (defaults && defaults.length > 0) {
+                const mapped = defaults.map((d: any) => ({
+                    name: d.works?.operation || 'Unknown',
+                    duration: d.default_quantity
+                }));
+                setSelectedWorks(mapped);
+            } else {
+                setSelectedWorks([]);
+            }
+        };
+
+        if (!item) { // Only load defaults for new items
+            loadDefaultWorks();
+        }
+    }, [productId]);
+
     const fetchProducts = async () => {
         const { data } = await (supabase as any).from('products').select('*').order('name');
         if (data) setProducts(data);
