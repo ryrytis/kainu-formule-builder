@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { clsx } from 'clsx';
 import { PricingService } from '../lib/PricingService';
 import { supabase } from '../lib/supabase';
-import { X, Loader2 } from 'lucide-react';
+import { X, Loader2, Plus, Trash2, ChevronDown, ChevronRight } from 'lucide-react';
 
 interface CreateOrderItemModalProps {
     isOpen: boolean;
@@ -16,6 +16,7 @@ const CreateOrderItemModal: React.FC<CreateOrderItemModalProps> = ({ isOpen, onC
     const [loading, setLoading] = useState(false);
     const [products, setProducts] = useState<any[]>([]);
     const [materials, setMaterials] = useState<any[]>([]);
+    const [works, setWorks] = useState<any[]>([]); // Available works from DB
 
     // Form State
     const [productId, setProductId] = useState('');
@@ -28,8 +29,13 @@ const CreateOrderItemModal: React.FC<CreateOrderItemModalProps> = ({ isOpen, onC
     // Pricing State
     const [unitPrice, setUnitPrice] = useState(0);
     const [totalPrice, setTotalPrice] = useState(0);
+    const [totalCost, setTotalCost] = useState(0); // Cost Price
+    const [marginPercent, setMarginPercent] = useState(0);
+    const [selectedWorks, setSelectedWorks] = useState<{ name: string, duration: number }[]>([]);
+
     const [appliedRules, setAppliedRules] = useState<string[]>([]);
     const [isManualPrice, setIsManualPrice] = useState(false);
+    const [showCostDetails, setShowCostDetails] = useState(false);
 
     const [error, setError] = useState<string | null>(null);
 
@@ -37,6 +43,7 @@ const CreateOrderItemModal: React.FC<CreateOrderItemModalProps> = ({ isOpen, onC
         if (isOpen) {
             fetchProducts();
             fetchMaterials();
+            fetchWorks();
 
             if (item) {
                 // If editing, fill form
@@ -57,6 +64,9 @@ const CreateOrderItemModal: React.FC<CreateOrderItemModalProps> = ({ isOpen, onC
                 setHeight('');
                 setUnitPrice(0);
                 setTotalPrice(0);
+                setTotalCost(0);
+                setMarginPercent(0);
+                setSelectedWorks([]);
                 setAppliedRules([]);
                 setIsManualPrice(false);
             }
@@ -80,17 +90,20 @@ const CreateOrderItemModal: React.FC<CreateOrderItemModalProps> = ({ isOpen, onC
                 quantity: quantity,
                 material_id: materialId,
                 width: width ? parseFloat(width) : undefined,
-                height: height ? parseFloat(height) : undefined
+                height: height ? parseFloat(height) : undefined,
+                extra_works: selectedWorks,
             });
 
             setUnitPrice(result.unit_price);
             setTotalPrice(result.total_price);
+            setTotalCost(result.total_cost || 0);
+            setMarginPercent(result.margin_percent || 0);
             setAppliedRules(result.applied_rules);
         };
 
         const debounce = setTimeout(calculate, 500);
         return () => clearTimeout(debounce);
-    }, [productId, quantity, materialId, width, height, printType, isManualPrice]);
+    }, [productId, quantity, materialId, width, height, printType, isManualPrice, selectedWorks]);
 
     // Recalculate total if manual price changes
     useEffect(() => {
@@ -109,6 +122,31 @@ const CreateOrderItemModal: React.FC<CreateOrderItemModalProps> = ({ isOpen, onC
         if (data) setMaterials(data);
     };
 
+    const fetchWorks = async () => {
+        const { data } = await supabase.from('works').select('*').order('operation');
+        if (data) setWorks(data);
+    };
+
+
+
+    const addWork = (workName: string) => {
+        if (!workName) return;
+        // Check if already added? Maybe allow multiples (e.g. 2x Cutting).
+        setSelectedWorks([...selectedWorks, { name: workName, duration: 1 }]);
+    };
+
+    const removeWork = (index: number) => {
+        const newWorks = [...selectedWorks];
+        newWorks.splice(index, 1);
+        setSelectedWorks(newWorks);
+    };
+
+    const updateWorkDuration = (index: number, val: number) => {
+        const newWorks = [...selectedWorks];
+        newWorks[index].duration = val;
+        setSelectedWorks(newWorks);
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
@@ -125,7 +163,10 @@ const CreateOrderItemModal: React.FC<CreateOrderItemModalProps> = ({ isOpen, onC
                 height: height ? parseFloat(height) : null,
                 print_type: printType,
                 unit_price: unitPrice,
-                total_price: totalPrice
+                total_price: totalPrice,
+                cost_price: totalCost,
+                margin_percent: marginPercent,
+                item_works: selectedWorks
             };
 
             if (item?.id) {
@@ -281,6 +322,52 @@ const CreateOrderItemModal: React.FC<CreateOrderItemModalProps> = ({ isOpen, onC
                         </div>
                     </div>
 
+                    {/* Additional Works Section */}
+                    <div className="bg-gray-50 p-4 rounded-md border border-gray-200 space-y-3">
+                        <div className="flex items-center justify-between">
+                            <label className="text-sm font-medium text-gray-700">Additional Works</label>
+                            <div className="flex items-center gap-2">
+                                <select
+                                    className="text-xs border rounded p-1 max-w-[150px]"
+                                    onChange={(e) => {
+                                        addWork(e.target.value);
+                                        e.target.value = '';
+                                    }}
+                                >
+                                    <option value="">+ Add Work</option>
+                                    {works.map((w) => (
+                                        <option key={w.id} value={w.operation}>{w.operation} (€{w.cost_price}/u)</option>
+                                    ))}
+                                </select>
+                            </div>
+                        </div>
+
+                        {selectedWorks.length > 0 ? (
+                            <div className="space-y-2">
+                                {selectedWorks.map((work, idx) => (
+                                    <div key={idx} className="flex items-center gap-2 text-sm bg-white p-2 rounded border border-gray-100">
+                                        <span className="flex-1 font-medium text-gray-700">{work.name}</span>
+                                        <div className="flex items-center gap-1">
+                                            <label className="text-[10px] text-gray-400">Qty/Min:</label>
+                                            <input
+                                                type="number"
+                                                value={work.duration}
+                                                onChange={(e) => updateWorkDuration(idx, parseFloat(e.target.value))}
+                                                className="w-16 border rounded px-1 py-0.5 text-right"
+                                                step="0.1"
+                                            />
+                                        </div>
+                                        <button type="button" onClick={() => removeWork(idx)} className="text-red-400 hover:text-red-600">
+                                            <Trash2 size={14} />
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <p className="text-xs text-gray-400 italic">No additional works selected.</p>
+                        )}
+                    </div>
+
                     {/* Price Preview & Adjustment Section */}
                     <div className="bg-gray-50 p-4 rounded-md border border-gray-200 mt-4 space-y-4">
                         <div className="flex items-center justify-between">
@@ -344,6 +431,46 @@ const CreateOrderItemModal: React.FC<CreateOrderItemModalProps> = ({ isOpen, onC
                         {isManualPrice && (
                             <div className="text-[10px] text-amber-600 font-medium bg-amber-50 p-2 rounded border border-amber-100 italic">
                                 Manual price override active. Rules are ignored.
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Cost Analysis toggle */}
+                    <div className="mt-2 text-center">
+                        <button
+                            type="button"
+                            onClick={() => setShowCostDetails(!showCostDetails)}
+                            className="inline-flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600 border border-transparent hover:border-gray-200 rounded px-2 py-1 transition-colors"
+                        >
+                            {showCostDetails ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                            {showCostDetails ? 'Hide Cost Breakdown' : 'Show Profitability Analysis'}
+                        </button>
+
+                        {showCostDetails && (
+                            <div className="mt-2 p-3 bg-slate-50 rounded border border-slate-200 text-xs text-slate-700 space-y-2 text-left animate-in fade-in zoom-in-95 duration-200">
+                                <div className="flex justify-between font-medium">
+                                    <span>Total Revenue:</span>
+                                    <span>€{totalPrice.toFixed(2)}</span>
+                                </div>
+                                <div className="flex justify-between text-gray-500">
+                                    <span>Total Cost:</span>
+                                    <span>€{totalCost.toFixed(2)}</span>
+                                </div>
+                                <div className="border-t border-slate-200 my-1"></div>
+                                <div className="flex justify-between font-bold text-emerald-700">
+                                    <span>Profit:</span>
+                                    <span>€{(totalPrice - totalCost).toFixed(2)}</span>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                    <span>Margin:</span>
+                                    <span className={clsx(
+                                        "font-bold px-1.5 py-0.5 rounded text-[10px]",
+                                        marginPercent >= 30 ? "bg-emerald-100 text-emerald-800" :
+                                            marginPercent >= 15 ? "bg-yellow-100 text-yellow-800" : "bg-red-100 text-red-800"
+                                    )}>
+                                        {marginPercent}%
+                                    </span>
+                                </div>
                             </div>
                         )}
                     </div>

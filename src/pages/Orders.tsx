@@ -22,6 +22,8 @@ type OrderItem = {
     material_id?: string;
     print_type?: string;
     unit_price?: number;
+    cost_price?: number;
+    margin_percent?: number;
 };
 
 type Order = Database['public']['Tables']['orders']['Row'] & {
@@ -37,6 +39,9 @@ type Order = Database['public']['Tables']['orders']['Row'] & {
         parcel_locker: string | null;
     } | null;
     order_items: OrderItem[];
+    // Ensure these are typed even if partial
+    total_cost?: number;
+    profit_margin?: number;
 };
 
 const Orders: React.FC = () => {
@@ -581,7 +586,14 @@ const Orders: React.FC = () => {
                                                     {new Date(order.created_at).toISOString().split('T')[0]}
                                                 </td>
                                                 <td className="py-4 px-4 text-right font-medium">
-                                                    €{order.total_price?.toFixed(2) || '0.00'}
+                                                    <div>€{order.total_price?.toFixed(2) || '0.00'}</div>
+                                                    {(order.total_cost || 0) > 0 && (
+                                                        <div className="text-[10px] text-gray-400 mt-1" title="Estimated Profit">
+                                                            <span className="text-emerald-600 font-bold">
+                                                                +€{((order.total_price || 0) - (order.total_cost || 0)).toFixed(2)}
+                                                            </span>
+                                                        </div>
+                                                    )}
                                                 </td>
                                                 <td className="py-4 px-4" onClick={(e) => e.stopPropagation()}>
                                                     <div className="flex justify-end gap-1">
@@ -795,6 +807,28 @@ const Orders: React.FC = () => {
                                                                 <div className="mt-4 pt-4 border-t border-gray-100">
                                                                     <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Notes</h4>
                                                                     <p className="text-sm text-gray-600">{order.notes}</p>
+                                                                </div>
+                                                            )}
+
+                                                            {/* Order Profitability Summary Block */}
+                                                            {(order.total_cost || 0) > 0 && (
+                                                                <div className="mt-2 pt-3 border-t border-gray-100 flex justify-end gap-6 text-xs">
+                                                                    <div className="text-right">
+                                                                        <span className="block text-gray-400">Total Cost</span>
+                                                                        <span className="font-medium">€{order.total_cost?.toFixed(2)}</span>
+                                                                    </div>
+                                                                    <div className="text-right">
+                                                                        <span className="block text-gray-400">Net Profit</span>
+                                                                        <span className="font-bold text-emerald-600">€{((order.total_price || 0) - (order.total_cost || 0)).toFixed(2)}</span>
+                                                                    </div>
+                                                                    <div className="text-right">
+                                                                        <span className="block text-gray-400">Margin</span>
+                                                                        <span className={clsx("font-bold",
+                                                                            ((order.total_price || 0) - (order.total_cost || 0)) / (order.total_price || 1) > 0.3 ? "text-emerald-600" : "text-amber-500"
+                                                                        )}>
+                                                                            {((((order.total_price || 0) - (order.total_cost || 0)) / (order.total_price || 1)) * 100).toFixed(1)}%
+                                                                        </span>
+                                                                    </div>
                                                                 </div>
                                                             )}
                                                         </div>

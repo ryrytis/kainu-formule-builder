@@ -12,7 +12,7 @@ import Materials from './pages/Materials';
 import Products from './pages/Products';
 import CalculationRules from './pages/CalculationRules';
 import Settings from './pages/Settings';
-import ProductPricing from './pages/ProductPricing';
+import Reporting from './pages/Reporting';
 import ProductPricingMatrix from './pages/ProductPricingMatrix';
 import Calculator from './pages/Calculator';
 import ClientOnboarding from './pages/ClientOnboarding';
@@ -35,7 +35,7 @@ function App() {
                             <Route path="materials" element={<Materials />} />
                             <Route path="products" element={<Products />} />
                             <Route path="products/:id/pricing" element={<ProductPricingMatrix />} />
-                            <Route path="reporting" element={<ProductPricing />} />
+                            <Route path="reporting" element={<Reporting />} />
                             <Route path="rules" element={<CalculationRules />} />
                             <Route path="calculator" element={<Calculator />} />
                             <Route path="settings" element={<Settings />} />

@@ -8,11 +8,14 @@ export interface PricingRequest {
     material_id?: string;
     lamination?: string;
     print_type?: string;
+    extra_works?: { name: string, duration: number }[];
 }
 
 export interface PricingResult {
     unit_price: number;
     total_price: number;
+    total_cost?: number;
+    margin_percent?: number;
     applied_rules: string[];
 }
 
@@ -24,6 +27,7 @@ export const PricingService = {
         const { product_id, quantity, lamination, width, height, material_id } = request;
 
         let unitPrice = 0;
+        let totalCost = 0;
         const appliedRules: string[] = [];
         let basePriceRuleApplied = false;
 
@@ -46,65 +50,131 @@ export const PricingService = {
 
         const product = productData || { name: 'Unknown' };
 
+        // --- SHEET OPTIMIZATION & COST CALCULATION ---
+        let sheetDetails = { itemsPerSheet: 0, totalSheets: 0, sheetCost: 0, printCost: 0, workCost: 0 };
+
+        // 1. Determine Product Dimensions
+        let ItemW = width || 0;
+        let ItemH = height || 0;
+
+        // Auto-detect standard sizes if not provided
+        if (!ItemW || !ItemH) {
+            const nameLower = product.name.toLowerCase();
+            const standardSizes: Record<string, { w: number, h: number }> = {
+                'a4': { w: 210, h: 297 },
+                'a5': { w: 148, h: 210 },
+                'a3': { w: 297, h: 420 },
+                'vizitinės': { w: 90, h: 50 },
+                'vizitines': { w: 90, h: 50 }
+            };
+            for (const key in standardSizes) {
+                if (nameLower.includes(key)) {
+                    ItemW = standardSizes[key].w;
+                    ItemH = standardSizes[key].h;
+                    appliedRules.push(`Standard Size: ${key.toUpperCase()} (${ItemW}x${ItemH}mm)`);
+                    break;
+                }
+            }
+        }
+
+        if (ItemW && ItemH) {
+            // SRA3 Sheet Dimensions
+            const SheetW = 320;
+            const SheetH = 450;
+            const SheetAreaM2 = (SheetW * SheetH) / 1000000;
+
+            // Geometric Layout
+            const perSheetH = Math.floor(SheetW / ItemW) * Math.floor(SheetH / ItemH);
+            const perSheetV = Math.floor(SheetW / ItemH) * Math.floor(SheetH / ItemW);
+            sheetDetails.itemsPerSheet = Math.max(perSheetH, perSheetV) || 1;
+
+            // Sheet Requirement
+            const requiredSheetsNet = Math.ceil(quantity / sheetDetails.itemsPerSheet);
+            const utilizationFactor = 0.8; // User specified 80% utilization
+            sheetDetails.totalSheets = Math.ceil(requiredSheetsNet / utilizationFactor);
+
+            appliedRules.push(`Sheet Optimization: ${sheetDetails.itemsPerSheet} per SRA3. Net: ${requiredSheetsNet}, Gross: ${sheetDetails.totalSheets} sheets.`);
+
+            // MATERIAL COST
+            if (material_id && materials) {
+                const mat = materials.find((m: any) => m.id === material_id);
+                if (mat) {
+                    // Cost is per sheet (usually). If unit_price is per pack, we'd need to know. 
+                    // Assuming materials.cost_price is per sheet or per unit (A3 sheet).
+                    // If materials.unit is 'm2', then use area.
+                    // For now, assume cost_price is per SRA3 sheet.
+                    const costPerSheet = mat.cost_price || 0;
+                    sheetDetails.sheetCost = sheetDetails.totalSheets * costPerSheet;
+                    appliedRules.push(`Material Cost: €${sheetDetails.sheetCost.toFixed(2)} (${mat.name})`);
+                }
+            }
+
+            // PRINT COST
+            // Assume 4+4 default unless specified
+            const printOptionName = '4+4';
+            const printOpt = printOptions?.find((p: any) => p.print_option === printOptionName);
+            if (printOpt) {
+                const printCostPerSheet = printOpt.cost_price || 0;
+                sheetDetails.printCost = sheetDetails.totalSheets * printCostPerSheet;
+                appliedRules.push(`Print Cost: €${sheetDetails.printCost.toFixed(2)}`);
+            }
+
+            // LAMINATION WORK COST check
+            if (lamination && works) {
+                const work = works.find((w: any) => w.operation === lamination);
+                if (work) {
+                    // Assume lamination cost is per sheet too, or per meter?
+                    // If cost_price is per unit... let's assume per sheet for lamination work.
+                    const lamCost = (work.cost_price || 0) * sheetDetails.totalSheets;
+                    sheetDetails.workCost += lamCost;
+                    appliedRules.push(`Lamination Cost: €${lamCost.toFixed(2)}`);
+                }
+            }
+
+            // GENERIC EXTRA WORKS
+            if (request.extra_works && request.extra_works.length > 0 && works) {
+                for (const extra of request.extra_works) {
+                    const workDef = works.find((w: any) => w.operation === extra.name);
+                    if (workDef) {
+                        const exCost = (workDef.cost_price || 0) * extra.duration;
+                        sheetDetails.workCost += exCost;
+                        appliedRules.push(`Work: ${extra.name} x${extra.duration} (Cost: €${exCost.toFixed(2)})`);
+                    }
+                }
+            }
+
+            totalCost = sheetDetails.sheetCost + sheetDetails.printCost + sheetDetails.workCost;
+        }
+
+
         // --- TIER 0: MATRIX PRICING (Exact Match) ---
-        // This takes precedence over everything else except client discounts
         if (matrixRules && matrixRules.length > 0) {
             const match = matrixRules.find((m: any) => {
                 const qtyMatch = quantity >= m.quantity_from && (m.quantity_to === null || quantity <= m.quantity_to);
-                // If lamination/print_type/material are specified in Matrix, they MUST match request.
-                // If they are null in Matrix, they are wildcards (match anything or ignore).
-
-                // Strict matching logic:
-                // 1. If Matrix has value, Request MUST match.
-                // 2. If Matrix is null, it applies to all.
-                // However, user wants "specific rows", so usually it implies strict match if provided.
-
-                // Let's assume:
-                // If request has 'lamination', and matrix has 'lamination', they must equal.
-                // If matrix has 'lamination' but request doesn't, it's a mismatch (unless default).
-
-                // Simplified Strict Match for Version 1:
                 const matMatch = !m.material_id || m.material_id === material_id;
                 const lamMatch = (!m.lamination || m.lamination === 'None') ? true : m.lamination === lamination;
-                const printMatch = !m.print_type || m.print_type === request.print_type || true; // TODO: Request needs print_type. 
-                // Note: 'request' input currently doesn't strictly disable 'print_type' but we can infer or ignore for now if not strictly passed.
-                // Re-reading interface: PricingRequest doesn't have print_type yet. I'll need to add it or infer it.
+                // const printMatch = !m.print_type || m.print_type === request.print_type || true; 
 
-                return qtyMatch && matMatch && lamMatch && printMatch;
+                return qtyMatch && matMatch && lamMatch;
             });
 
             if (match) {
-                unitPrice = match.price / quantity; // Matrix price is TOTAL for that Qty usually? Or Unit?
-                // Plan said "Price (Input)". Usually in print matrix it's "Price for 100 is €20". So Unit Price = 0.20.
-                // Let's assume the Input Price is TOTAL for that row (e.g. 100pcs = €20).
-                // Because user said "Price €" in UI for Qty 100.
-
-                // Wait, previous code says `unitPrice = rule.value` for base price per unit.
-                // Let's look at UI: "Total Price (€)".
-                // So if I enter 20 for 100 qty, unit is 0.2.
-
-                // BUT, if the quantity requested is 150, and we matched the '100' row (range 100-199?), do we use the unit price of the 100 row?
-                // The logic `quantity >= m.quantity_from` suggests stepped pricing.
-                // Let's treat the matrix price as the TOTAL price for the `quantity_from` amount?
-                // No, usually matrix is "Price for X amount".
-                // If I have a row: 100 qty, €20.
-                // If I order 100, price is €20.
-                // If I order 101?
-                // Simplest interpretation: The price defined is for the exact quantity block?
-                // Or does it resolve to a unit price?
-                // Let's calculate unit price from the matrix entry.
-
+                // If matrix price is TOTAL for the block
+                // E.g. 100 qty = €20. Unit = 0.2.
                 unitPrice = match.price / match.quantity_from;
-                // Example: 100 cards = €20. Unit = 0.2.
-                // If I order 150 cards, cost is 150 * 0.2 = €30.
+                if (quantity > match.quantity_from) {
+                    // Scaling? Or fixed block?
+                    // Usually matrix is "100 vnt = 20eu". If 150 vnt, do we prorate?
+                    // Let's assume linear pro-rating from the base unit price of that tier.
+                }
 
-                appliedRules.push(`Matrix Match: ${match.quantity_from}qty @ €${match.price} total`);
+                appliedRules.push(`Matrix Match: ${match.quantity_from}qty @ €${match.price}`);
                 basePriceRuleApplied = true;
             }
         }
 
         // --- TIER 1: CHECK CUSTOM BASE PRICE RULES (Legacy) ---
-        if (rules) {
+        if (!basePriceRuleApplied && rules) {
             for (const rule of rules) {
                 if (rule.rule_type === 'Base Price per unit' || rule.rule_type === 'Base Price per 100') {
                     const productMatch = !rule.product_id || rule.product_id === product_id;
@@ -121,115 +191,67 @@ export const PricingService = {
                             appliedRules.push(`Base Price Rule: ${rule.name} (€${rule.value}/100)`);
                         }
                         basePriceRuleApplied = true;
-                        break; // Stop after highest priority base price rule
+                        break;
                     }
                 }
             }
         }
 
-        // --- TIER 2: PRODUCT BASE PRICE (from products table) ---
+        // --- TIER 2: PRODUCT BASE PRICE ---
         if (!basePriceRuleApplied && (product as any).base_price) {
             unitPrice = (product as any).base_price;
             appliedRules.push(`Product Base Price: €${(product as any).base_price.toFixed(2)}`);
             basePriceRuleApplied = true;
         }
 
-        // --- TIER 2.5: DESIGN SERVICE CHECK ---
-        if (!basePriceRuleApplied) {
-            const isDesignService = product.name.toLowerCase().includes('dizainas') || product.name.toLowerCase().includes('maketavimas');
-            if (isDesignService) {
-                appliedRules.push('Design Service Detected');
+        // --- TIER 3: CALCULATED PRICE (Fallback) ---
+        if (!basePriceRuleApplied && unitPrice === 0 && sheetDetails.itemsPerSheet > 0) {
+            // Price Calculation based on Cost + Margin?
+            // Or Price based on Sheet Price + Print Price?
+            // Existing logic had hardcoded 15.00 print price etc.
+
+            // Let's rely on Sales Price columns in materials/options if available, 
+            // OR apply a standard margin to the Cost.
+            // For now, let's keep the legacy logic for Price, but strictly calculate Cost.
+
+            // Re-implementing simplified Price logic from before to maintain compatibility
+            // Printing
+            const printOptionName = '4+4';
+            const printOpt = printOptions?.find((p: any) => p.print_option === printOptionName);
+            const sheetPrintPrice = printOpt ? printOpt.price : 15.00; // Sales Price
+            const printPriceTotal = sheetDetails.totalSheets * sheetPrintPrice; // Using Gross sheets for price too? Or Net? Usually Gross to cover waste.
+
+            // Paper
+            let sheetPaperPrice = 0.15;
+            if (material_id && materials) {
+                const mat = materials.find((m: any) => m.id === material_id);
+                if (mat && mat.unit_price) sheetPaperPrice = mat.unit_price; // Sales Price
             }
-        }
+            const paperPriceTotal = sheetDetails.totalSheets * sheetPaperPrice;
 
-        // --- TIER 3: SHEET OPTIMIZATION (Standard Calculation) ---
-        if (!basePriceRuleApplied && unitPrice === 0) {
-            // 1. Determine Dimensions
-            let prodWidth = width || 0;
-            let prodHeight = height || 0;
-
-            // Auto-detect standard sizes if not provided
-            const standardSizes: Record<string, { w: number, h: number }> = {
-                'a4': { w: 210, h: 297 },
-                'a5': { w: 148, h: 210 },
-                'a3': { w: 297, h: 420 },
-                'vizitinės': { w: 90, h: 50 },
-                'vizitines': { w: 90, h: 50 }
-            };
-
-            if (!prodWidth || !prodHeight) {
-                const nameLower = product.name.toLowerCase();
-                for (const key in standardSizes) {
-                    if (nameLower.includes(key)) {
-                        prodWidth = standardSizes[key].w;
-                        prodHeight = standardSizes[key].h;
-                        appliedRules.push(`Standard Size Detected: ${key.toUpperCase()}`);
-                        break;
-                    }
-                }
+            // Lamination
+            let laminationPriceTotal = 0;
+            if (lamination && works) {
+                const work = works.find((w: any) => w.operation === lamination);
+                if (work) laminationPriceTotal = work.price * sheetDetails.totalSheets;
             }
 
-            if (prodWidth && prodHeight) {
-                // 2. Algorithm Selection
-                // Simple A3 Sheet Optimization
-                const SHEET_W = 320; // SRA3 roughly or raw sheet
-                const SHEET_H = 450;
+            const totalCalculatedPrice = printPriceTotal + paperPriceTotal + laminationPriceTotal;
+            unitPrice = totalCalculatedPrice / quantity;
 
-                // Fits horizontal
-                const fitsH = Math.floor(SHEET_W / prodWidth) * Math.floor(SHEET_H / prodHeight);
-                // Fits vertical
-                const fitsV = Math.floor(SHEET_W / prodHeight) * Math.floor(SHEET_H / prodWidth);
-
-                const itemsPerSheet = Math.max(fitsH, fitsV) || 1;
-                appliedRules.push(`Sheet Opt: ${itemsPerSheet} items/sheet (SRA3)`);
-
-                // 3. Costs
-                // Printing (Default to 4+4 if not specified/mapped, assume €15.00/sheet)
-                // TODO: Map 'request.print_type' to 'print_options.print_option'
-                const printOptionName = '4+4'; // Hardcoded for demo, map from request.printType properly
-                const printOpt = printOptions?.find((p: any) => p.print_option === printOptionName);
-                const sheetPrintPrice = printOpt ? printOpt.price : 15.00;
-                const printCostPerItem = sheetPrintPrice / itemsPerSheet;
-
-                // Paper
-                let sheetPaperPrice = 0.15; // Default fallback
-                if (material_id && materials) {
-                    const mat = materials.find((m: any) => m.id === material_id);
-                    if (mat && mat.unit_price) {
-                        sheetPaperPrice = mat.unit_price;
-                        appliedRules.push(`Material: ${mat.name}`);
-                    }
-                }
-                const paperCostPerItem = sheetPaperPrice / itemsPerSheet;
-
-                // Lamination
-                let laminationCost = 0;
-                if (lamination && works) {
-                    const work = works.find((w: any) => w.operation === lamination);
-                    if (work) {
-                        laminationCost = work.price / itemsPerSheet; // Assuming sheet lamination, or if unit based, don't divide
-                        appliedRules.push(`Lamination: ${work.operation}`);
-                    }
-                }
-
-                unitPrice = printCostPerItem + paperCostPerItem + laminationCost;
-            }
+            appliedRules.push(`Calculated: ${(unitPrice * quantity).toFixed(2)} (Cost: ${totalCost.toFixed(2)})`);
         }
 
         // --- FINAL ADJUSTMENTS (Multipliers) ---
         if (rules) {
             for (const rule of rules) {
-                // Quantity Multiplier (Discount)
                 if (rule.rule_type === 'Qty Multiplier') {
-                    // Check criteria match (e.g. gaminys_contains)
-                    // Simplified criteria check for now
                     const minQtyMatch = !rule.min_quantity || quantity >= rule.min_quantity;
                     if (minQtyMatch && unitPrice > 0) {
                         unitPrice = unitPrice * rule.value;
                         appliedRules.push(`${rule.name} (x${rule.value})`);
                     }
                 }
-                // Client Discount
                 if (rule.rule_type === 'Client Discount' && unitPrice > 0) {
                     unitPrice = unitPrice * rule.value;
                     appliedRules.push(`${rule.name} (Client x${rule.value})`);
@@ -240,7 +262,11 @@ export const PricingService = {
         return {
             unit_price: Number(unitPrice.toFixed(4)),
             total_price: Number((unitPrice * quantity).toFixed(2)),
-            applied_rules: appliedRules
+            total_cost: Number(totalCost.toFixed(2)),
+            applied_rules: appliedRules,
+            margin_percent: totalCost > 0 && (unitPrice * quantity) > 0
+                ? Number((((unitPrice * quantity - totalCost) / (unitPrice * quantity)) * 100).toFixed(1))
+                : 100 // If cost is 0, margin is effectively 100% (or undefined, but 100 is safer for display)
         };
     }
 };
