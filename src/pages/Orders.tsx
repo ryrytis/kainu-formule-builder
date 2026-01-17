@@ -465,6 +465,22 @@ const Orders: React.FC = () => {
     };
 
 
+    const handleDeleteOrder = async (e: React.MouseEvent, orderId: string) => {
+        e.stopPropagation();
+        if (!confirm('Are you sure you want to delete this order? This action cannot be undone.')) return;
+
+        try {
+            const { error } = await (supabase as any).from('orders').delete().eq('id', orderId);
+            if (error) throw error;
+
+            setOrders(prev => prev.filter(o => o.id !== orderId));
+            alert('Order deleted successfully');
+        } catch (err) {
+            console.error('Failed to delete order:', err);
+            alert('Failed to delete order. Please try again.');
+        }
+    };
+
     // Client-side mapping alias (server-side filtering now handles the logic)
     const filteredOrders = orders;
 
@@ -665,6 +681,13 @@ const Orders: React.FC = () => {
                                                             title="View Details"
                                                         >
                                                             <ChevronRight size={18} />
+                                                        </button>
+                                                        <button
+                                                            onClick={(e) => handleDeleteOrder(e, order.id)}
+                                                            className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors ml-1"
+                                                            title="Delete Order"
+                                                        >
+                                                            <Trash2 size={18} />
                                                         </button>
                                                     </div>
                                                 </td>
