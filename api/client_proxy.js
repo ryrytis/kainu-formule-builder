@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 export default async function handler(request, response) {
     // 1. CORS Headers
     response.setHeader('Access-Control-Allow-Credentials', true);
+    response.setHeader('X-Deployment-Test', 'Verified'); // Trace marker
     response.setHeader('Access-Control-Allow-Origin', '*');
     response.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
     response.setHeader(
