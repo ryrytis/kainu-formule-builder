@@ -40,11 +40,18 @@ export const AiService = {
      */
     generateEmailDraft: async (orderId: string, context: string) => {
         // Fetch order details first
-        const { data: order } = await supabase
-            .from('orders')
-            .select('*, clients(*)')
+        const { data: orderData, error } = await supabase
+            .from('orders') // Assuming 'orders' table
+            .select('*, clients(*)') // Assuming it also fetches client details
             .eq('id', orderId)
-            .single<any>();
+            .single();
+
+        if (error) {
+            console.error("Error fetching order:", error);
+            throw new Error("Could not fetch order details.");
+        }
+
+        const order = orderData as any;
         if (!order) throw new Error("Order not found");
 
         console.log("AI Agent: Drafting email for order", order.order_number);
