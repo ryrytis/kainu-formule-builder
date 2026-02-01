@@ -61,7 +61,7 @@ export default async function handler(request, response) {
             const { clientId, ...updates } = request.body;
 
             if (!clientId) {
-                return response.status(400).json({ error: 'Missing clientId in body' });
+                return response.status(400).json({ error: 'Missing clientId parameter (VERIFIED)' });
             }
 
             const { error } = await supabase
