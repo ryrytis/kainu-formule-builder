@@ -448,6 +448,19 @@ const CreateOrderItemModal: React.FC<CreateOrderItemModalProps> = ({ isOpen, onC
                             </div>
                         </div>
 
+                        {/* Margin Guard Warning */}
+                        {marginPercent < 20 && marginPercent > -100 && totalPrice > 0 && (
+                            <div className="flex items-start gap-2 text-xs bg-amber-50 text-amber-800 p-2 rounded border border-amber-200 mt-2 animate-in fade-in slide-in-from-top-1">
+                                <div className="mt-0.5 text-amber-600">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" /><line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" /></svg>
+                                </div>
+                                <div>
+                                    <span className="font-bold">Low Margin Warning:</span>
+                                    <span className="ml-1">Current margin is only {marginPercent.toFixed(1)}%. Check if setup fees or extra works are missing.</span>
+                                </div>
+                            </div>
+                        )}
+
                         {!isManualPrice && appliedRules.length > 0 && (
                             <div className="text-xs text-gray-500 border-t border-gray-200 pt-3">
                                 <p className="font-semibold mb-1">Calculated via Rules:</p>

@@ -219,7 +219,12 @@ export const SaskaitaService = {
                 date: new Date().toISOString().split('T')[0],
                 date_due: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
                 date_due_show: true,
-                total: (Number(order.total_price || 0) * 1.21).toFixed(2),
+                // Calculate total by summing individually rounded line items to match invoice display
+                total: order.order_items.reduce((sum, item) => {
+                    const itemNet = Number(item.total_price || 0);
+                    const itemGross = Number((itemNet * 1.21).toFixed(2));
+                    return sum + itemGross;
+                }, 0).toFixed(2),
                 discount: "0",
                 discount_type: "percent",
                 discount_value: "0",

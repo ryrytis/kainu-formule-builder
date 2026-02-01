@@ -176,24 +176,26 @@ const Orders: React.FC = () => {
     const fetchOrders = async () => {
         setLoading(true);
         try {
-            let query = (supabase as any)
-                .from('orders')
-                .select(`
-                    *,
-                    clients!inner (name, email, phone, company, address, vat_code, city, post_code, parcel_locker, company_code, person_type, delivery_method),
-                    order_items (*)
-                `)
-                .order('created_at', { ascending: false })
-                .limit(50);
+            let query: any;
 
             if (debouncedSearch) {
-                // Search by order number OR client name
-                query = query.or(`order_number.ilike.%${debouncedSearch}%,clients.name.ilike.%${debouncedSearch}%`);
+                // Use RPC for search to handle joined table filtering correctly
+                query = (supabase as any).rpc('search_orders', { search_term: debouncedSearch });
+            } else {
+                // Standard fetch
+                query = supabase.from('orders').select('*, clients!inner(*), order_items(*)');
             }
+
+            // Apply select w/ embedding for both cases
+            if (debouncedSearch) {
+                query = query.select('*, clients!inner(*), order_items(*)');
+            }
+
+            // Apply standard sorts and limits
+            query = query.order('created_at', { ascending: false }).limit(50);
 
             if (statusFilter !== 'All') {
                 if (statusFilter === 'Not Invoiced') {
-                    // Complex filter: not invoiced AND not Cancelled
                     query = query.eq('invoiced', false).neq('status', 'Cancelled');
                 } else {
                     query = query.eq('status', statusFilter);

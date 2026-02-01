@@ -217,40 +217,59 @@ const Reporting: React.FC = () => {
             </div>
 
             {/* Charts Row */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div className="card p-6">
-                    <h3 className="text-lg font-bold text-gray-700 mb-4">Revenue vs Cost (Last 6 Months)</h3>
-                    <div className="h-80">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={monthlyData}>
-                                <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                                <XAxis dataKey="name" />
-                                <YAxis />
-                                <Tooltip formatter={(value: any) => `€${Number(value).toFixed(2)}`} />
-                                <Legend />
-                                <Bar dataKey="revenue" name="Revenue" fill="#10B981" radius={[4, 4, 0, 0]} />
-                                <Bar dataKey="cost" name="Cost" fill="#EF4444" radius={[4, 4, 0, 0]} />
-                            </BarChart>
-                        </ResponsiveContainer>
-                    </div>
-                </div>
-
-                <div className="card p-6">
-                    <h3 className="text-lg font-bold text-gray-700 mb-4">Profit Trend</h3>
-                    <div className="h-80">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <LineChart data={monthlyData}>
-                                <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                                <XAxis dataKey="name" />
-                                <YAxis />
-                                <Tooltip formatter={(value: any) => `€${Number(value).toFixed(2)}`} />
-                                <Legend />
-                                <Line type="monotone" dataKey="profit" name="Net Profit" stroke="#8884d8" strokeWidth={3} dot={{ r: 6 }} />
-                            </LineChart>
-                        </ResponsiveContainer>
-                    </div>
-                </div>
+            <div className="flex gap-4 mb-6">
+                <button
+                    className={clsx("px-4 py-2 rounded-lg font-medium transition-colors", searchTerm === 'general' ? "bg-primary text-white" : "bg-white text-gray-600 hover:bg-gray-50")}
+                    onClick={() => setSearchTerm('general')}
+                >
+                    General Profitability
+                </button>
+                <button
+                    className={clsx("px-4 py-2 rounded-lg font-medium transition-colors", searchTerm === 'materials' ? "bg-primary text-white" : "bg-white text-gray-600 hover:bg-gray-50")}
+                    onClick={() => setSearchTerm('materials')}
+                >
+                    Material Usage
+                </button>
             </div>
+
+            {searchTerm === 'materials' ? (
+                <MaterialUsageReport />
+            ) : (
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div className="card p-6">
+                        <h3 className="text-lg font-bold text-gray-700 mb-4">Revenue vs Cost (Last 6 Months)</h3>
+                        <div className="h-80">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <BarChart data={monthlyData}>
+                                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                                    <XAxis dataKey="name" />
+                                    <YAxis />
+                                    <Tooltip formatter={(value: any) => `€${Number(value).toFixed(2)}`} />
+                                    <Legend />
+                                    <Bar dataKey="revenue" name="Revenue" fill="#10B981" radius={[4, 4, 0, 0]} />
+                                    <Bar dataKey="cost" name="Cost" fill="#EF4444" radius={[4, 4, 0, 0]} />
+                                </BarChart>
+                            </ResponsiveContainer>
+                        </div>
+                    </div>
+
+                    <div className="card p-6">
+                        <h3 className="text-lg font-bold text-gray-700 mb-4">Profit Trend</h3>
+                        <div className="h-80">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <LineChart data={monthlyData}>
+                                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                                    <XAxis dataKey="name" />
+                                    <YAxis />
+                                    <Tooltip formatter={(value: any) => `€${Number(value).toFixed(2)}`} />
+                                    <Legend />
+                                    <Line type="monotone" dataKey="profit" name="Net Profit" stroke="#8884d8" strokeWidth={3} dot={{ r: 6 }} />
+                                </LineChart>
+                            </ResponsiveContainer>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Product Analytics Table */}
             <div className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
@@ -321,6 +340,81 @@ const Reporting: React.FC = () => {
                         </tbody>
                     </table>
                 </div>
+            </div>
+        </div>
+    );
+};
+
+const MaterialUsageReport = () => {
+    const [usageData, setUsageData] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        fetchUsage();
+    }, []);
+
+    const fetchUsage = async () => {
+        setLoading(true);
+        // Default to current month
+        const { data, error } = await supabase.rpc('get_monthly_material_usage');
+        if (data) {
+            setUsageData(data);
+        } else {
+            console.error(error);
+        }
+        setLoading(false);
+    };
+
+    if (loading) return <div className="p-10 text-center text-gray-500">Loading usage data...</div>;
+
+    const exportCsv = () => {
+        const header = ['Material', 'Total Used', 'Unit', 'Usage Count'];
+        const rows = usageData.map(r => [r.material_name, r.total_used, r.unit, r.usage_count]);
+        const csvContent = "data:text/csv;charset=utf-8," + [header, ...rows].map(e => e.join(",")).join("\n");
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", `material_usage_${new Date().toISOString().slice(0, 7)}.csv`);
+        document.body.appendChild(link);
+        link.click();
+    };
+
+    return (
+        <div className="card p-6 animate-in fade-in">
+            <div className="flex justify-between items-center mb-6">
+                <div>
+                    <h3 className="text-xl font-bold text-gray-800">Monthly Material Usage</h3>
+                    <p className="text-sm text-gray-500">Aggregated usage for current month (auto-deducted).</p>
+                </div>
+                <button onClick={exportCsv} className="btn-secondary flex items-center gap-2">
+                    <Package size={16} /> Export CSV
+                </button>
+            </div>
+
+            <div className="overflow-x-auto">
+                <table className="w-full text-left">
+                    <thead className="bg-gray-50 text-xs uppercase text-gray-500 font-semibold">
+                        <tr>
+                            <th className="px-4 py-3">Material Name</th>
+                            <th className="px-4 py-3 text-right">Total Used</th>
+                            <th className="px-4 py-3 text-right">Orders</th>
+                        </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                        {usageData.map((row, i) => (
+                            <tr key={i} className="hover:bg-gray-50">
+                                <td className="px-4 py-3 font-medium text-gray-700">{row.material_name}</td>
+                                <td className="px-4 py-3 text-right font-bold text-primary">
+                                    {Number(row.total_used).toFixed(2)} <span className="text-gray-400 text-xs font-normal ml-1">{row.unit}</span>
+                                </td>
+                                <td className="px-4 py-3 text-right text-gray-600">{row.usage_count}</td>
+                            </tr>
+                        ))}
+                        {usageData.length === 0 && (
+                            <tr><td colSpan={3} className="px-4 py-8 text-center text-gray-400">No usage recorded this month yet.</td></tr>
+                        )}
+                    </tbody>
+                </table>
             </div>
         </div>
     );
