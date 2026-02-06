@@ -17,6 +17,7 @@ import ProductPricingMatrix from './pages/ProductPricingMatrix';
 import Calculator from './pages/Calculator';
 import ClientOnboarding from './pages/ClientOnboarding';
 import Works from './pages/Works';
+import AiSettings from './pages/AiSettings';
 
 function App() {
     return (
@@ -41,6 +42,7 @@ function App() {
                             <Route path="rules" element={<CalculationRules />} />
                             <Route path="calculator" element={<Calculator />} />
                             <Route path="settings" element={<Settings />} />
+                            <Route path="ai-settings" element={<AiSettings />} />
                         </Route>
                     </Route>
                 </Routes>

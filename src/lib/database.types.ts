@@ -9,6 +9,61 @@ export type Json =
 export interface Database {
     public: {
         Tables: {
+            ai_knowledge: {
+                Row: {
+                    id: string
+                    topic: string
+                    content: string
+                    category: string
+                    is_active: boolean
+                    priority: number
+                    created_at: string
+                    updated_at: string
+                }
+                Insert: {
+                    id?: string
+                    topic: string
+                    content: string
+                    category?: string
+                    is_active?: boolean
+                    priority?: number
+                    created_at?: string
+                    updated_at?: string
+                }
+                Update: {
+                    id?: string
+                    topic?: string
+                    content?: string
+                    category?: string
+                    is_active?: boolean
+                    priority?: number
+                    created_at?: string
+                    updated_at?: string
+                }
+            }
+            chat_messages: {
+                Row: {
+                    id: string
+                    session_id: string
+                    role: 'user' | 'assistant'
+                    content: string
+                    created_at: string
+                }
+                Insert: {
+                    id?: string
+                    session_id: string
+                    role: 'user' | 'assistant'
+                    content: string
+                    created_at?: string
+                }
+                Update: {
+                    id?: string
+                    session_id?: string
+                    role?: 'user' | 'assistant'
+                    content?: string
+                    created_at?: string
+                }
+            }
             clients: {
                 Row: {
                     id: string

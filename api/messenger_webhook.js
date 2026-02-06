@@ -59,6 +59,19 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: "Method not allowed" });
 }
 
+
+import { createClient } from '@supabase/supabase-js';
+
+// Initialize Supabase Client
+const supabaseUrl = process.env.VITE_SUPABASE_URL || 'https://wnogzzwrsxlyowxwdciw.supabase.co'; // Fallback for Vercel
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+if (!supabaseUrl || !supabaseKey) {
+    console.error("CRITICAL: Missing Supabase Credentials", { url: !!supabaseUrl, key: !!supabaseKey });
+}
+
+const supabase = createClient(supabaseUrl, supabaseKey);
+
 async function handleMessage(sender_psid, received_message) {
     let response;
 
@@ -67,25 +80,158 @@ async function handleMessage(sender_psid, received_message) {
 
         // Generate response using OpenAI
         try {
+            // 0. Save User Message
+            const { error: saveError } = await supabase.from('chat_messages').insert({
+                session_id: sender_psid,
+                role: 'user',
+                content: received_message.text
+            });
+
+            if (saveError) {
+                console.error("CRITICAL: Failed to save user message!", saveError);
+                // We continue, but context will be lost.
+            }
+
+            // 1. Fetch Knowledge Base & System Prompt & History
+            const [{ data: allRules }, { data: history }] = await Promise.all([
+                supabase
+                    .from('ai_knowledge')
+                    .select('topic, content, priority, category')
+                    .eq('is_active', true)
+                    .order('priority', { ascending: false }),
+                supabase
+                    .from('chat_messages')
+                    .select('role, content')
+                    .eq('session_id', sender_psid)
+                    .order('created_at', { ascending: true }) // OpenAI needs chronological order
+                    .limit(10) // Get last 10 messages (including what we just saved hopefully, or we might double dip. Actually we just inserted, so it might return it, duplicate issue? )
+                // BETTER: Exclude the very last one we just inserted or just use history from BEFORE insert?
+                // To be safe and simple: Let's fetch history BEFORE insert? Or just filter duplicates?
+                // actually, fetching AFTER insert is fine, it will include the user's latest message as the last item.
+                // But we want to construct the prompt: System, History... (User's msg is in history).
+            ]);
+
+            // Find System Prompt
+            const systemPromptRule = allRules?.find(r => r.category === 'SYSTEM');
+            const knowledgeRules = allRules?.filter(r => r.category !== 'SYSTEM') || [];
+
+            // Use DB system prompt or fallback
+            let systemContext = systemPromptRule ? systemPromptRule.content : "You are an AI Support Agent for 'Keturi print'. \n\nIMPORTANT: No system instructions found. Please contact admin.";
+
+            if (knowledgeRules.length > 0) {
+                systemContext += "\n\nCRITICAL BUSINESS KNOWLEDGE (Use this to answer):";
+                knowledgeRules.forEach(rule => {
+                    systemContext += `\n- [${rule.topic}]: ${rule.content}`;
+                });
+            }
+
+            // 1.5 Dynamic Pricing Search
+            // If user asks about price, search historical orders
+            const lowerMsg = received_message.text.toLowerCase();
+            if (lowerMsg.includes('kaina') || lowerMsg.includes('kainuoja') || lowerMsg.includes('price') || lowerMsg.includes('cost')) {
+                // Extract potential product keywords (simple approach: use the whole message or key terms)
+                // For now, let's try to find matchable terms or just pass relevant words. 
+                // A better way is to search for known product types if found in message? 
+                // Or just search using the user's filtered input.
+                // Let's search using the message content but remove common words if possible, or just search.
+                // Simple: Search for "lipduk" if "lipdukai" int text. 
+
+                // Let's implement the search function directly here or import it if extracted.
+                // For simplicity, inline logic for now.
+
+                const searchTerm = lowerMsg.replace(/kaina|kainuoja|price|cost|kokia|kiek/g, '').trim();
+                if (searchTerm.length > 3) {
+                    console.log(`Dynamic Search for: ${searchTerm}`);
+                    const { data: priceData } = await supabase
+                        .from('order_items')
+                        .select('unit_price, quantity')
+                        .ilike('product_type', `%${searchTerm}%`)
+                        .limit(50);
+
+                    if (priceData && priceData.length > 0) {
+                        const ranges = {
+                            small: { min: 0, max: 100, prices: [] },
+                            medium: { min: 101, max: 500, prices: [] },
+                            large: { min: 501, max: 10000, prices: [] }
+                        };
+
+                        priceData.forEach(item => {
+                            if (item.quantity <= 100) ranges.small.prices.push(item.unit_price);
+                            else if (item.quantity <= 500) ranges.medium.prices.push(item.unit_price);
+                            else ranges.large.prices.push(item.unit_price);
+                        });
+
+                        const getAvg = (arr) => arr.length ? (arr.reduce((a, b) => a + b, 0) / arr.length).toFixed(4) : null;
+
+                        let priceContext = "\n\nSTANDARD PRICING (Historical Averages - Use as estimates only):";
+                        if (ranges.small.prices.length) priceContext += `\n- Small Qty (<100): ~${getAvg(ranges.small.prices)} EUR`;
+                        if (ranges.medium.prices.length) priceContext += `\n- Medium Qty (100-500): ~${getAvg(ranges.medium.prices)} EUR`;
+                        if (ranges.large.prices.length) priceContext += `\n- Large Qty (>500): ~${getAvg(ranges.large.prices)} EUR`;
+
+                        if (priceContext.includes('~')) {
+                            systemContext += priceContext;
+                            systemContext += "\nINSTRUCTION: Use these standard prices to answer. Do NOT mention 'past orders' or specific clients.";
+                        }
+                    }
+                }
+            }
+
+            // Construct Messages Array
+            const messages = [
+                { role: "system", content: systemContext }
+            ];
+
+            // Add history (which includes correct 'user' and 'assistant' roles)
+            if (history && history.length > 0) {
+                // Already fetched recentHistory below, so this block is redundant/placeholder in original code
+            }
+
+            // Re-fetch properly to get latest 5
+            const { data: recentHistory } = await supabase
+                .from('chat_messages')
+                .select('role, content')
+                .eq('session_id', sender_psid)
+                .order('created_at', { ascending: false })
+                .limit(20); // Increased history limit to maintain context
+
+            if (recentHistory) {
+                // Reverse to put in chronological order
+                const chronologicalHistory = [...recentHistory].reverse();
+                chronologicalHistory.forEach(msg => {
+                    messages.push({ role: msg.role, content: msg.content });
+                });
+            }
+
             const openai = new OpenAI({
                 apiKey: process.env.OPENAI_API_KEY,
             });
 
             const completion = await openai.chat.completions.create({
-                messages: [
-                    { role: "system", content: "You are a helpful assistant for a business." },
-                    { role: "user", content: received_message.text }
-                ],
-                model: "gpt-3.5-turbo",
+                messages: messages,
+                model: "gpt-4o",
             });
+
+            console.log("--- OPENAI REQUEST DEBUG ---");
+            console.log("System Prompt:", systemContext);
+            console.log("Full Messages:", JSON.stringify(messages, null, 2));
 
             const aiResponse = completion.choices[0].message.content;
             response = {
                 "text": aiResponse
             }
 
+            // Save AI Response
+            await supabase.from('chat_messages').insert({
+                session_id: sender_psid,
+                role: 'assistant',
+                content: aiResponse
+            });
+
+            console.log("--- OPENAI RESPONSE DEBUG ---");
+            console.log("Raw Response:", aiResponse);
+
         } catch (error) {
-            console.error("OpenAI Error:", error);
+            console.error("OpenAI/Supabase Error:", error);
             response = { "text": "Sorry, I am unable to process your request at the moment." };
         }
     } else if (received_message.attachments) {
@@ -101,6 +247,11 @@ async function handleMessage(sender_psid, received_message) {
 
 async function callSendAPI(sender_psid, response) {
     const PAGE_ACCESS_TOKEN = process.env.FACEBOOK_PAGE_ACCESS_TOKEN;
+
+    if (process.env.MOCK_FB_RESPONSE) {
+        console.log(`\n🤖 AGENT: ${response.text}\n`);
+        return;
+    }
 
     const requestBody = {
         "recipient": {

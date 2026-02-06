@@ -1,7 +1,6 @@
 
+import 'dotenv/config';
 import handler from '../api/messenger_webhook.js';
-import dotenv from 'dotenv';
-dotenv.config();
 
 // Mock console.log/error to keep output clean, or keep them to see flow
 // console.log = () => {};
@@ -58,7 +57,7 @@ async function runTests() {
                     messaging: [
                         {
                             sender: { id: 'user_123' },
-                            message: { text: 'Hello AI' }
+                            message: { text: 'Kokia lipdukų kaina?' }
                         }
                     ]
                 }
