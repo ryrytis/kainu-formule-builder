@@ -7,3 +7,11 @@ VALUES (
         10,
         true
     );
+INSERT INTO public.ai_knowledge (topic, content, category, priority, is_active)
+VALUES (
+        'Minimum Order Policy',
+        'Vienkartiniams pirkimams taikomas minimalus užsakymo dydis – 13 EUR + PVM. Jei vartotojas klausia apie minimalų kiekį ar krepšelio sumą (arba tiesiog bendrai domisi sąlygomis), informuok apie šią taisyklę.',
+        'Sales Logic',
+        20,
+        true
+    );
