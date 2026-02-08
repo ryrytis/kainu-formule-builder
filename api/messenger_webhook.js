@@ -80,16 +80,25 @@ async function handleMessage(sender_psid, received_message) {
 
         // Generate response using OpenAI
         try {
+            console.log("=== MESSAGE HANDLER START ===");
+            console.log("Session ID (PSID):", sender_psid);
+            console.log("Message text:", received_message.text);
+            console.log("Supabase URL configured:", !!supabaseUrl);
+            console.log("Supabase Key configured:", !!supabaseKey);
+
             // 0. Save User Message
-            const { error: saveError } = await supabase.from('chat_messages').insert({
+            console.log("Attempting to save user message to chat_messages...");
+            const { data: insertData, error: saveError } = await supabase.from('chat_messages').insert({
                 session_id: sender_psid,
                 role: 'user',
                 content: received_message.text
-            });
+            }).select();
 
             if (saveError) {
-                console.error("CRITICAL: Failed to save user message!", saveError);
+                console.error("CRITICAL: Failed to save user message!", JSON.stringify(saveError));
                 // We continue, but context will be lost.
+            } else {
+                console.log("✅ User message saved successfully:", insertData);
             }
 
             // 1. Fetch Knowledge Base & System Prompt & History
