@@ -2,7 +2,13 @@ const { Client } = require('pg');
 const fs = require('fs');
 const path = require('path');
 
-const connectionString = 'postgresql://neondb_owner:npg_BKN5GAqEDo6L@ep-odd-breeze-aeo9i8er.c-2.us-east-2.aws.neon.tech/neondb?sslmode=require&options=project%3Dep-odd-breeze-aeo9i8er';
+require('dotenv').config();
+const connectionString = process.env.NEON_DATABASE_URL;
+
+if (!connectionString) {
+    console.error('NEON_DATABASE_URL is not set in .env');
+    process.exit(1);
+}
 
 async function run() {
     const filename = process.argv[2];
@@ -18,17 +24,20 @@ async function run() {
 
     try {
         await client.connect();
-        console.log('Connected to database.');
 
-        const filePath = path.resolve(__dirname, filename);
-        const sql = fs.readFileSync(filePath, 'utf8');
-
-        console.log(`Executing SQL from ${filename}...`);
-        await client.query(sql);
-        console.log('✅ Migration executed successfully.');
+        if (process.argv[2]) {
+            const fs = require('fs');
+            const sql = fs.readFileSync(process.argv[2], 'utf8');
+            const res = await client.query(sql);
+            console.log(JSON.stringify(res.rows, null, 2));
+        } else {
+            console.log('No SQL file provided');
+        }
 
     } catch (err) {
-        console.error('Error executing query', err);
+        console.error('Error executing query:');
+        console.error(err.message);
+        console.error(err.stack);
     } finally {
         await client.end();
     }

@@ -23,7 +23,7 @@ VALUES (
 INSERT INTO public.ai_knowledge (topic, content, category, priority, is_active)
 VALUES (
         'Premium Business Cards',
-        'Klausimas: Kokios yra premium vizitinių galimybės?\nAtsakymas: Folijavimas (aukso/sidabro), kongrevo spauda (reljefas), soft-touch laminavimas, stogas 600g+ kartonas, spalvotas kartonas iš šono.',
+        'Klausimas: Kokios yra vizitinių galimybės?\nAtsakymas: Folijavimas (aukso/sidabro), kongrevo spauda (reljefas), soft-touch laminavimas.',
         'Product FAQ - Business Cards',
         16,
         true

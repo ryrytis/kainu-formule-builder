@@ -93,7 +93,7 @@ VALUES (
 INSERT INTO public.ai_knowledge (topic, content, category, priority, is_active)
 VALUES (
         'Design from Scratch',
-        'Klausimas: Ar galite sukurti dizainą nuo nulio?\nAtsakymas: Taip, turime dizainerius. Kaina priklauso nuo produkto sudėtingumo (vizitinės ~15-25 EUR, lankstinukas ~40-80 EUR, katalogas – individualiai).',
+        'Klausimas: Ar galite sukurti dizainą nuo nulio?\nAtsakymas: Taip, galime sukurti dizainą nuo 0. Kaina priklauso nuo produkto sudėtingumo (vizitinės ~15-25 EUR, lankstinukas ~40-80 EUR, katalogas – individualiai).',
         'Product FAQ - Design',
         16,
         true
@@ -101,7 +101,7 @@ VALUES (
 INSERT INTO public.ai_knowledge (topic, content, category, priority, is_active)
 VALUES (
         'Logo Design',
-        'Klausimas: Ar kuriate logotipus?\nAtsakymas: Siūlome paprastą logotipo kūrimą arba galime rekomenduoti profesionalų dizainerį. Paprastas logotipas – nuo 50-100 EUR.',
+        'Klausimas: Ar kuriate logotipus?\nAtsakymas: Taip, kuriame logotipus. Paprastas logotipas – nuo 50-100 EUR.',
         'Product FAQ - Design',
         16,
         true
@@ -117,7 +117,7 @@ VALUES (
 INSERT INTO public.ai_knowledge (topic, content, category, priority, is_active)
 VALUES (
         'Design Revision Rounds',
-        'Klausimas: Kiek taisymų įskaičiuota į dizaino kainą?\nAtsakymas: Paprastai – 2 taisymų raundai. Papildomi taisymai – nuo 10 EUR/valanda.',
+        'Klausimas: Kiek taisymų įskaičiuota į dizaino kainą?\nAtsakymas: Paprastai – 2 taisymų raundai. Papildomi taisymai – nuo 19 EUR/valanda.',
         'Product FAQ - Design',
         16,
         true

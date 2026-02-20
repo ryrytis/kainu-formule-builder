@@ -1,13 +1,13 @@
 [
   {
-    "id": "05a0f235-2feb-4442-8c39-3ed4f74aea00",
-    "topic": "Munken Pure 300 gsm",
-    "content": "Material available: Munken Pure 300 gsm. 90x64 cm Cost: 0.6820 EUR per pcs.",
-    "category": "Materials",
+    "id": "0778cdb0-3fc2-463c-bc63-20efdd5c66ab",
+    "topic": "Flyer Paper Types",
+    "content": "Klausimas: Koks popierius geriausiai tinka skrajutėms?\\nAtsakymas: Populiariausias pasirinkimas yra 130g arba 170g kreidinis popierius. Masiniam platinimui rekomenduojame 115g.",
+    "category": "Product FAQ - Flyers",
     "is_active": true,
-    "priority": 3,
-    "created_at": "2026-02-01T12:48:14.562759+00:00",
-    "updated_at": "2026-02-01T12:48:14.562759+00:00"
+    "priority": 15,
+    "created_at": "2026-02-08T07:19:16.577707+00:00",
+    "updated_at": "2026-02-08T07:19:16.577707+00:00"
   },
   {
     "id": "0864dada-350b-4ad3-a267-64f19114d7aa",
@@ -30,44 +30,24 @@
     "updated_at": "2026-02-01T12:48:14.562759+00:00"
   },
   {
-    "id": "0cee9476-84f1-4efe-9c56-74d9c444a7a9",
-    "topic": "Lankstinukas, 1+1, 210x396mm",
-    "content": "We offer Lankstinukas, 1+1, 210x396mm.  Base price starts at 0.5000 EUR.",
-    "category": "Products",
+    "id": "0d6e4c10-0016-4a38-bf34-135033804db6",
+    "topic": "Box Cardboard Thickness",
+    "content": "Klausimas: Kokio storio kartoną rinktis dėžutėms?\\nAtsakymas: Lengviems gaminiams naudojame 300-350g kartoną.",
+    "category": "Product FAQ - Packaging",
     "is_active": true,
-    "priority": 5,
-    "created_at": "2026-02-01T12:48:14.562759+00:00",
-    "updated_at": "2026-02-01T12:48:14.562759+00:00"
+    "priority": 15,
+    "created_at": "2026-02-08T07:19:16.577707+00:00",
+    "updated_at": "2026-02-08T07:19:16.577707+00:00"
   },
   {
-    "id": "0e93aa5e-56dd-481e-b9ca-c25151e80b1d",
-    "topic": "Munken Pure 240 gsm",
-    "content": "Material available: Munken Pure 240 gsm. 90x64 cm Cost: 0.4250 EUR per pcs.",
-    "category": "Materials",
+    "id": "1830ddef-c2ec-438b-a0fe-94a3311ae9fa",
+    "topic": "Selective UV Coating",
+    "content": "Klausimas: Kas yra selektyvus (3D) UV lakas?\\nAtsakymas: Tai būdas padengti tik tam tikras maketo dalis (pvz. logotipą) iškiliu, blizgiu sluoksniu, kurį galima pajusti pirštais.",
+    "category": "Product FAQ - Finishing",
     "is_active": true,
-    "priority": 3,
-    "created_at": "2026-02-01T12:48:14.562759+00:00",
-    "updated_at": "2026-02-01T12:48:14.562759+00:00"
-  },
-  {
-    "id": "1196cf14-941b-478d-baf8-53904c7a65e0",
-    "topic": "Novatech Dig S 130 gsm",
-    "content": "Material available: Novatech Dig S 130 gsm. Novatech digital paper 130 gsm Cost: 0.0420 EUR per A3 sheets.",
-    "category": "Materials",
-    "is_active": true,
-    "priority": 3,
-    "created_at": "2026-02-01T12:48:14.562759+00:00",
-    "updated_at": "2026-02-01T12:48:14.562759+00:00"
-  },
-  {
-    "id": "18e7b9d5-c459-494d-8d17-121182c4df3d",
-    "topic": "Pjovimas",
-    "content": "Service available: Pjovimas. Price is 0 EUR.",
-    "category": "Services",
-    "is_active": true,
-    "priority": 5,
-    "created_at": "2026-02-01T12:48:14.562759+00:00",
-    "updated_at": "2026-02-01T12:48:14.562759+00:00"
+    "priority": 18,
+    "created_at": "2026-02-08T07:19:16.577707+00:00",
+    "updated_at": "2026-02-08T07:19:16.577707+00:00"
   },
   {
     "id": "1ad8e3e1-8318-421e-80b6-eb63fe162a2f",
@@ -78,6 +58,26 @@
     "priority": 10,
     "created_at": "2026-02-01T12:48:14.562759+00:00",
     "updated_at": "2026-02-01T12:48:14.562759+00:00"
+  },
+  {
+    "id": "1b944173-873a-4e50-88cd-73a31f89dcd0",
+    "topic": "Business Card Sizes",
+    "content": "Klausimas: Kokio dydžio vizitines korteles gaminate?\\nAtsakymas: Standartinis dydis Lietuvoje yra 90x50 mm, tačiau gaminame ir europietišką 85x55 mm formatą bei nestandartinius dydžius.",
+    "category": "Product FAQ - Business Cards",
+    "is_active": true,
+    "priority": 15,
+    "created_at": "2026-02-08T07:19:16.577707+00:00",
+    "updated_at": "2026-02-08T07:19:16.577707+00:00"
+  },
+  {
+    "id": "1c858837-16c9-4ede-980c-27f4aba656d6",
+    "topic": "Leaflet Folding Methods",
+    "content": "Klausimas: Kuo skiriasi lankstinukų lankstymo būdai (C-fold vs Z-fold)?\\nAtsakymas: C-fold lankstomas į vidų (lyg laiškas), o Z-fold lankstomas „armonika\". Tai svarbu planuojant maketo dizainą.",
+    "category": "Product FAQ - Flyers",
+    "is_active": true,
+    "priority": 15,
+    "created_at": "2026-02-08T07:19:16.577707+00:00",
+    "updated_at": "2026-02-08T07:19:16.577707+00:00"
   },
   {
     "id": "1e99b2bb-2383-4359-bc72-fd84db5eba35",
@@ -120,24 +120,14 @@
     "updated_at": "2026-02-01T12:48:14.562759+00:00"
   },
   {
-    "id": "31d7264b-377d-4f0e-91e8-76ae1396c855",
-    "topic": "Novatech Dig S 200 gsm",
-    "content": "Material available: Novatech Dig S 200 gsm. Novatech digital paper 200 gsm Cost: 0.0660 EUR per A3 sheets.",
-    "category": "Materials",
+    "id": "36d62fdd-a948-488d-9bf5-96e0c91ee794",
+    "topic": "Variable Data Business Cards",
+    "content": "Klausimas: Ar galima užsisakyti vizitines su skirtingais vardais?\\nAtsakymas: Taip, pateikite Excel sąrašą su duomenimis, o mes sugeneruosime korteles visiems darbuotojams viename tiraže.",
+    "category": "Product FAQ - Business Cards",
     "is_active": true,
-    "priority": 3,
-    "created_at": "2026-02-01T12:48:14.562759+00:00",
-    "updated_at": "2026-02-01T12:48:14.562759+00:00"
-  },
-  {
-    "id": "3777f12f-76c4-4524-94d6-0ee856bc23c8",
-    "topic": "Raflatac Polylaser, Plėvelė Skaidri Blizgi",
-    "content": "Material available: Raflatac Polylaser, Plėvelė Skaidri Blizgi. Clear glossy film sticker Cost: 0.6000 EUR per A3 sheets.",
-    "category": "Materials",
-    "is_active": true,
-    "priority": 3,
-    "created_at": "2026-02-01T12:48:14.562759+00:00",
-    "updated_at": "2026-02-01T12:48:14.562759+00:00"
+    "priority": 15,
+    "created_at": "2026-02-08T07:19:16.577707+00:00",
+    "updated_at": "2026-02-08T07:19:16.577707+00:00"
   },
   {
     "id": "378df45f-6b75-44d2-a492-016ca2d92f0c",
@@ -160,32 +150,12 @@
     "updated_at": "2026-02-01T12:48:14.562759+00:00"
   },
   {
-    "id": "38ff8e50-d0dd-42a4-90de-7a6a5871d6c1",
-    "topic": "Galerie Art Matt 350 g",
-    "content": "Material available: Galerie Art Matt 350 g. Matte art paper 350 g Cost: 0.1200 EUR per A3 sheets.",
-    "category": "Materials",
-    "is_active": true,
-    "priority": 3,
-    "created_at": "2026-02-01T12:48:14.562759+00:00",
-    "updated_at": "2026-02-01T12:48:14.562759+00:00"
-  },
-  {
     "id": "4393fb9c-32fa-41df-bab8-445f93e16732",
     "topic": "Plakatas A3",
     "content": "We offer Plakatas A3.  Base price starts at 0.4000 EUR.",
     "category": "Products",
     "is_active": true,
     "priority": 5,
-    "created_at": "2026-02-01T12:48:14.562759+00:00",
-    "updated_at": "2026-02-01T12:48:14.562759+00:00"
-  },
-  {
-    "id": "4b045467-44d5-4bfb-978e-c5e26a13a061",
-    "topic": "Galerie A Gloss 170 gsm",
-    "content": "Material available: Galerie A Gloss 170 gsm. Glossy art paper 170 gsm Cost: 0.0600 EUR per A3 sheets.",
-    "category": "Materials",
-    "is_active": true,
-    "priority": 3,
     "created_at": "2026-02-01T12:48:14.562759+00:00",
     "updated_at": "2026-02-01T12:48:14.562759+00:00"
   },
@@ -200,36 +170,6 @@
     "updated_at": "2026-02-01T12:48:14.562759+00:00"
   },
   {
-    "id": "506694b9-93b4-49c5-93cd-db656c944d35",
-    "topic": "Novatech Dig S 250 gsm",
-    "content": "Material available: Novatech Dig S 250 gsm. Novatech digital paper 250 gsm Cost: 0.0900 EUR per A3 sheets.",
-    "category": "Materials",
-    "is_active": true,
-    "priority": 3,
-    "created_at": "2026-02-01T12:48:14.562759+00:00",
-    "updated_at": "2026-02-01T12:48:14.562759+00:00"
-  },
-  {
-    "id": "52e98af3-6178-431a-976e-c18189814e88",
-    "topic": "Olin colours black, 320 gsm",
-    "content": "Material available: Olin colours black, 320 gsm. 100x70 cm Cost: 1.5800 EUR per pcs.",
-    "category": "Materials",
-    "is_active": true,
-    "priority": 3,
-    "created_at": "2026-02-01T12:48:14.562759+00:00",
-    "updated_at": "2026-02-01T12:48:14.562759+00:00"
-  },
-  {
-    "id": "53708776-6ba6-46c2-9a6f-3571710ca5d0",
-    "topic": "Novatech Matt 300 gsm",
-    "content": "Material available: Novatech Matt 300 gsm. Novatech matte paper 300 gsm Cost: 0.1100 EUR per A3 sheets.",
-    "category": "Materials",
-    "is_active": true,
-    "priority": 3,
-    "created_at": "2026-02-01T12:48:14.562759+00:00",
-    "updated_at": "2026-02-01T12:48:14.562759+00:00"
-  },
-  {
     "id": "579f3871-4aa7-4564-a645-84fba7610295",
     "topic": "Bukletas rištas spirale A4",
     "content": "We offer Bukletas rištas spirale A4.  Price on request.",
@@ -240,29 +180,19 @@
     "updated_at": "2026-02-01T12:48:14.562759+00:00"
   },
   {
-    "id": "5a0b4628-5a85-4399-b74e-a5cad076527b",
-    "topic": "Galerie A Gloss 300 gsm",
-    "content": "Material available: Galerie A Gloss 300 gsm. Glossy art paper 300 gsm",
-    "category": "Materials",
+    "id": "5a83ec4c-a56e-4a36-b967-2997c0e86e67",
+    "topic": "Minimum Order Policy",
+    "content": "Vienkartiniams pirkimams taikomas minimalus užsakymo dydis – 13 EUR + PVM. Jei vartotojas klausia apie minimalų kiekį ar krepšelio sumą (arba tiesiog bendrai domisi sąlygomis), informuok apie šią taisyklę.",
+    "category": "Sales Logic",
     "is_active": true,
-    "priority": 3,
-    "created_at": "2026-02-01T12:48:14.562759+00:00",
-    "updated_at": "2026-02-01T12:48:14.562759+00:00"
-  },
-  {
-    "id": "63eed651-0dbd-43d6-9fe0-7485e8aa0e59",
-    "topic": "Olins design matinis ofsetinis 120 gsm",
-    "content": "Material available: Olins design matinis ofsetinis 120 gsm. Olins matte offset paper 120 gsm Cost: 0.0500 EUR per A3 sheets.",
-    "category": "Materials",
-    "is_active": true,
-    "priority": 3,
-    "created_at": "2026-02-01T12:48:14.562759+00:00",
-    "updated_at": "2026-02-01T12:48:14.562759+00:00"
+    "priority": 20,
+    "created_at": "2026-02-08T06:59:31.674377+00:00",
+    "updated_at": "2026-02-08T06:59:31.674377+00:00"
   },
   {
     "id": "647cfd92-7eba-42a1-9940-018a90488ef5",
     "topic": "System Identity",
-    "content": "You are an AI Support Agent for 'Keturi print'. \\n\\nIMPORTANT RULES:\\n1. You MUST explicitly state you are an AI agent in your greeting if asked or at the start of a new topic.\\n2. You MUST offer the user the option to speak to a human if they seem frustrated or ask for it.\\n3. If asked for a human, tell them to email agniete@keturiprint.lt or rytis@keturiprint.lt, or call +370 696 63915 or +370 679 06605.",
+    "content": "You are an AI Support Agent for 'Keturi print'. \nIMPORTANT RULES:\n1. You MUST answer in LITHUANIAN language (Lietuvių kalba) at all times, unless the user speaks English.\n2. You MUST explicitly state you are an AI agent in your greeting if asked or at the start of a new topic.\n3. You MUST offer the user the option to speak to a human if they seem frustrated or ask for it.\n4. If asked for a human, tell them to email agniete@keturiprint.lt or rytis@keturiprint.lt, or call +370 696 63915 or +370 679 06605.",
     "category": "SYSTEM",
     "is_active": true,
     "priority": 10,
@@ -302,40 +232,10 @@
   {
     "id": "6a9796f2-3795-4e22-afd9-ff3652102d57",
     "topic": "Lipdukas ant plėvelės",
-    "content": "We offer Lipdukas ant plėvelės.  Base price starts at 2.4000 EUR.",
+    "content": "We offer Film Stickers (Lipdukai ant plėvelės). Base price starts at 1.65 EUR + VAT per A3 sheet.",
     "category": "Products",
     "is_active": true,
     "priority": 5,
-    "created_at": "2026-02-01T12:48:14.562759+00:00",
-    "updated_at": "2026-02-01T12:48:14.562759+00:00"
-  },
-  {
-    "id": "6bf9a3a4-8008-49f8-901d-788c7cac138f",
-    "topic": "Galerie Art Matt 250 gsm",
-    "content": "Material available: Galerie Art Matt 250 gsm. 46x64 cm Cost: 0.1800 EUR per pcs.",
-    "category": "Materials",
-    "is_active": true,
-    "priority": 3,
-    "created_at": "2026-02-01T12:48:14.562759+00:00",
-    "updated_at": "2026-02-01T12:48:14.562759+00:00"
-  },
-  {
-    "id": "6cbf721e-6e57-4e18-996c-e85f6a16ba22",
-    "topic": "INVERCOTE G 260 gsm",
-    "content": "Material available: INVERCOTE G 260 gsm. Invercote cardboard 260 gsm Cost: 0.1400 EUR per A3 sheets.",
-    "category": "Materials",
-    "is_active": true,
-    "priority": 3,
-    "created_at": "2026-02-01T12:48:14.562759+00:00",
-    "updated_at": "2026-02-01T12:48:14.562759+00:00"
-  },
-  {
-    "id": "6dcebfc2-f32d-4b28-86e1-e4f856c896d4",
-    "topic": "Serixo Offset, 60 g",
-    "content": "Material available: Serixo Offset, 60 g. 45ox64o mm Cost: 0.0290 EUR per pcs.",
-    "category": "Materials",
-    "is_active": true,
-    "priority": 3,
     "created_at": "2026-02-01T12:48:14.562759+00:00",
     "updated_at": "2026-02-01T12:48:14.562759+00:00"
   },
@@ -370,16 +270,6 @@
     "updated_at": "2026-02-01T12:48:14.562759+00:00"
   },
   {
-    "id": "77198bf4-38bb-4356-b33c-51cb96d8d715",
-    "topic": "Olins design matinis ofsetinis 150 gsm",
-    "content": "Material available: Olins design matinis ofsetinis 150 gsm. Olins matte offset paper 150 gsm Cost: 0.0700 EUR per A3 sheets.",
-    "category": "Materials",
-    "is_active": true,
-    "priority": 3,
-    "created_at": "2026-02-01T12:48:14.562759+00:00",
-    "updated_at": "2026-02-01T12:48:14.562759+00:00"
-  },
-  {
     "id": "7a7035bd-850d-4b5b-8094-1e882fd2c11c",
     "topic": "Kalendorius pakabinamas 3 dalių 3 rekl.plotai",
     "content": "We offer Kalendorius pakabinamas 3 dalių 3 rekl.plotai.  Price on request.",
@@ -392,7 +282,7 @@
   {
     "id": "7af84e2b-ab0e-4110-bd34-ca3d83a3f8db",
     "topic": "Contact Info",
-    "content": "You can reach us at info@keturiprint.lt or by phone.",
+    "content": "You can reach us at agniete@keturiprint.lt, rytis@keturiprint.lt or by phone.",
     "category": "General",
     "is_active": true,
     "priority": 8,
@@ -400,34 +290,14 @@
     "updated_at": "2026-02-01T12:48:14.562759+00:00"
   },
   {
-    "id": "7b77fa28-11fa-499c-ae8a-137cad1c5817",
-    "topic": "Sticotac popierinis lipdukas, pusiau blizgus",
-    "content": "Material available: Sticotac popierinis lipdukas, pusiau blizgus. Semi-gloss paper sticker Cost: 0.1400 EUR per A3 sheets.",
-    "category": "Materials",
+    "id": "7dfb8e81-bff0-47cf-bd3f-00e8993947ea",
+    "topic": "Sticker Inquiry Logic",
+    "content": "When a user asks about sticker prices (Lipdukai), you MUST first ask: \"Do you need them in sheets (lapais) or rolls (rulonais)?\". \n- IF Sheets: Quote the price starting from 1.65 EUR + VAT per A3 sheet. State that can produce sticker on gloss, matt paper and film. We also have transparent film.\n- IF Rolls: State that price depends on design, colors, size, and quantity and ASK for these details.\n-State that minimum order is 1000 pieces\n-State that we have matt, gloss paper and gloss film",
+    "category": "Sales Logic",
     "is_active": true,
-    "priority": 3,
-    "created_at": "2026-02-01T12:48:14.562759+00:00",
-    "updated_at": "2026-02-01T12:48:14.562759+00:00"
-  },
-  {
-    "id": "7bf2e3ba-abc5-4a80-9ad3-9b8130705673",
-    "topic": "Galerie A Gloss 100 gsm",
-    "content": "Material available: Galerie A Gloss 100 gsm. Glossy art paper 100 gsm Cost: 0.0400 EUR per A3 sheets.",
-    "category": "Materials",
-    "is_active": true,
-    "priority": 3,
-    "created_at": "2026-02-01T12:48:14.562759+00:00",
-    "updated_at": "2026-02-01T12:48:14.562759+00:00"
-  },
-  {
-    "id": "818599aa-1019-4a8a-b638-e7e560218845",
-    "topic": "Galerie A Gloss 200 gsm",
-    "content": "Material available: Galerie A Gloss 200 gsm. Glossy art paper 200 gsm Cost: 0.0700 EUR per A3 sheets.",
-    "category": "Materials",
-    "is_active": true,
-    "priority": 3,
-    "created_at": "2026-02-01T12:48:14.562759+00:00",
-    "updated_at": "2026-02-01T12:48:14.562759+00:00"
+    "priority": 10,
+    "created_at": "2026-02-05T05:40:35.865468+00:00",
+    "updated_at": "2026-02-05T05:40:35.865468+00:00"
   },
   {
     "id": "86b259fd-37d9-462b-9b66-391cdb5258a3",
@@ -440,14 +310,24 @@
     "updated_at": "2026-02-01T12:48:14.562759+00:00"
   },
   {
-    "id": "9f92f8e7-4505-4675-bb0a-157b3a3a7696",
-    "topic": "Laminavimas",
-    "content": "Service available: Laminavimas. Price is 0 EUR.",
-    "category": "Services",
+    "id": "87b933f7-c2b4-462e-b63d-86bf47c9d18a",
+    "topic": "Lamination Types",
+    "content": "Klausimas: Kokias laminato rūšis galiu pasirinkti?\\nAtsakymas: Blizgų (ryškios spalvos), matinį (solidumas, be atspindžių) arba Soft-touch (aksominis švelnumas).",
+    "category": "Product FAQ - Finishing",
     "is_active": true,
-    "priority": 5,
-    "created_at": "2026-02-01T12:48:14.562759+00:00",
-    "updated_at": "2026-02-01T12:48:14.562759+00:00"
+    "priority": 18,
+    "created_at": "2026-02-08T07:19:16.577707+00:00",
+    "updated_at": "2026-02-08T07:19:16.577707+00:00"
+  },
+  {
+    "id": "9aa51517-33f8-4b04-a1fc-3ca8b4aff8bd",
+    "topic": "Foil Stamping",
+    "content": "Klausimas: Kas yra folijavimas ir kokias spalvas siūlote?\\nAtsakymas: Tai metalizuoto sluoksnio perkėlimas ant popieriaus. Siūlome auksinę, sidabrinę, varinę bei spalvotas folijas.",
+    "category": "Product FAQ - Finishing",
+    "is_active": true,
+    "priority": 18,
+    "created_at": "2026-02-08T07:19:16.577707+00:00",
+    "updated_at": "2026-02-08T07:19:16.577707+00:00"
   },
   {
     "id": "a363de96-4043-4ccc-93e6-94998b822fb5",
@@ -470,42 +350,12 @@
     "updated_at": "2026-02-01T12:48:14.562759+00:00"
   },
   {
-    "id": "a759d087-851e-4323-be40-25ba3d0608a0",
-    "topic": "Invercote Creato 260 gsm",
-    "content": "Material available: Invercote Creato 260 gsm. Invercote Creato 260 gsm Cost: 0.1400 EUR per A3 sheets.",
-    "category": "Materials",
-    "is_active": true,
-    "priority": 3,
-    "created_at": "2026-02-01T12:48:14.562759+00:00",
-    "updated_at": "2026-02-01T12:48:14.562759+00:00"
-  },
-  {
-    "id": "a7f1e3f4-9d16-495c-af7d-fe680ee53d89",
-    "topic": "Spauda",
-    "content": "Service available: Spauda. Price is 0 EUR.",
-    "category": "Services",
-    "is_active": true,
-    "priority": 5,
-    "created_at": "2026-02-01T12:48:14.562759+00:00",
-    "updated_at": "2026-02-01T12:48:14.562759+00:00"
-  },
-  {
     "id": "a8180ce6-0652-4bb0-925b-ea527526bc4d",
     "topic": "Bukletas segtas kabėmis A5",
     "content": "We offer Bukletas segtas kabėmis A5.  Price on request.",
     "category": "Products",
     "is_active": true,
     "priority": 5,
-    "created_at": "2026-02-01T12:48:14.562759+00:00",
-    "updated_at": "2026-02-01T12:48:14.562759+00:00"
-  },
-  {
-    "id": "b3b76948-76d0-4b46-9299-fb0f04242ffa",
-    "topic": "Galerie Art Matt 200 gsm",
-    "content": "Material available: Galerie Art Matt 200 gsm. 46x64 cm Cost: 0.1430 EUR per pcs.",
-    "category": "Materials",
-    "is_active": true,
-    "priority": 3,
     "created_at": "2026-02-01T12:48:14.562759+00:00",
     "updated_at": "2026-02-01T12:48:14.562759+00:00"
   },
@@ -520,64 +370,14 @@
     "updated_at": "2026-02-01T12:48:14.562759+00:00"
   },
   {
-    "id": "b74cb7bb-23de-480f-b260-3b475cab8d55",
-    "topic": "Raflatac Polylaser, Plėvelė Matinė",
-    "content": "Material available: Raflatac Polylaser, Plėvelė Matinė. Matte film sticker Cost: 0.5000 EUR per A3 sheets.",
-    "category": "Materials",
+    "id": "c616d1d6-c322-4079-a350-90f50ffaae96",
+    "topic": "Double-Sided Flyers",
+    "content": "Klausimas: Ar skrajutės gali būti dvipusės?\\nAtsakymas: Taip, gaminame tiek vienpuses (4+0), tiek dvipuses (4+4) skrajutes. Dvipusė spauda leidžia išnaudoti visą plotą informacijai.",
+    "category": "Product FAQ - Flyers",
     "is_active": true,
-    "priority": 3,
-    "created_at": "2026-02-01T12:48:14.562759+00:00",
-    "updated_at": "2026-02-01T12:48:14.562759+00:00"
-  },
-  {
-    "id": "c67fbb57-ecf7-4fc2-8c69-1ff07500e143",
-    "topic": "Novatech Dig S 170 gsm",
-    "content": "Material available: Novatech Dig S 170 gsm. Novatech digital paper 170 gsm Cost: 0.0550 EUR per A3 sheets.",
-    "category": "Materials",
-    "is_active": true,
-    "priority": 3,
-    "created_at": "2026-02-01T12:48:14.562759+00:00",
-    "updated_at": "2026-02-01T12:48:14.562759+00:00"
-  },
-  {
-    "id": "c6b83f78-e03d-43e5-9c47-94bdbb271796",
-    "topic": "Novatech Dig S 150 gsm",
-    "content": "Material available: Novatech Dig S 150 gsm. Novatech digital paper 150 gsm Cost: 0.0485 EUR per A3 sheets.",
-    "category": "Materials",
-    "is_active": true,
-    "priority": 3,
-    "created_at": "2026-02-01T12:48:14.562759+00:00",
-    "updated_at": "2026-02-01T12:48:14.562759+00:00"
-  },
-  {
-    "id": "c6d3b856-d32a-41d2-aefc-af706e229bce",
-    "topic": "Raflatac Polylaser, Plėvelė Blizgi",
-    "content": "Material available: Raflatac Polylaser, Plėvelė Blizgi. Glossy film sticker Cost: 0.7400 EUR per A3 sheets.",
-    "category": "Materials",
-    "is_active": true,
-    "priority": 3,
-    "created_at": "2026-02-01T12:48:14.562759+00:00",
-    "updated_at": "2026-02-01T12:48:14.562759+00:00"
-  },
-  {
-    "id": "c83814d5-3355-4c03-a555-f862bbd02e91",
-    "topic": "Keyacolor dekoratyvinis popierius 300 g",
-    "content": "Material available: Keyacolor dekoratyvinis popierius 300 g. Decorative paper 300 g Cost: 0.8000 EUR per A3 sheets.",
-    "category": "Materials",
-    "is_active": true,
-    "priority": 3,
-    "created_at": "2026-02-01T12:48:14.562759+00:00",
-    "updated_at": "2026-02-01T12:48:14.562759+00:00"
-  },
-  {
-    "id": "c9d89573-e218-4682-a3a2-e889a83f698c",
-    "topic": "Munken Pure 170 gsm",
-    "content": "Material available: Munken Pure 170 gsm. 90x64 cm Cost: 0.3010 EUR per pcs.",
-    "category": "Materials",
-    "is_active": true,
-    "priority": 3,
-    "created_at": "2026-02-01T12:48:14.562759+00:00",
-    "updated_at": "2026-02-01T12:48:14.562759+00:00"
+    "priority": 15,
+    "created_at": "2026-02-08T07:19:16.577707+00:00",
+    "updated_at": "2026-02-08T07:19:16.577707+00:00"
   },
   {
     "id": "c9ece6dc-80cc-44cb-883f-f64fcdc851d9",
@@ -590,24 +390,14 @@
     "updated_at": "2026-02-01T12:48:14.562759+00:00"
   },
   {
-    "id": "ca6bcc23-1583-475e-ac32-85c86793a16d",
-    "topic": "Olins design matinis ofsetinis 200 gsm",
-    "content": "Material available: Olins design matinis ofsetinis 200 gsm. Olins matte offset paper 200 gsm Cost: 0.0900 EUR per A3 sheets.",
-    "category": "Materials",
+    "id": "d1ec9210-3d3e-4498-be86-50e28a7fb5d6",
+    "topic": "Custom Box Dimensions",
+    "content": "Klausimas: Ar gaminate individualių matmenų dėžutes?\\nAtsakymas: Taip, galime pagaminti dėžutę pagal jūsų prekės matmenis. Rekomenduojame atsiųsti prekės ilgį, plotį ir aukštį (mm).",
+    "category": "Product FAQ - Packaging",
     "is_active": true,
-    "priority": 3,
-    "created_at": "2026-02-01T12:48:14.562759+00:00",
-    "updated_at": "2026-02-01T12:48:14.562759+00:00"
-  },
-  {
-    "id": "d1328c3b-4960-42b8-b983-93e9ae20e1fc",
-    "topic": "Olins design matinis ofsetinis 100 gsm",
-    "content": "Material available: Olins design matinis ofsetinis 100 gsm. Olins matte offset paper 100 gsm Cost: 0.0400 EUR per A3 sheets.",
-    "category": "Materials",
-    "is_active": true,
-    "priority": 3,
-    "created_at": "2026-02-01T12:48:14.562759+00:00",
-    "updated_at": "2026-02-01T12:48:14.562759+00:00"
+    "priority": 15,
+    "created_at": "2026-02-08T07:19:16.577707+00:00",
+    "updated_at": "2026-02-08T07:19:16.577707+00:00"
   },
   {
     "id": "d40b72db-aa9c-4c3a-ac2b-43aa43e0a0ce",
@@ -642,27 +432,17 @@
   {
     "id": "e150ce4e-24f3-4db9-82c6-dac94f3c272f",
     "topic": "Lipdukas ant popieriaus",
-    "content": "We offer Lipdukas ant popieriaus.  Base price starts at 2.0000 EUR.",
+    "content": "We offer Paper Stickers (Lipdukai ant popieriaus). Base price starts at 1.65 EUR + VAT per A3 sheet.",
     "category": "Products",
     "is_active": true,
     "priority": 5,
-    "created_at": "2026-02-01T12:48:14.562759+00:00",
-    "updated_at": "2026-02-01T12:48:14.562759+00:00"
-  },
-  {
-    "id": "eb298306-a441-4780-8f2b-a132d8ce34ba",
-    "topic": "Invercote Creato 300 gsm",
-    "content": "Material available: Invercote Creato 300 gsm. Invercote Creato 300 gsm Cost: 0.1700 EUR per A3 sheets.",
-    "category": "Materials",
-    "is_active": true,
-    "priority": 3,
     "created_at": "2026-02-01T12:48:14.562759+00:00",
     "updated_at": "2026-02-01T12:48:14.562759+00:00"
   },
   {
     "id": "edeb04b4-4e29-4e06-a7cf-4a1c58a92d51",
     "topic": "Dizainas",
-    "content": "We offer Dizainas.  Base price starts at 40.0000 EUR.",
+    "content": "We offer Design Services (Dizainas). Price differs by product:\\n- Business Cards: ~15-25 EUR\\n- Flyers/Posters: ~40-60 EUR\\n- Multi-page: Custom quote.",
     "category": "Products",
     "is_active": true,
     "priority": 5,
@@ -670,14 +450,14 @@
     "updated_at": "2026-02-01T12:48:14.562759+00:00"
   },
   {
-    "id": "eeda42a5-27f5-405b-8bf8-6288db885338",
-    "topic": "Galerie Art Matt 115 gsm",
-    "content": "Material available: Galerie Art Matt 115 gsm. Matte art paper 115 gsm Cost: 0.0400 EUR per A3 sheets.",
-    "category": "Materials",
+    "id": "f36579a8-7170-4429-8549-a8d728d61cfc",
+    "topic": "Calendar Inquiry Logic",
+    "content": "Kai vartotojas klausia apie kalendorius (sieninius, stalinius ar bendrai), PRIVALAI išvardinti turimus tipus ir paklausti, kuris domina:\n1. Pakabinamas 3 dalių (su 1 arba 3 reklaminiais plotais)\n2. Pakabinamas 1 dalies (vieno lapo)\n3. Pastatomas (stalinis)\n\nKainos priklauso nuo kiekio ir tipo.",
+    "category": "Sales Logic",
     "is_active": true,
-    "priority": 3,
-    "created_at": "2026-02-01T12:48:14.562759+00:00",
-    "updated_at": "2026-02-01T12:48:14.562759+00:00"
+    "priority": 10,
+    "created_at": "2026-02-05T06:03:50.627984+00:00",
+    "updated_at": "2026-02-05T06:03:50.627984+00:00"
   },
   {
     "id": "f3b8ffef-939a-4aa6-9af3-788c57ab8baa",
@@ -686,26 +466,6 @@
     "category": "Products",
     "is_active": true,
     "priority": 5,
-    "created_at": "2026-02-01T12:48:14.562759+00:00",
-    "updated_at": "2026-02-01T12:48:14.562759+00:00"
-  },
-  {
-    "id": "f3d7cff6-1fb5-4bc8-88c8-d7eea8e5374e",
-    "topic": "MB Natural 260 gsm",
-    "content": "Material available: MB Natural 260 gsm. Natural paper 260 gsm Cost: 0.1100 EUR per A3 sheets.",
-    "category": "Materials",
-    "is_active": true,
-    "priority": 3,
-    "created_at": "2026-02-01T12:48:14.562759+00:00",
-    "updated_at": "2026-02-01T12:48:14.562759+00:00"
-  },
-  {
-    "id": "f4cfac3e-2510-4918-8b77-cb6eb8d7e574",
-    "topic": "INVERCOTE G 300 gsm",
-    "content": "Material available: INVERCOTE G 300 gsm. Invercote cardboard 300 gsm Cost: 0.1300 EUR per A3 sheets.",
-    "category": "Materials",
-    "is_active": true,
-    "priority": 3,
     "created_at": "2026-02-01T12:48:14.562759+00:00",
     "updated_at": "2026-02-01T12:48:14.562759+00:00"
   },
@@ -720,24 +480,14 @@
     "updated_at": "2026-02-01T12:48:14.562759+00:00"
   },
   {
-    "id": "f564bd8a-2589-4ae8-8d9b-45c30206900a",
-    "topic": "Novatech Dig S 350 gsm",
-    "content": "Material available: Novatech Dig S 350 gsm. Novatech digital paper 350 gsm Cost: 0.1300 EUR per A3 sheets.",
-    "category": "Materials",
+    "id": "f4d5855f-3fa1-4f60-8804-11a597e9832a",
+    "topic": "Design Inquiry Logic",
+    "content": "Kai vartotojas klausia apie bet kurio spaudos gaminio kainą (skrajutės, vizitinės ir t.t.), PRIVALAI paklausti: \"Ar turite spaudai tinkamą maketą?\". \n- JEI TAIP: Paprašyk atsiųsti patikrinimui.\n- JEI NE: Paaiškink maketavimo paslaugas:\n  * Smulkūs pataisymai: ~10-25 EUR (priklauso nuo sudėtingumo).\n  * Naujas maketas: Kaina priklauso nuo gaminio (pvz., vizitinės ~15-25 EUR, skrajutės ~40+ EUR).",
+    "category": "Sales Logic",
     "is_active": true,
-    "priority": 3,
-    "created_at": "2026-02-01T12:48:14.562759+00:00",
-    "updated_at": "2026-02-01T12:48:14.562759+00:00"
-  },
-  {
-    "id": "f677e083-a84a-451a-a266-f740524debb5",
-    "topic": "Olins design white 300 gsm",
-    "content": "Material available: Olins design white 300 gsm. Olins white paper 300 gsm Cost: 0.1600 EUR per A3 sheets.",
-    "category": "Materials",
-    "is_active": true,
-    "priority": 3,
-    "created_at": "2026-02-01T12:48:14.562759+00:00",
-    "updated_at": "2026-02-01T12:48:14.562759+00:00"
+    "priority": 10,
+    "created_at": "2026-02-05T05:51:20.906701+00:00",
+    "updated_at": "2026-02-05T05:51:20.906701+00:00"
   },
   {
     "id": "f7428f9c-0d2e-4bcc-bb89-309d4247876a",
@@ -760,19 +510,9 @@
     "updated_at": "2026-02-01T12:48:14.562759+00:00"
   },
   {
-    "id": "fcfae9d5-2793-4488-91c3-8ae8f6393f79",
-    "topic": "Galerie A Gloss 150 gsm",
-    "content": "Material available: Galerie A Gloss 150 gsm. Glossy art paper 150 gsm Cost: 0.0500 EUR per A3 sheets.",
-    "category": "Materials",
-    "is_active": true,
-    "priority": 3,
-    "created_at": "2026-02-01T12:48:14.562759+00:00",
-    "updated_at": "2026-02-01T12:48:14.562759+00:00"
-  },
-  {
     "id": "fe8f70a5-7538-411e-b7bd-84a7e84f74db",
     "topic": "Maketavimas",
-    "content": "We offer Maketavimas.  Base price starts at 25.0000 EUR.",
+    "content": "We offer Layout/Adjustment Services (Maketavimas). Price differs:\\n- Small Adjustments: 10-25 EUR.\\n- Full Layout: Starts at 25 EUR.",
     "category": "Products",
     "is_active": true,
     "priority": 5,
@@ -782,7 +522,7 @@
   {
     "id": "ff4f059b-0de4-4ca1-8c9d-33d6273625cc",
     "topic": "Karulis",
-    "content": "We offer Karulis.  Price on request.",
+    "content": "We offer Karulis. Minimum quantity is as many pieces as fits to one sheet. Price will depend also on how many pieces will fit to one sheet.",
     "category": "Products",
     "is_active": true,
     "priority": 5,

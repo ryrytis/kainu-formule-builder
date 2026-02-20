@@ -3,9 +3,21 @@ import { supabase } from '../lib/supabase';
 import { Plus, Search, Edit, Trash2, Copy } from 'lucide-react';
 import CreateRuleModal from '../components/CreateRuleModal';
 
+const RULE_TYPE_COLORS: Record<string, string> = {
+    'Base Price per 100': 'bg-blue-50 text-blue-800',
+    'Base Price per unit': 'bg-blue-50 text-blue-800',
+    'Extra Cost per unit': 'bg-emerald-50 text-emerald-800',
+    'Extra Cost per 100': 'bg-emerald-50 text-emerald-800',
+    'Extra Cost Flat': 'bg-amber-50 text-amber-800',
+    'Qty Adjustment': 'bg-orange-50 text-orange-800',
+    'Qty Discount': 'bg-purple-50 text-purple-800',
+    'Qty Multiplier': 'bg-purple-50 text-purple-800',
+    'Client Discount': 'bg-rose-50 text-rose-800',
+    'Lamination Cost': 'bg-emerald-50 text-emerald-800',
+};
+
 const CalculationRules: React.FC = () => {
     const [rules, setRules] = useState<any[]>([]);
-    // const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedRule, setSelectedRule] = useState<any | null>(null);
@@ -15,8 +27,6 @@ const CalculationRules: React.FC = () => {
     }, []);
 
     const fetchRules = async () => {
-        // setLoading(true);
-        // Cast to any because we manually added type definitions
         const { data } = await (supabase as any)
             .from('calculation_rules')
             .select(`
@@ -26,7 +36,6 @@ const CalculationRules: React.FC = () => {
             .order('priority', { ascending: false });
 
         if (data) setRules(data);
-        // setLoading(false);
     };
 
     const handleDelete = async (id: string) => {
@@ -41,7 +50,7 @@ const CalculationRules: React.FC = () => {
         const newRule = {
             ...duplicateData,
             name: `${rule.name} (Copy)`,
-            is_active: false // Default to inactive so user can review
+            is_active: false
         };
 
         const { error } = await (supabase as any).from('calculation_rules').insert([newRule]);
@@ -69,16 +78,24 @@ const CalculationRules: React.FC = () => {
         const term = searchTerm.toLowerCase();
         return (
             (r.name?.toLowerCase() || '').includes(term) ||
-            (r.description?.toLowerCase() || '').includes(term)
+            (r.description?.toLowerCase() || '').includes(term) ||
+            (r.extra_name?.toLowerCase() || '').includes(term) ||
+            (r.rule_type?.toLowerCase() || '').includes(term)
         );
     });
+
+    const formatValue = (rule: any) => {
+        if (rule.rule_type === 'Qty Discount') return `-${rule.value}%`;
+        if (rule.rule_type === 'Client Discount' || rule.rule_type === 'Qty Multiplier') return `×${rule.value}`;
+        return `€${rule.value}`;
+    };
 
     return (
         <div className="space-y-6 animate-in fade-in duration-300">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
                     <h1 className="text-3xl font-bold text-primary tracking-tight">Calculation Rules</h1>
-                    <p className="text-gray-500 mt-1">Define pricing logic and automated rules</p>
+                    <p className="text-gray-500 mt-1">Define pricing logic: base prices, extras, and discounts</p>
                 </div>
                 <button
                     onClick={() => setIsModalOpen(true)}
@@ -108,7 +125,8 @@ const CalculationRules: React.FC = () => {
                         <tr>
                             <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Priority</th>
                             <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Rule Name</th>
-                            <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Goal / Value</th>
+                            <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Type</th>
+                            <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Value</th>
                             <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Conditions</th>
                             <th className="px-6 py-4 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">Status</th>
                             <th className="px-6 py-4 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">Actions</th>
@@ -124,15 +142,20 @@ const CalculationRules: React.FC = () => {
                                 </td>
                                 <td className="px-6 py-4">
                                     <div className="text-sm font-bold text-primary">{rule.name}</div>
+                                    {rule.extra_name && (
+                                        <div className="text-xs text-emerald-600 font-medium">⚙ {rule.extra_name}</div>
+                                    )}
                                     <div className="text-xs text-gray-500">{rule.description || '-'}</div>
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap">
-                                    <div className="flex flex-col">
-                                        <span className="text-xs uppercase text-gray-400 font-bold">{rule.rule_type}</span>
-                                        <span className="text-sm font-bold text-accent-teal">
-                                            {rule.value}
-                                        </span>
-                                    </div>
+                                    <span className={`px-2 py-1 text-xs font-semibold rounded ${RULE_TYPE_COLORS[rule.rule_type] || 'bg-gray-100 text-gray-700'}`}>
+                                        {rule.rule_type}
+                                    </span>
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                    <span className="text-lg font-bold text-accent-teal font-mono">
+                                        {formatValue(rule)}
+                                    </span>
                                 </td>
                                 <td className="px-6 py-4 text-sm text-gray-600">
                                     <div className="flex flex-col gap-1">

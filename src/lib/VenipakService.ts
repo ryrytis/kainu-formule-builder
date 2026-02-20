@@ -217,7 +217,7 @@ export const VenipakService = {
         // Prepare Consignee Data
         const consigneeCheck = terminal ? {
             name: terminal.name || '',
-            company_code: terminal.pastomat_id,
+            company_code: terminal.code,
             country: 'LT',
             city: terminal.pastomat_city,
             address: terminal.pastomat_address,

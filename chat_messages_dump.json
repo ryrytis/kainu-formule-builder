@@ -1,0 +1,58 @@
+[
+  {
+    "id": "f7ddf7c5-db04-469e-b2a7-5e7338530d34",
+    "session_id": "test_session_1770271417497",
+    "role": "assistant",
+    "content": "Jei jums reikalingi lipdukai lapais, kaina prasideda nuo 1.65 EUR + PVM už vieną A3 lapą. Ar turite dar kokių nors klausimų?",
+    "created_at": "2026-02-05T06:03:45.808336+00:00"
+  },
+  {
+    "id": "992ea342-5fbc-4dc5-99c4-2de3911f0919",
+    "session_id": "test_session_1770271417497",
+    "role": "user",
+    "content": "O jei lapais?",
+    "created_at": "2026-02-05T06:03:44.471846+00:00"
+  },
+  {
+    "id": "f20eaef9-4426-45b4-9df7-2c088338b517",
+    "session_id": "test_session_1770271417497",
+    "role": "assistant",
+    "content": "Lipdukų rulonais kaina priklauso nuo dizaino, spalvų, dydžio ir kiekio. Gal galite pateikti šias detales, kad galėčiau jums tiksliau padėti?",
+    "created_at": "2026-02-05T06:03:44.404844+00:00"
+  },
+  {
+    "id": "9f6bb792-42de-4755-be52-128f6b0fda6f",
+    "session_id": "test_session_1770271417497",
+    "role": "user",
+    "content": "Rulonais",
+    "created_at": "2026-02-05T06:03:41.614775+00:00"
+  },
+  {
+    "id": "22c562c0-0b7f-4735-a569-a9d58e6242c8",
+    "session_id": "test_session_1770271417497",
+    "role": "assistant",
+    "content": "Ar jums reikalingi lipdukai ant lapų (lapais) ar rulonais (rulonais)?",
+    "created_at": "2026-02-05T06:03:41.368601+00:00"
+  },
+  {
+    "id": "60bec28e-c920-4048-b9ad-c12a1eeddbea",
+    "session_id": "test_session_1770271417497",
+    "role": "user",
+    "content": "Kokia kaina lipdukų?",
+    "created_at": "2026-02-05T06:03:39.963157+00:00"
+  },
+  {
+    "id": "266adfc2-ab6d-4513-abaf-3754c0f0fd95",
+    "session_id": "test_session_1770271417497",
+    "role": "assistant",
+    "content": "Labas! Kaip galiu jums padėti šiandien? Esu AI asistentas ir galiu atsakyti į jūsų klausimus apie \"Keturi print\" paslaugas.",
+    "created_at": "2026-02-05T06:03:39.799147+00:00"
+  },
+  {
+    "id": "7eb53b54-626a-430e-a08e-c651efbca18f",
+    "session_id": "test_session_1770271417497",
+    "role": "user",
+    "content": "Labas",
+    "created_at": "2026-02-05T06:03:37.097551+00:00"
+  }
+]

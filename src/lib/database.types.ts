@@ -243,14 +243,15 @@ export interface Database {
             calculation_rules: {
                 Row: {
                     id: string
-                    rule_type: string // 'Base Price per unit', 'Base Price per 100', 'Qty Multiplier', 'Client Discount'
+                    rule_type: string // 'Base Price per 100', 'Extra Cost per 100', 'Extra Cost Flat', 'Qty Discount', 'Client Discount'
                     name: string | null
                     description: string | null
                     priority: number
                     is_active: boolean
-                    value: number // The price or multiplier
+                    value: number // The price, cost, or discount percentage
                     product_id: string | null
                     lamination: string | null
+                    extra_name: string | null // Label for extras: 'Matt Lamination', 'Foil', 'Rounded Corners'
                     min_quantity: number | null
                     max_quantity: number | null
                     created_at: string
@@ -266,6 +267,7 @@ export interface Database {
                     value: number
                     product_id?: string | null
                     lamination?: string | null
+                    extra_name?: string | null
                     min_quantity?: number | null
                     max_quantity?: number | null
                     created_at?: string
@@ -281,6 +283,7 @@ export interface Database {
                     value?: number
                     product_id?: string | null
                     lamination?: string | null
+                    extra_name?: string | null
                     min_quantity?: number | null
                     max_quantity?: number | null
                     created_at?: string

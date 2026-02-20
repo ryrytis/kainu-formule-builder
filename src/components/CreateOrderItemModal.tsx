@@ -91,13 +91,12 @@ const CreateOrderItemModal: React.FC<CreateOrderItemModalProps> = ({ isOpen, onC
                 material_id: materialId,
                 width: width ? parseFloat(width) : undefined,
                 height: height ? parseFloat(height) : undefined,
-                extra_works: selectedWorks,
             });
 
             setUnitPrice(result.unit_price);
             setTotalPrice(result.total_price);
-            setTotalCost(result.total_cost || 0);
-            setMarginPercent(result.margin_percent || 0);
+            setTotalCost(0);
+            setMarginPercent(0);
             setAppliedRules(result.applied_rules);
         };
 

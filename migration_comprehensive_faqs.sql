@@ -101,7 +101,7 @@ VALUES (
 INSERT INTO public.ai_knowledge (topic, content, category, priority, is_active)
 VALUES (
         'Payment Methods',
-        'Klausimas: Kokie mokėjimo būdai galimi?\nAtsakymas: Bankinis pavedimas, kortelės mokėjimas. Nuolatiniams klientams galimas mokėjimas pagal sąskaitą po pristatymo.',
+        'Klausimas: Kokie mokėjimo būdai galimi?\nAtsakymas: Bankinis pavedimas. Nuolatiniams klientams galimas mokėjimas pagal sąskaitą po pristatymo.',
         'Product FAQ - Payment',
         15,
         true
@@ -117,7 +117,7 @@ VALUES (
 INSERT INTO public.ai_knowledge (topic, content, category, priority, is_active)
 VALUES (
         'Invoice Terms',
-        'Klausimas: Per kiek laiko reikia apmokėti sąskaitą?\nAtsakymas: Standartinis mokėjimo terminas – 14 dienų nuo sąskaitos išrašymo datos.',
+        'Klausimas: Per kiek laiko reikia apmokėti sąskaitą?\nAtsakymas: Standartinis mokėjimo terminas – 7 dienos nuo sąskaitos išrašymo datos.',
         'Product FAQ - Payment',
         15,
         true
@@ -213,16 +213,8 @@ VALUES (
     );
 INSERT INTO public.ai_knowledge (topic, content, category, priority, is_active)
 VALUES (
-        'Eco Inks',
-        'Klausimas: Kokius dažus naudojate?\nAtsakymas: Naudojame UV ir lateksinius dažus, kurie yra mažiau kenksmingi aplinkai nei tradiciniai tirpikliniai dažai.',
-        'Product FAQ - Eco',
-        15,
-        true
-    );
-INSERT INTO public.ai_knowledge (topic, content, category, priority, is_active)
-VALUES (
         'Biodegradable Options',
-        'Klausimas: Ar yra biologiškai skaidžių pakuočių?\nAtsakymas: Taip, galime pasiūlyti kartonines dėžutes be laminavimo, kurios lengvai perdirbamos. Plėvelinis laminavimas apsunkina perdirbimą.',
+        'Klausimas: Ar yra biologiškai skaidžių pakuočių?\nAtsakymas: Taip, galime pasiūlyti kartonines dėžutes be laminavimo, kurios lengvai perdirbamos. Laminavimas apsunkina perdirbimą.',
         'Product FAQ - Eco',
         15,
         true
@@ -234,14 +226,6 @@ INSERT INTO public.ai_knowledge (topic, content, category, priority, is_active)
 VALUES (
         'Embossing',
         'Klausimas: Kas yra kongrevo spauda (embossing)?\nAtsakymas: Tai reljefinis įspaudimas, kuris sukuria iškilų (arba įdubusį) vaizdą popieriuje. Puikiai tinka logotipams ir vizitinėms.',
-        'Product FAQ - Finishing',
-        18,
-        true
-    );
-INSERT INTO public.ai_knowledge (topic, content, category, priority, is_active)
-VALUES (
-        'Die Cutting',
-        'Klausimas: Kas yra štancavimas (die-cutting)?\nAtsakymas: Tai specialios formos išpjovimas – galime pagaminti bet kokios formos korteles, lipdukus, dėžutes. Reikalingas individualus pjovimo įrankis.',
         'Product FAQ - Finishing',
         18,
         true
@@ -286,25 +270,9 @@ VALUES (
         18,
         true
     );
-INSERT INTO public.ai_knowledge (topic, content, category, priority, is_active)
-VALUES (
-        'Varnish Types',
-        'Klausimas: Kokie lakavimo būdai galimi?\nAtsakymas: Pilnas UV lakas (blizgus arba matinis), selektyvus 3D UV lakas (tik pasirinktose vietose), dispersionis lakas (pigesnis variantas).',
-        'Product FAQ - Finishing',
-        18,
-        true
-    );
 -- ============================================
 -- BOXES & PACKAGING CUTTING (6 entries)
 -- ============================================
-INSERT INTO public.ai_knowledge (topic, content, category, priority, is_active)
-VALUES (
-        'Box Die Cutting Tool',
-        'Klausimas: Ar man reikia savo pjovimo įrankio dėžutėms?\nAtsakymas: Jei naudojate standartinę formą – turime gatavus įrankius. Individualiems dydžiams sukuriame naują štancą (formą) už papildomą mokestį.',
-        'Product FAQ - Boxes',
-        18,
-        true
-    );
 INSERT INTO public.ai_knowledge (topic, content, category, priority, is_active)
 VALUES (
         'Box Prototype',
@@ -324,7 +292,7 @@ VALUES (
 INSERT INTO public.ai_knowledge (topic, content, category, priority, is_active)
 VALUES (
         'Box Minimum Quantity',
-        'Klausimas: Koks minimalus dėžučių užsakymas?\nAtsakymas: Standartinėms formoms – nuo 50 vnt. Individualioms – nuo 100-200 vnt. dėl štancos gamybos kaštų.',
+        'Klausimas: Koks minimalus dėžučių užsakymas?\nAtsakymas: Kadangi, dėžutes pjauname, o ne kertame, tai minimalus kiekis yra nuo 1 vnt.',
         'Product FAQ - Boxes',
         18,
         true
@@ -445,7 +413,7 @@ VALUES (
 INSERT INTO public.ai_knowledge (topic, content, category, priority, is_active)
 VALUES (
         'Poster Mounting',
-        'Klausimas: Ar galite pritvirtinti plakatą ant putų kartono?\nAtsakymas: Taip, siūlome montavimą ant Kapa (foam board) – lengvas ir tvirtas pagrindas parodoms ar ekspozicijoms.',
+        'Klausimas: Ar galite pritvirtinti plakatą ant putų kartono?\nAtsakymas: Ne, klijavimo nesiūlome.',
         'Product FAQ - Posters',
         15,
         true

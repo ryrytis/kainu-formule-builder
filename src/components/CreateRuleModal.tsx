@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { X, Loader2, Info } from 'lucide-react';
+import { RULE_TYPES } from '../lib/PricingService';
 
 interface Rule {
     id: string;
@@ -12,6 +13,7 @@ interface Rule {
     value: number;
     product_id: string | null;
     lamination: string | null;
+    extra_name: string | null;
     min_quantity: number | null;
     max_quantity: number | null;
 }
@@ -28,10 +30,18 @@ interface CreateRuleModalProps {
     ruleToEdit?: Rule | null;
 }
 
+const RULE_TYPE_OPTIONS = [
+    { value: RULE_TYPES.BASE_PRICE_100, label: 'Base Price (€ per 100 pcs)', hint: 'E.g. €9 per 100 business cards' },
+    { value: RULE_TYPES.EXTRA_COST_UNIT, label: 'Extra Cost (€ per unit)', hint: 'Lamination, foil, embossing — priced per piece' },
+    { value: RULE_TYPES.EXTRA_COST_FLAT, label: 'Extra Cost (flat fee €)', hint: 'Setup fees, design — fixed amount' },
+    { value: RULE_TYPES.QTY_ADJUSTMENT, label: 'Qty Adjustment (± %)', hint: '+10 = surcharge for small qty, -5 = discount for large' },
+    { value: RULE_TYPES.CLIENT_DISCOUNT, label: 'Client Discount (multiplier)', hint: '0.9 = 10% off for this client' },
+];
+
 const CreateRuleModal: React.FC<CreateRuleModalProps> = ({ isOpen, onClose, onSuccess, ruleToEdit }) => {
     const [products, setProducts] = useState<Product[]>([]);
     const [formData, setFormData] = useState({
-        rule_type: 'Base Price per unit',
+        rule_type: RULE_TYPES.BASE_PRICE_100 as string,
         name: '',
         description: '',
         priority: 10,
@@ -39,6 +49,7 @@ const CreateRuleModal: React.FC<CreateRuleModalProps> = ({ isOpen, onClose, onSu
         value: 0,
         product_id: '',
         lamination: '',
+        extra_name: '',
         min_quantity: '' as any,
         max_quantity: '' as any
     });
@@ -56,7 +67,7 @@ const CreateRuleModal: React.FC<CreateRuleModalProps> = ({ isOpen, onClose, onSu
     useEffect(() => {
         if (ruleToEdit) {
             setFormData({
-                rule_type: ruleToEdit.rule_type || 'Base Price per unit',
+                rule_type: ruleToEdit.rule_type || RULE_TYPES.BASE_PRICE_100,
                 name: ruleToEdit.name || '',
                 description: ruleToEdit.description || '',
                 priority: ruleToEdit.priority || 10,
@@ -64,12 +75,13 @@ const CreateRuleModal: React.FC<CreateRuleModalProps> = ({ isOpen, onClose, onSu
                 value: ruleToEdit.value || 0,
                 product_id: ruleToEdit.product_id || '',
                 lamination: ruleToEdit.lamination || '',
+                extra_name: ruleToEdit.extra_name || '',
                 min_quantity: ruleToEdit.min_quantity || '',
                 max_quantity: ruleToEdit.max_quantity || ''
             });
         } else {
             setFormData({
-                rule_type: 'Base Price per unit',
+                rule_type: RULE_TYPES.BASE_PRICE_100,
                 name: '',
                 description: '',
                 priority: 10,
@@ -77,21 +89,53 @@ const CreateRuleModal: React.FC<CreateRuleModalProps> = ({ isOpen, onClose, onSu
                 value: 0,
                 product_id: '',
                 lamination: '',
+                extra_name: '',
                 min_quantity: '',
                 max_quantity: ''
             });
         }
     }, [ruleToEdit, isOpen]);
 
+    const isExtraType = formData.rule_type === RULE_TYPES.EXTRA_COST_UNIT ||
+        formData.rule_type === RULE_TYPES.EXTRA_COST_FLAT;
+    const isQtyAdj = formData.rule_type === RULE_TYPES.QTY_ADJUSTMENT;
+    const needsQtyRange = isQtyAdj || formData.rule_type === RULE_TYPES.BASE_PRICE_100;
+
+    const getValueLabel = () => {
+        switch (formData.rule_type) {
+            case RULE_TYPES.QTY_ADJUSTMENT:
+                return 'Adjustment (%) — use + for surcharge, - for discount';
+            case RULE_TYPES.CLIENT_DISCOUNT:
+                return 'Multiplier (e.g. 0.9 = 10% off)';
+            case RULE_TYPES.EXTRA_COST_FLAT:
+                return 'Flat Fee (€)';
+            case RULE_TYPES.EXTRA_COST_UNIT:
+                return 'Price per unit (€)';
+            default:
+                return 'Price per 100 pcs (€)';
+        }
+    };
+
+    const getValueHint = () => {
+        switch (formData.rule_type) {
+            case RULE_TYPES.QTY_ADJUSTMENT:
+                return 'E.g.: +10 for 50 pcs means 10% surcharge. -5 for 200 pcs means 5% discount.';
+            case RULE_TYPES.EXTRA_COST_UNIT:
+                return 'E.g.: 0.03 = €0.03 per piece for lamination';
+            default:
+                return '';
+        }
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
 
         try {
-            // Clean up payload
             const payload: any = { ...formData };
             if (!payload.product_id) payload.product_id = null;
             if (!payload.lamination) payload.lamination = null;
+            if (!payload.extra_name) payload.extra_name = null;
             if (payload.min_quantity === '') payload.min_quantity = null;
             if (payload.max_quantity === '') payload.max_quantity = null;
 
@@ -132,25 +176,29 @@ const CreateRuleModal: React.FC<CreateRuleModalProps> = ({ isOpen, onClose, onSu
                 </div>
 
                 <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-8 space-y-6">
+                    {/* Rule Type */}
+                    <div className="space-y-1">
+                        <label htmlFor="rule-type" className="text-xs font-bold text-gray-500 uppercase">Rule Type</label>
+                        <select
+                            id="rule-type"
+                            value={formData.rule_type}
+                            onChange={e => setFormData({ ...formData, rule_type: e.target.value })}
+                            className="w-full border-b-2 border-gray-200 p-2 focus:border-accent-teal outline-none transition-colors"
+                        >
+                            {RULE_TYPE_OPTIONS.map(opt => (
+                                <option key={opt.value} value={opt.value}>{opt.label}</option>
+                            ))}
+                        </select>
+                        <p className="text-xs text-gray-400 mt-1">
+                            {RULE_TYPE_OPTIONS.find(o => o.value === formData.rule_type)?.hint}
+                        </p>
+                    </div>
+
+                    {/* Value + Name */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-1">
-                            <label htmlFor="rule-type" className="text-xs font-bold text-gray-500 uppercase">Rule Type</label>
-                            <select
-                                id="rule-type"
-                                value={formData.rule_type}
-                                onChange={e => setFormData({ ...formData, rule_type: e.target.value })}
-                                className="w-full border-b-2 border-gray-200 p-2 focus:border-accent-teal outline-none transition-colors"
-                            >
-                                <option value="Base Price per unit">Base Price (€ per unit)</option>
-                                <option value="Base Price per 100">Base Price (€ per 100pcs)</option>
-                                <option value="Qty Multiplier">Quantity Multiplier (Discount)</option>
-                                <option value="Client Discount">Client Discount</option>
-                                <option value="Lamination Cost">Lamination Cost</option>
-                            </select>
-                        </div>
-                        <div className="space-y-1">
                             <label htmlFor="rule-value" className="text-xs font-bold text-gray-500 uppercase">
-                                {formData.rule_type.includes('Multiplier') || formData.rule_type.includes('Discount') ? 'Multiplier / %' : 'Price (€)'}
+                                {getValueLabel()}
                             </label>
                             <input
                                 id="rule-value"
@@ -161,21 +209,40 @@ const CreateRuleModal: React.FC<CreateRuleModalProps> = ({ isOpen, onClose, onSu
                                 onChange={e => setFormData({ ...formData, value: parseFloat(e.target.value) })}
                                 className="w-full border-b-2 border-gray-200 p-2 focus:border-accent-teal outline-none transition-colors font-mono"
                             />
+                            {getValueHint() && <p className="text-xs text-amber-600 mt-1">{getValueHint()}</p>}
+                        </div>
+                        <div className="space-y-1">
+                            <label className="text-xs font-bold text-gray-500 uppercase">Rule Name</label>
+                            <input
+                                required
+                                type="text"
+                                value={formData.name}
+                                onChange={e => setFormData({ ...formData, name: e.target.value })}
+                                className="w-full border-b-2 border-gray-200 p-2 focus:border-accent-teal outline-none transition-colors"
+                                placeholder="e.g. Business Cards Base Price"
+                            />
                         </div>
                     </div>
 
-                    <div className="space-y-1">
-                        <label className="text-xs font-bold text-gray-500 uppercase">Rule Name</label>
-                        <input
-                            required
-                            type="text"
-                            value={formData.name}
-                            onChange={e => setFormData({ ...formData, name: e.target.value })}
-                            className="w-full border-b-2 border-gray-200 p-2 focus:border-accent-teal outline-none transition-colors"
-                            placeholder="e.g. Standard Business Card Price"
-                        />
-                    </div>
+                    {/* Extra Name — only for Extra Cost types */}
+                    {isExtraType && (
+                        <div className="space-y-1">
+                            <label className="text-xs font-bold text-gray-500 uppercase">
+                                Extra Name
+                                <span className="text-gray-400 normal-case ml-1">(shown in calculator as toggle)</span>
+                            </label>
+                            <input
+                                required
+                                type="text"
+                                value={formData.extra_name}
+                                onChange={e => setFormData({ ...formData, extra_name: e.target.value })}
+                                className="w-full border-b-2 border-gray-200 p-2 focus:border-accent-teal outline-none transition-colors"
+                                placeholder="e.g. Matt Lamination, Foil, Rounded Corners, Embossing"
+                            />
+                        </div>
+                    )}
 
+                    {/* Conditions */}
                     <div className="bg-gray-50 p-4 border border-gray-200 rounded-sm space-y-4">
                         <h3 className="font-bold text-sm text-primary uppercase flex items-center gap-2">
                             <Info size={16} /> Conditions (Optional)
@@ -196,50 +263,61 @@ const CreateRuleModal: React.FC<CreateRuleModalProps> = ({ isOpen, onClose, onSu
                                     ))}
                                 </select>
                             </div>
-                            <div className="space-y-1">
-                                <label htmlFor="rule-lamination" className="text-xs font-bold text-gray-500 uppercase">Lamination</label>
-                                <select
-                                    id="rule-lamination"
-                                    value={formData.lamination}
-                                    onChange={e => setFormData({ ...formData, lamination: e.target.value })}
-                                    className="w-full border p-2 bg-white"
-                                >
-                                    <option value="">-- Any --</option>
-                                    <option value="None">None</option>
-                                    <option value="Matte">Matte</option>
-                                    <option value="Gloss">Gloss</option>
-                                    <option value="SoftTouch">SoftTouch</option>
-                                </select>
-                            </div>
+                            {isExtraType && (
+                                <div className="space-y-1">
+                                    <label htmlFor="rule-lamination" className="text-xs font-bold text-gray-500 uppercase">Lamination Match</label>
+                                    <select
+                                        id="rule-lamination"
+                                        value={formData.lamination}
+                                        onChange={e => setFormData({ ...formData, lamination: e.target.value })}
+                                        className="w-full border p-2 bg-white"
+                                    >
+                                        <option value="">-- Any --</option>
+                                        <option value="Matt">Matt</option>
+                                        <option value="Gloss">Gloss</option>
+                                        <option value="SoftTouch">SoftTouch</option>
+                                    </select>
+                                </div>
+                            )}
                         </div>
 
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-1">
-                                <label className="text-xs font-bold text-gray-500 uppercase">Min Quantity</label>
-                                <input
-                                    type="number"
-                                    value={formData.min_quantity}
-                                    onChange={e => setFormData({ ...formData, min_quantity: e.target.value as any })}
-                                    className="w-full border p-2 bg-white"
-                                    placeholder="0"
-                                />
+                        {needsQtyRange && (
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-1">
+                                    <label className="text-xs font-bold text-gray-500 uppercase">Min Quantity</label>
+                                    <input
+                                        type="number"
+                                        value={formData.min_quantity}
+                                        onChange={e => setFormData({ ...formData, min_quantity: e.target.value as any })}
+                                        className="w-full border p-2 bg-white"
+                                        placeholder="e.g. 50"
+                                    />
+                                </div>
+                                <div className="space-y-1">
+                                    <label className="text-xs font-bold text-gray-500 uppercase">Max Quantity</label>
+                                    <input
+                                        type="number"
+                                        value={formData.max_quantity}
+                                        onChange={e => setFormData({ ...formData, max_quantity: e.target.value as any })}
+                                        className="w-full border p-2 bg-white"
+                                        placeholder="e.g. 99"
+                                    />
+                                </div>
                             </div>
-                            <div className="space-y-1">
-                                <label className="text-xs font-bold text-gray-500 uppercase">Max Quantity</label>
-                                <input
-                                    type="number"
-                                    value={formData.max_quantity}
-                                    onChange={e => setFormData({ ...formData, max_quantity: e.target.value as any })}
-                                    className="w-full border p-2 bg-white"
-                                    placeholder="∞"
-                                />
+                        )}
+
+                        {isQtyAdj && (
+                            <div className="bg-amber-50 border border-amber-200 rounded p-3 text-xs text-amber-800">
+                                <strong>Tip:</strong> Create multiple Qty Adjustment rules for different ranges.
+                                E.g.: 1–99 → <code>+10</code>, 100–199 → <code>0</code>, 200–499 → <code>-5</code>, 500+ → <code>-10</code>
                             </div>
-                        </div>
+                        )}
                     </div>
 
+                    {/* Priority + Active */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-1">
-                            <label htmlFor="rule-priority" className="text-xs font-bold text-gray-500 uppercase">Priority (Higher runs first)</label>
+                            <label htmlFor="rule-priority" className="text-xs font-bold text-gray-500 uppercase">Priority (Higher = first)</label>
                             <input
                                 id="rule-priority"
                                 required
@@ -262,8 +340,9 @@ const CreateRuleModal: React.FC<CreateRuleModalProps> = ({ isOpen, onClose, onSu
                         </div>
                     </div>
 
+                    {/* Description */}
                     <div className="space-y-1">
-                        <label className="text-xs font-bold text-gray-500 uppercase">Internal Description</label>
+                        <label className="text-xs font-bold text-gray-500 uppercase">Internal Note</label>
                         <textarea
                             rows={2}
                             value={formData.description}
