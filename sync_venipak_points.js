@@ -53,7 +53,7 @@ async function syncPoints() {
             name: p.name || 'Venipak paštomatas',
             pastomat_city: p.city || '',
             pastomat_address: p.address || '',
-            pastomat_name: p.name || '',
+            pastomat_name: p.display_name || p.name || '',
             pastomat_zip: p.zip || ''
         }));
 

@@ -137,11 +137,11 @@ export const VenipakService = {
         if (data.terminal_id) {
             console.log(`VenipakService: Looking for terminal: "${data.terminal_id}" (Length: ${data.terminal_id.length})`);
 
-            // 1. Try exact match on 'pastomat_name' (This is what we save in the DB)
+            // 1. Try exact match on 'name' (This is what we save in the DB)
             let { data: terms, error: termError } = await (supabase as any)
                 .from('venipak_pickup_points')
                 .select('*')
-                .eq('pastomat_name', data.terminal_id)
+                .eq('name', data.terminal_id)
                 .limit(1)
                 .maybeSingle();
 
@@ -160,7 +160,7 @@ export const VenipakService = {
                 }
 
                 if (cityTerms && cityTerms.length > 0) {
-                    const candidateNames = cityTerms.map((t: any) => t.pastomat_name).join(', ');
+                    const candidateNames = cityTerms.map((t: any) => t.name).join(', ');
                     console.log(`VenipakService: Found ${cityTerms.length} candidates in city: ${candidateNames}`);
 
                     // Scoring function: Count how many words from user string appear in the DB record
@@ -169,7 +169,7 @@ export const VenipakService = {
                         const targetTokens = normalize(target).split(' ').filter(w => w.length > 2); // Ignore short words
 
                         // Check against Name, Address, and ID
-                        const candidateText = normalize(`${candidate.pastomat_name} ${candidate.pastomat_address} ${candidate.pastomat_id}`);
+                        const candidateText = normalize(`${candidate.name} ${candidate.pastomat_address} ${candidate.pastomat_id}`);
 
                         let matches = 0;
                         targetTokens.forEach(token => {
@@ -184,7 +184,7 @@ export const VenipakService = {
 
                     cityTerms.forEach((term: any) => {
                         const score = getScore(data.terminal_id || '', term);
-                        console.log(`VenipakService: Scored "${term.pastomat_name}": ${score}`);
+                        console.log(`VenipakService: Scored "${term.name}": ${score}`);
                         if (score > maxScore) {
                             maxScore = score;
                             bestMatch = term;
@@ -216,8 +216,8 @@ export const VenipakService = {
 
         // Prepare Consignee Data
         const consigneeCheck = terminal ? {
-            name: this.getCleanTerminalName(terminal.pastomat_name || ''),
-            company_code: terminal.code || terminal.pastomat_id,
+            name: this.getCleanTerminalName(terminal.name || ''),
+            company_code: terminal.pastomat_id,
             country: 'LT',
             city: terminal.pastomat_city,
             address: terminal.pastomat_address,
