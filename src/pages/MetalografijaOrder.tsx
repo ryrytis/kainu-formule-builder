@@ -121,7 +121,7 @@ const INITIAL_FORM: FormState = {
     customerName: 'MB Keturi print',
     contactEmail: 'agniete@keturiprint.lt',
     projectName: generateProjectNumber(),
-    dieTechnology: '',
+    dieTechnology: 'CNC Engraved',
     dieType: '',
     klisesTipas: '',
     dieQty: '',
