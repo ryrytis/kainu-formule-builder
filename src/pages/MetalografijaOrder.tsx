@@ -129,7 +129,7 @@ const INITIAL_FORM: FormState = {
     reliefProfile: '',
     stampingTemperature: '',
     otherTemperature: '',
-    typeOfStock: '',
+    typeOfStock: 'Paper',
     substrateName: '',
     stockGrammage: '',
     stockThickness: '',
