@@ -55,11 +55,9 @@ const TYPE_OF_STOCK_OPTIONS = [
 
 const DELIVERY_METHOD_OPTIONS = [
     { value: '', label: 'Please Select' },
+    { value: 'Venipak', label: 'Venipak' },
     { value: 'DHL', label: 'DHL Express' },
-    { value: 'UPS', label: 'UPS' },
-    { value: 'FedEx', label: 'FedEx' },
-    { value: 'Standard Post', label: 'Standard Post' },
-    { value: 'Pickup', label: 'Pickup' },
+    { value: 'Self Collection', label: 'Self Collection' },
 ];
 
 const COUNTRY_OPTIONS = [
