@@ -140,7 +140,7 @@ const INITIAL_FORM: FormState = {
     postCode: '',
     country: 'Lithuania',
     phoneNo: '',
-    preferredDispatchDate: '',
+    preferredDispatchDate: (() => { const d = new Date(); d.setDate(d.getDate() + 1); return d.toISOString().slice(0, 10); })(),
     notes: '',
 };
 
