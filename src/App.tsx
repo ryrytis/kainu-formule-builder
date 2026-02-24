@@ -18,6 +18,7 @@ import Calculator from './pages/Calculator';
 import ClientOnboarding from './pages/ClientOnboarding';
 import Works from './pages/Works';
 import AiSettings from './pages/AiSettings';
+import MetalografijaOrder from './pages/MetalografijaOrder';
 
 function App() {
     return (
@@ -43,6 +44,7 @@ function App() {
                             <Route path="calculator" element={<Calculator />} />
                             <Route path="settings" element={<Settings />} />
                             <Route path="ai-settings" element={<AiSettings />} />
+                            <Route path="metalografija" element={<MetalografijaOrder />} />
                         </Route>
                     </Route>
                 </Routes>

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Outlet, NavLink } from 'react-router-dom';
-import { LayoutDashboard, Users, ShoppingCart, Box, Settings, LogOut, Ruler, BarChart3, Calculator, ListTodo, Hammer, Lightbulb } from 'lucide-react';
+import { LayoutDashboard, Users, ShoppingCart, Box, Settings, LogOut, Ruler, BarChart3, Calculator, ListTodo, Hammer, Lightbulb, Stamp } from 'lucide-react';
 import clsx from 'clsx';
 import { useAuth } from '../contexts/AuthContext';
 import UpdatePasswordModal from '../components/UpdatePasswordModal';
@@ -81,6 +81,7 @@ const SidebarLayout: React.FC = () => {
         { icon: Calculator, label: 'Calculator', to: '/calculator' },
         { icon: BarChart3, label: 'Reporting', to: '/reporting' },
         { icon: Lightbulb, label: 'AI Settings', to: '/ai-settings' },
+        { icon: Stamp, label: 'Metalografija', to: '/metalografija' },
         { icon: Settings, label: 'Settings', to: '/settings' },
     ].filter(item => item.label !== 'Settings' || user?.email?.includes('rytis'));
 
