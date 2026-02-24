@@ -133,7 +133,7 @@ const INITIAL_FORM: FormState = {
     substrateName: '',
     stockGrammage: '',
     stockThickness: '',
-    deliveryMethod: '',
+    deliveryMethod: 'DHL',
     recipient: 'MB Keturi print',
     street: 'Pakalnės 8-2',
     city: 'Ramučiai',
