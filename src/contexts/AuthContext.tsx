@@ -37,10 +37,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const [loading, setLoading] = useState(true);
     const [showPasswordReset, setShowPasswordReset] = useState(false);
 
-    const fetchProfile = async (userId: string, email?: string) => {
         try {
-            // Force admin for main user regardless of DB state during this outage
-            if (email?.includes('rytis')) {
+            // Force admin for main users regardless of DB state during this outage
+            const isAdminEmail = email?.includes('rytis') || email?.includes('agniete');
+            if (isAdminEmail) {
                 setProfile({ role: 'admin', client_id: null });
                 return;
             }

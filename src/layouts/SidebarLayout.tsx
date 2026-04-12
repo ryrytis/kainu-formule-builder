@@ -85,7 +85,7 @@ const SidebarLayout: React.FC = () => {
         { icon: Lightbulb, label: 'AI Settings', to: '/ai-settings', adminOnly: true },
         { icon: Stamp, label: 'Metalografija', to: '/metalografija', adminOnly: true },
         { icon: Settings, label: 'Settings', to: '/settings', adminOnly: true },
-    ].filter(item => item.label !== 'Settings' || user?.email?.includes('rytis'));
+    ].filter(item => item.label !== 'Settings' || user?.email?.includes('rytis') || user?.email?.includes('agniete'));
 
     if (profile && profile.role === 'client') {
         navItems = navItems.filter(item => !item.adminOnly);
