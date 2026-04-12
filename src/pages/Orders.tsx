@@ -151,11 +151,6 @@ const Orders: React.FC = () => {
         }
     };
 
-    // navigate is already defined above at line 51, but if it was removed, re-add it too.
-    // Looking at previous view_file, navigate was at line 51. My previous edit started at 46.
-    // So navigate might have been removed or displaced if line 51 was included in the replacement range.
-    // Let's check the file content first.
-
     const handleStatusChange = async (orderId: string, newStatus: string) => {
         try {
             const { error } = await (supabase as any)
