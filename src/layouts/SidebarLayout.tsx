@@ -87,7 +87,7 @@ const SidebarLayout: React.FC = () => {
         { icon: Settings, label: 'Settings', to: '/settings', adminOnly: true },
     ].filter(item => item.label !== 'Settings' || user?.email?.includes('rytis'));
 
-    if (profile?.role === 'client') {
+    if (profile && profile.role === 'client') {
         navItems = navItems.filter(item => !item.adminOnly);
     }
 
