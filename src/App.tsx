@@ -1,9 +1,12 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
+import AdminRoute from './components/AdminRoute';
 import SidebarLayout from './layouts/SidebarLayout';
 import Dashboard from './pages/Dashboard';
 import Login from './pages/Login';
+import PendingApproval from './pages/PendingApproval';
+import UserManagement from './pages/UserManagement';
 import Tasks from './pages/Tasks';
 import Orders from './pages/Orders';
 import OrderDetails from './pages/OrderDetails';
@@ -26,25 +29,31 @@ function App() {
             <Router>
                 <Routes>
                     <Route path="/login" element={<Login />} />
+                    <Route path="/pending" element={<PendingApproval />} />
                     <Route path="/onboarding/:clientId" element={<ClientOnboarding />} />
 
                     <Route element={<ProtectedRoute />}>
                         <Route path="/" element={<SidebarLayout />}>
                             <Route index element={<Dashboard />} />
-                            <Route path="tasks" element={<Tasks />} />
                             <Route path="orders" element={<Orders />} />
-                            <Route path="orders/:id" element={<OrderDetails />} />
-                            <Route path="clients" element={<Clients />} />
-                            <Route path="materials" element={<Materials />} />
-                            <Route path="products" element={<Products />} />
-                            <Route path="products/:id/pricing" element={<ProductPricingMatrix />} />
-                            <Route path="works" element={<Works />} />
-                            <Route path="reporting" element={<Reporting />} />
-                            <Route path="rules" element={<CalculationRules />} />
                             <Route path="calculator" element={<Calculator />} />
-                            <Route path="settings" element={<Settings />} />
-                            <Route path="ai-settings" element={<AiSettings />} />
-                            <Route path="metalografija" element={<MetalografijaOrder />} />
+                            
+                            {/* Admin only routes */}
+                            <Route element={<AdminRoute />}>
+                                <Route path="tasks" element={<Tasks />} />
+                                <Route path="orders/:id" element={<OrderDetails />} />
+                                <Route path="clients" element={<Clients />} />
+                                <Route path="materials" element={<Materials />} />
+                                <Route path="products" element={<Products />} />
+                                <Route path="products/:id/pricing" element={<ProductPricingMatrix />} />
+                                <Route path="works" element={<Works />} />
+                                <Route path="reporting" element={<Reporting />} />
+                                <Route path="rules" element={<CalculationRules />} />
+                                <Route path="settings" element={<Settings />} />
+                                <Route path="users" element={<UserManagement />} />
+                                <Route path="ai-settings" element={<AiSettings />} />
+                                <Route path="metalografija" element={<MetalografijaOrder />} />
+                            </Route>
                         </Route>
                     </Route>
                 </Routes>

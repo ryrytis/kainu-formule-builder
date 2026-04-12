@@ -11,34 +11,53 @@ interface CreateMaterialModalProps {
 
 const CreateMaterialModal: React.FC<CreateMaterialModalProps> = ({ isOpen, onClose, onSuccess, materialToEdit }) => {
     const [loading, setLoading] = useState(false);
+    const [categories, setCategories] = useState<string[]>(['Paper', 'Ink', 'Packaging', 'Plates', 'Other']);
+    const [isCustomCategory, setIsCustomCategory] = useState(false);
     const [formData, setFormData] = useState({
         name: '',
         description: '',
-        category: '',
+        category: 'Paper',
         unit_price: '',
         current_stock: '',
         unit: 'pcs'
     });
 
     useEffect(() => {
+        const fetchCategories = async () => {
+            const { data } = await supabase.from('materials').select('category');
+            if (data) {
+                const dbCategories = (data as any[]).map(item => item.category).filter(Boolean);
+                const uniqueCategories = Array.from(new Set([
+                    'Paper', 'Ink', 'Packaging', 'Plates', 'Other',
+                    ...dbCategories
+                ]));
+                setCategories(uniqueCategories.sort());
+            }
+        };
+        fetchCategories();
+    }, []);
+
+    useEffect(() => {
         if (materialToEdit) {
             setFormData({
                 name: materialToEdit.name || '',
                 description: materialToEdit.description || '',
-                category: materialToEdit.category || '',
+                category: materialToEdit.category || 'Paper',
                 unit_price: materialToEdit.unit_price?.toString() || '',
                 current_stock: materialToEdit.current_stock?.toString() || '',
                 unit: materialToEdit.unit || 'pcs'
             });
+            setIsCustomCategory(false);
         } else {
             setFormData({
                 name: '',
                 description: '',
-                category: '',
+                category: 'Paper',
                 unit_price: '',
                 current_stock: '',
                 unit: 'pcs'
             });
+            setIsCustomCategory(false);
         }
     }, [materialToEdit, isOpen]);
 
@@ -117,14 +136,49 @@ const CreateMaterialModal: React.FC<CreateMaterialModalProps> = ({ isOpen, onClo
 
                     <div className="grid grid-cols-2 gap-6">
                         <div className="space-y-1">
-                            <label className="text-xs font-bold text-gray-500 uppercase">Category</label>
-                            <input
-                                type="text"
-                                value={formData.category}
-                                onChange={e => setFormData({ ...formData, category: e.target.value })}
-                                className="w-full border-b-2 border-gray-200 p-2 focus:border-accent-teal outline-none transition-colors"
-                                placeholder="e.g. Paper, Ink"
-                            />
+                            <label htmlFor="material-category" className="text-xs font-bold text-gray-500 uppercase">Category</label>
+                            {isCustomCategory ? (
+                                <div className="flex gap-2 items-center">
+                                    <input
+                                        id="material-category"
+                                        type="text"
+                                        value={formData.category}
+                                        onChange={e => setFormData({ ...formData, category: e.target.value })}
+                                        className="flex-1 w-full border-b-2 border-gray-200 p-2 focus:border-accent-teal outline-none transition-colors"
+                                        placeholder="Enter new category"
+                                        autoFocus
+                                    />
+                                    <button 
+                                        type="button" 
+                                        onClick={() => {
+                                            setIsCustomCategory(false);
+                                            setFormData({ ...formData, category: categories[0] || 'Paper' });
+                                        }}
+                                        className="text-xs font-bold text-gray-400 hover:text-gray-600 uppercase"
+                                    >
+                                        Cancel
+                                    </button>
+                                </div>
+                            ) : (
+                                <select
+                                    id="material-category"
+                                    value={categories.includes(formData.category) ? formData.category : (categories[0] || 'Paper')}
+                                    onChange={e => {
+                                        if (e.target.value === 'ADD_NEW') {
+                                            setIsCustomCategory(true);
+                                            setFormData({ ...formData, category: '' });
+                                        } else {
+                                            setFormData({ ...formData, category: e.target.value });
+                                        }
+                                    }}
+                                    className="w-full border-b-2 border-gray-200 p-2 focus:border-accent-teal outline-none transition-colors bg-white select-category"
+                                >
+                                    {categories.map(c => (
+                                        <option key={c} value={c}>{c}</option>
+                                    ))}
+                                    <option value="ADD_NEW" className="font-bold text-accent-teal">+ Add New Category...</option>
+                                </select>
+                            )}
                         </div>
                         <div className="space-y-1">
                             <label htmlFor="material-unit" className="text-xs font-bold text-gray-500 uppercase">Unit</label>
@@ -132,12 +186,10 @@ const CreateMaterialModal: React.FC<CreateMaterialModalProps> = ({ isOpen, onClo
                                 id="material-unit"
                                 value={formData.unit}
                                 onChange={e => setFormData({ ...formData, unit: e.target.value })}
-                                className="w-full border-b-2 border-gray-200 p-2 focus:border-accent-teal outline-none transition-colors"
+                                className="w-full border-b-2 border-gray-200 p-2 focus:border-accent-teal outline-none transition-colors bg-white"
                             >
                                 <option value="pcs">pcs</option>
                                 <option value="m2">m²</option>
-                                <option value="kg">kg</option>
-                                <option value="l">l</option>
                                 <option value="m">m</option>
                             </select>
                         </div>

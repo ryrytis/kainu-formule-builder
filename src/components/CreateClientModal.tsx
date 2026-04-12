@@ -56,8 +56,8 @@ const CreateClientModal: React.FC<CreateClientModalProps> = ({ isOpen, onClose, 
                 const { data, error } = await (supabase as any)
                     .from('venipak_pickup_points')
                     .select('*')
-                    .or(`pastomat_city.ilike."%${lockerSearch}%",pastomat_name.ilike."%${lockerSearch}%"`)
-                    .limit(10);
+                    .or(`pastomat_city.ilike."%${lockerSearch}%",pastomat_name.ilike."%${lockerSearch}%",pastomat_address.ilike."%${lockerSearch}%"`)
+                    .limit(100);
 
                 if (error) throw error;
                 setLockers(data || []);
@@ -324,15 +324,15 @@ const CreateClientModal: React.FC<CreateClientModalProps> = ({ isOpen, onClose, 
                                     onChange={e => setFormData({ ...formData, delivery_method: e.target.value })}
                                     className="w-full border p-2 bg-white focus:border-accent-teal outline-none"
                                 >
-                                    <option value="Pickup">Pickup</option>
-                                    <option value="Courier">Courier</option>
-                                    <option value="Locker">Parcel Locker</option>
+                                    <option value="Pickup">Atsiimsiu vietoje</option>
+                                    <option value="Courier">Kurjeris</option>
+                                    <option value="Locker">Paštomatas</option>
                                 </select>
                             </div>
 
                             {formData.delivery_method === 'Locker' ? (
                                 <div className="md:col-span-2 space-y-1 relative">
-                                    <label className="text-xs font-bold text-gray-500 uppercase">Search Parcel Locker (City or Name)</label>
+                                    <label className="text-xs font-bold text-gray-500 uppercase">Ieškoti paštomato (miestas arba pavadinimas)</label>
                                     <div className="relative">
                                         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
                                             <Search size={16} />

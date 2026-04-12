@@ -34,8 +34,10 @@ const RULE_TYPE_OPTIONS = [
     { value: RULE_TYPES.BASE_PRICE_100, label: 'Base Price (€ per 100 pcs)', hint: 'E.g. €9 per 100 business cards' },
     { value: RULE_TYPES.EXTRA_COST_UNIT, label: 'Extra Cost (€ per unit)', hint: 'Lamination, foil, embossing — priced per piece' },
     { value: RULE_TYPES.EXTRA_COST_FLAT, label: 'Extra Cost (flat fee €)', hint: 'Setup fees, design — fixed amount' },
+    { value: RULE_TYPES.EXTRA_COST_SHEET, label: 'Extra Cost (€ per sheet)', hint: 'Divided by items per sheet (e.g. cliché cost)' },
     { value: RULE_TYPES.QTY_ADJUSTMENT, label: 'Qty Adjustment (± %)', hint: '+10 = surcharge for small qty, -5 = discount for large' },
     { value: RULE_TYPES.CLIENT_DISCOUNT, label: 'Client Discount (multiplier)', hint: '0.9 = 10% off for this client' },
+    { value: RULE_TYPES.SHEET_SETUP_WASTE, label: 'Sheet Setup Waste (%)', hint: 'Default is 20 if not set. Enter 15 for 15% etc.' },
 ];
 
 const CreateRuleModal: React.FC<CreateRuleModalProps> = ({ isOpen, onClose, onSuccess, ruleToEdit }) => {
@@ -47,7 +49,7 @@ const CreateRuleModal: React.FC<CreateRuleModalProps> = ({ isOpen, onClose, onSu
         priority: 10,
         is_active: true,
         value: 0,
-        product_id: '',
+        product_ids: [] as string[],
         lamination: '',
         extra_name: '',
         min_quantity: '' as any,
@@ -73,7 +75,7 @@ const CreateRuleModal: React.FC<CreateRuleModalProps> = ({ isOpen, onClose, onSu
                 priority: ruleToEdit.priority || 10,
                 is_active: ruleToEdit.is_active ?? true,
                 value: ruleToEdit.value || 0,
-                product_id: ruleToEdit.product_id || '',
+                product_ids: ruleToEdit.product_id ? [ruleToEdit.product_id] : [],
                 lamination: ruleToEdit.lamination || '',
                 extra_name: ruleToEdit.extra_name || '',
                 min_quantity: ruleToEdit.min_quantity || '',
@@ -87,7 +89,7 @@ const CreateRuleModal: React.FC<CreateRuleModalProps> = ({ isOpen, onClose, onSu
                 priority: 10,
                 is_active: true,
                 value: 0,
-                product_id: '',
+                product_ids: [],
                 lamination: '',
                 extra_name: '',
                 min_quantity: '',
@@ -97,9 +99,11 @@ const CreateRuleModal: React.FC<CreateRuleModalProps> = ({ isOpen, onClose, onSu
     }, [ruleToEdit, isOpen]);
 
     const isExtraType = formData.rule_type === RULE_TYPES.EXTRA_COST_UNIT ||
+        formData.rule_type === RULE_TYPES.EXTRA_COST_SHEET ||
         formData.rule_type === RULE_TYPES.EXTRA_COST_FLAT;
     const isQtyAdj = formData.rule_type === RULE_TYPES.QTY_ADJUSTMENT;
-    const needsQtyRange = isQtyAdj || formData.rule_type === RULE_TYPES.BASE_PRICE_100;
+    const isSetupWaste = formData.rule_type === RULE_TYPES.SHEET_SETUP_WASTE;
+    const needsQtyRange = isQtyAdj || isSetupWaste || formData.rule_type === RULE_TYPES.BASE_PRICE_100;
 
     const getValueLabel = () => {
         switch (formData.rule_type) {
@@ -109,6 +113,10 @@ const CreateRuleModal: React.FC<CreateRuleModalProps> = ({ isOpen, onClose, onSu
                 return 'Multiplier (e.g. 0.9 = 10% off)';
             case RULE_TYPES.EXTRA_COST_FLAT:
                 return 'Flat Fee (€)';
+            case RULE_TYPES.SHEET_SETUP_WASTE:
+                return 'Setup Waste (%)';
+            case RULE_TYPES.EXTRA_COST_SHEET:
+                return 'Price per sheet (€)';
             case RULE_TYPES.EXTRA_COST_UNIT:
                 return 'Price per unit (€)';
             default:
@@ -122,6 +130,10 @@ const CreateRuleModal: React.FC<CreateRuleModalProps> = ({ isOpen, onClose, onSu
                 return 'E.g.: +10 for 50 pcs means 10% surcharge. -5 for 200 pcs means 5% discount.';
             case RULE_TYPES.EXTRA_COST_UNIT:
                 return 'E.g.: 0.03 = €0.03 per piece for lamination';
+            case RULE_TYPES.SHEET_SETUP_WASTE:
+                return 'E.g.: 15 = 15% setup waste added for sheets';
+            case RULE_TYPES.EXTRA_COST_SHEET:
+                return 'E.g.: 5.00 = €5 per sheet (divided by items on sheet)';
             default:
                 return '';
         }
@@ -132,23 +144,31 @@ const CreateRuleModal: React.FC<CreateRuleModalProps> = ({ isOpen, onClose, onSu
         setLoading(true);
 
         try {
-            const payload: any = { ...formData };
-            if (!payload.product_id) payload.product_id = null;
-            if (!payload.lamination) payload.lamination = null;
-            if (!payload.extra_name) payload.extra_name = null;
-            if (payload.min_quantity === '') payload.min_quantity = null;
-            if (payload.max_quantity === '') payload.max_quantity = null;
+            const basePayload: any = { ...formData };
+            delete basePayload.product_ids;
+
+            if (!basePayload.lamination) basePayload.lamination = null;
+            if (!basePayload.extra_name) basePayload.extra_name = null;
+            if (basePayload.min_quantity === '') basePayload.min_quantity = null;
+            if (basePayload.max_quantity === '') basePayload.max_quantity = null;
 
             if (ruleToEdit) {
+                const payload = { ...basePayload, product_id: formData.product_ids[0] || null };
                 const { error } = await (supabase as any)
                     .from('calculation_rules')
                     .update(payload)
                     .eq('id', ruleToEdit.id);
                 if (error) throw error;
             } else {
+                const productsToInsert = formData.product_ids.length > 0 ? formData.product_ids : [null];
+                const payloads = productsToInsert.map(pid => ({
+                    ...basePayload,
+                    product_id: pid
+                }));
+
                 const { error } = await (supabase as any)
                     .from('calculation_rules')
-                    .insert([payload]);
+                    .insert(payloads);
                 if (error) throw error;
             }
             onSuccess();
@@ -250,18 +270,29 @@ const CreateRuleModal: React.FC<CreateRuleModalProps> = ({ isOpen, onClose, onSu
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div className="space-y-1">
-                                <label htmlFor="rule-product" className="text-xs font-bold text-gray-500 uppercase">Product</label>
+                                <label htmlFor="rule-product" className="text-xs font-bold text-gray-500 uppercase">Product(s)</label>
                                 <select
                                     id="rule-product"
-                                    value={formData.product_id}
-                                    onChange={e => setFormData({ ...formData, product_id: e.target.value })}
-                                    className="w-full border p-2 bg-white"
+                                    multiple
+                                    size={4}
+                                    value={formData.product_ids}
+                                    onChange={e => {
+                                        const options = Array.from(e.target.selectedOptions, option => option.value);
+                                        // If "All Products" is selected, clear other selections
+                                        if (options.includes("")) {
+                                            setFormData({ ...formData, product_ids: [] });
+                                        } else {
+                                            setFormData({ ...formData, product_ids: options });
+                                        }
+                                    }}
+                                    className="w-full border p-2 bg-white form-multiselect rounded transition-colors"
                                 >
-                                    <option value="">-- Apply to All Products --</option>
+                                    <option value="" className="font-bold border-b mb-1 pb-1">-- Apply to All Products --</option>
                                     {products.map(p => (
-                                        <option key={p.id} value={p.id}>{p.name}</option>
+                                        <option key={p.id} value={p.id} className="py-0.5">{p.name}</option>
                                     ))}
                                 </select>
+                                <p className="text-[10px] text-gray-400">Ctrl+Click (Cmd+Click) to select multiple</p>
                             </div>
                             {isExtraType && (
                                 <div className="space-y-1">

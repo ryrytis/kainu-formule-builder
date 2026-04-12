@@ -17,6 +17,7 @@ export interface Database {
                     category: string
                     is_active: boolean
                     priority: number
+                    is_internal: boolean
                     created_at: string
                     updated_at: string
                 }
@@ -27,6 +28,7 @@ export interface Database {
                     category?: string
                     is_active?: boolean
                     priority?: number
+                    is_internal?: boolean
                     created_at?: string
                     updated_at?: string
                 }
@@ -37,6 +39,7 @@ export interface Database {
                     category?: string
                     is_active?: boolean
                     priority?: number
+                    is_internal?: boolean
                     created_at?: string
                     updated_at?: string
                 }
@@ -174,6 +177,62 @@ export interface Database {
                     shipment_number?: string | null
                     finish_date?: string
                     workflow_link?: string | null
+                }
+            }
+            order_items: {
+                Row: {
+                    id: string
+                    order_id: string
+                    product_type: string
+                    material_id: string | null
+                    quantity: number
+                    width: number | null
+                    height: number | null
+                    print_type: string | null
+                    unit_price: number | null
+                    total_price: number | null
+                    cost_price: number | null
+                    item_works: Json | null
+                    margin_percent: number | null
+                    manual_unit_paint_price: number | null
+                    created_at: string
+                    updated_at: string
+                }
+                Insert: {
+                    id?: string
+                    order_id: string
+                    product_type: string
+                    material_id?: string | null
+                    quantity: number
+                    width?: number | null
+                    height?: number | null
+                    print_type?: string | null
+                    unit_price?: number | null
+                    total_price?: number | null
+                    cost_price?: number | null
+                    item_works?: Json | null
+                    margin_percent?: number | null
+                    manual_unit_paint_price?: number | null
+                    created_at?: string
+                    updated_at?: string
+                }
+                Update: {
+                    id?: string
+                    order_id?: string
+                    product_type?: string
+                    material_id?: string | null
+                    quantity?: number
+                    width?: number | null
+                    height?: number | null
+                    print_type?: string | null
+                    unit_price?: number | null
+                    total_price?: number | null
+                    cost_price?: number | null
+                    item_works?: Json | null
+                    margin_percent?: number | null
+                    manual_unit_paint_price?: number | null
+                    created_at?: string
+                    updated_at?: string
                 }
             }
             materials: {

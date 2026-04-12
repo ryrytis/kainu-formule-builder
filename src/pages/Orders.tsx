@@ -5,8 +5,9 @@ import { Database } from '../lib/database.types';
 import { getStatusColor } from '../lib/statusUtils';
 import CreateOrderModal from '../components/CreateOrderModal';
 import CreateOrderItemModal from '../components/CreateOrderItemModal';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { clsx } from 'clsx';
+import { useAuth } from '../contexts/AuthContext';
 import { SaskaitaService } from '../lib/SaskaitaService';
 import { VenipakService } from '../lib/VenipakService';
 import { generateOrderNumber } from '../lib/orderUtils';
@@ -55,9 +56,15 @@ const Orders: React.FC = () => {
     // Server-side search state
     const [debouncedSearch, setDebouncedSearch] = useState('');
 
+    const location = useLocation();
     const [isFilterOpen, setIsFilterOpen] = useState(false);
-    const [statusFilter, setStatusFilter] = useState<string>('All');
-    const [statusOptions, setStatusOptions] = useState<string[]>(['All', 'Not Invoiced', 'New', 'Draft', 'Invoiced', 'Completed', 'Cancelled']);
+    const { profile } = useAuth();
+    const isAdmin = profile?.role === 'admin';
+    
+    // Read filter from URL initially
+    const initialFilter = new URLSearchParams(location.search).get('filter') || 'All';
+    const [statusFilter, setStatusFilter] = useState<string>(initialFilter);
+    const [statusOptions, setStatusOptions] = useState<string[]>(['All', 'Not Invoiced', 'New', 'Draft', 'Invoiced', 'Completed', 'Cancelled', 'Afinia']);
 
     // Debounce search term
     useEffect(() => {
@@ -428,6 +435,46 @@ const Orders: React.FC = () => {
         }
     };
 
+    const handleCreateSPFolder = async (e: React.MouseEvent, order: Order) => {
+        e.stopPropagation();
+        if (processingIds.has(order.id) || order.workflow_link) return;
+        setProcessingIds(prev => new Set(prev).add(order.id));
+
+        try {
+            const { data: clientData } = await (supabase as any)
+                .from('clients')
+                .select('name')
+                .eq('id', order.client_id)
+                .single();
+
+            if (clientData?.name && order.order_number) {
+                const res = await SharePointService.createOrderFolder(clientData.name, order.order_number, order.status);
+                if (res.success && res.folderUrl) {
+                    await (supabase as any)
+                        .from('orders')
+                        .update({ workflow_link: res.folderUrl })
+                        .eq('id', order.id);
+                    
+                    setOrders(prev => prev.map(o => o.id === order.id ? { ...o, workflow_link: res.folderUrl || null } : o));
+                    alert('SharePoint folder created successfully!');
+                } else {
+                    alert('Failed to create SharePoint folder. Check logs.');
+                }
+            } else {
+                alert('Client name or order number missing.');
+            }
+        } catch (error) {
+            console.error('Error creating SP folder:', error);
+            alert('Failed to trigger SP creation.');
+        } finally {
+            setProcessingIds(prev => {
+                const next = new Set(prev);
+                next.delete(order.id);
+                return next;
+            });
+        }
+    };
+
     const handleEditItem = (e: React.MouseEvent, orderId: string, item: OrderItem) => {
         e.stopPropagation();
         setSelectedOrderId(orderId);
@@ -615,7 +662,7 @@ const Orders: React.FC = () => {
                                                 </td>
                                                 <td className="py-4 px-4" onClick={(e) => e.stopPropagation()}>
                                                     <div className="flex justify-end gap-1">
-                                                        {order.workflow_link && (
+                                                        {order.workflow_link && isAdmin && (
                                                             <a
                                                                 href={order.workflow_link}
                                                                 target="_blank"
@@ -626,57 +673,71 @@ const Orders: React.FC = () => {
                                                                 <img src="https://res-1.cdn.office.net/files/fabric-cdn-prod_20221209.001/assets/brand-icons/product/svg/sharepoint_48x1.svg" alt="SP" className="w-4 h-4" />
                                                             </a>
                                                         )}
-                                                        <button
-                                                            onClick={(e) => handleSendToSaskaita(e, order)}
-                                                            disabled={!!order.invoiced || processingIds.has(order.id)}
-                                                            className={`p-1.5 rounded-md transition-colors flex items-center gap-1 group/invoice ${order.invoiced
-                                                                ? 'text-green-600 bg-green-50 cursor-not-allowed'
-                                                                : 'text-orange-600 hover:bg-orange-50'
-                                                                }`}
-                                                            title={order.invoiced ? "Already Invoiced" : "Generate Invoice (Saskaita123)"}
-                                                        >
-                                                            {processingIds.has(order.id) ? <Loader2 size={16} className="animate-spin" /> : <Receipt size={16} />}
-                                                            <span className="text-[10px] font-bold hidden group-hover/invoice:block transition-all">
-                                                                {order.invoiced ? 'SENT' : 'INVOICE'}
-                                                            </span>
-                                                        </button>
-                                                        <button
-                                                            onClick={(e) => handleSendPackage(e, order)}
-                                                            disabled={processingIds.has(order.id)}
-                                                            className={clsx(
-                                                                "p-1.5 rounded-md transition-colors",
-                                                                order.shipped ? "text-green-600 bg-green-50" : "text-indigo-600 hover:bg-indigo-50"
-                                                            )}
-                                                            title={order.shipped ? "Package Shipped" : "Send Cargo (Venipak)"}
-                                                        >
-                                                            <Truck size={16} />
-                                                        </button>
-                                                        <button
-                                                            onClick={async (e) => {
-                                                                e.stopPropagation();
-                                                                const tracking = prompt('Enter Venipak tracking number:');
-                                                                if (!tracking) return;
+                                                        {!order.workflow_link && isAdmin && (
+                                                            <button
+                                                                onClick={(e) => handleCreateSPFolder(e, order)}
+                                                                disabled={processingIds.has(order.id)}
+                                                                className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
+                                                                title="Create SharePoint Folder"
+                                                            >
+                                                                {processingIds.has(order.id) ? <Loader2 size={16} className="animate-spin" /> : <Plus size={16} />}
+                                                            </button>
+                                                        )}
+                                                        {isAdmin && (
+                                                            <>
+                                                                <button
+                                                                    onClick={(e) => handleSendToSaskaita(e, order)}
+                                                                    disabled={!!order.invoiced || processingIds.has(order.id)}
+                                                                    className={`p-1.5 rounded-md transition-colors flex items-center gap-1 group/invoice ${order.invoiced
+                                                                        ? 'text-green-600 bg-green-50 cursor-not-allowed'
+                                                                        : 'text-orange-600 hover:bg-orange-50'
+                                                                        }`}
+                                                                    title={order.invoiced ? "Already Invoiced" : "Generate Invoice (Saskaita123)"}
+                                                                >
+                                                                    {processingIds.has(order.id) ? <Loader2 size={16} className="animate-spin" /> : <Receipt size={16} />}
+                                                                    <span className="text-[10px] font-bold hidden group-hover/invoice:block transition-all">
+                                                                        {order.invoiced ? 'SENT' : 'INVOICE'}
+                                                                    </span>
+                                                                </button>
+                                                                <button
+                                                                    onClick={(e) => handleSendPackage(e, order)}
+                                                                    disabled={processingIds.has(order.id)}
+                                                                    className={clsx(
+                                                                        "p-1.5 rounded-md transition-colors",
+                                                                        order.shipped ? "text-green-600 bg-green-50" : "text-indigo-600 hover:bg-indigo-50"
+                                                                    )}
+                                                                    title={order.shipped ? "Package Shipped" : "Send Cargo (Venipak)"}
+                                                                >
+                                                                    <Truck size={16} />
+                                                                </button>
+                                                                <button
+                                                                    onClick={async (e) => {
+                                                                        e.stopPropagation();
+                                                                        const tracking = prompt('Enter Venipak tracking number:');
+                                                                        if (!tracking) return;
 
-                                                                const res = await VenipakService.getLabel(tracking);
-                                                                if (res.success && res.url) {
-                                                                    window.open(res.url, '_blank');
-                                                                } else {
-                                                                    alert('Error: ' + res.error);
-                                                                }
-                                                            }}
-                                                            className="p-1.5 text-gray-500 hover:bg-gray-100 rounded-md transition-colors"
-                                                            title="Print Existing Label"
-                                                        >
-                                                            <Printer size={16} />
-                                                        </button>
-                                                        <button
-                                                            onClick={(e) => handleDuplicateOrder(e, order)}
-                                                            disabled={processingIds.has(order.id)}
-                                                            className="p-1.5 text-gray-500 hover:bg-gray-100 rounded-md transition-colors"
-                                                            title="Clone Order"
-                                                        >
-                                                            <Copy size={16} />
-                                                        </button>
+                                                                        const res = await VenipakService.getLabel(tracking);
+                                                                        if (res.success && res.url) {
+                                                                            window.open(res.url, '_blank');
+                                                                        } else {
+                                                                            alert('Error: ' + res.error);
+                                                                        }
+                                                                    }}
+                                                                    className="p-1.5 text-gray-500 hover:bg-gray-100 rounded-md transition-colors"
+                                                                    title="Print Existing Label"
+                                                                >
+                                                                    <Printer size={16} />
+                                                                </button>
+                                                                <button
+                                                                    onClick={(e) => handleDuplicateOrder(e, order)}
+                                                                    disabled={processingIds.has(order.id)}
+                                                                    className="p-1.5 text-gray-500 hover:bg-gray-100 rounded-md transition-colors"
+                                                                    title="Clone Order"
+                                                                >
+                                                                    <Copy size={16} />
+                                                                </button>
+                                                            </>
+                                                        )}
                                                         <button
                                                             onClick={() => navigate(`/orders/${order.id}`)}
                                                             className="p-1.5 text-gray-400 hover:text-primary transition-colors ml-1"
@@ -684,13 +745,15 @@ const Orders: React.FC = () => {
                                                         >
                                                             <ChevronRight size={18} />
                                                         </button>
-                                                        <button
-                                                            onClick={(e) => handleDeleteOrder(e, order.id)}
-                                                            className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors ml-1"
-                                                            title="Delete Order"
-                                                        >
-                                                            <Trash2 size={18} />
-                                                        </button>
+                                                        {isAdmin && (
+                                                            <button
+                                                                onClick={(e) => handleDeleteOrder(e, order.id)}
+                                                                className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors ml-1"
+                                                                title="Delete Order"
+                                                            >
+                                                                <Trash2 size={18} />
+                                                            </button>
+                                                        )}
                                                     </div>
                                                 </td>
                                             </tr>

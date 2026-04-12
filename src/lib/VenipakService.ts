@@ -137,70 +137,13 @@ export const VenipakService = {
         if (data.terminal_id) {
             console.log(`VenipakService: Looking for terminal: "${data.terminal_id}" (Length: ${data.terminal_id.length})`);
 
-            // 1. Try exact match on 'name' (This is what we save in the DB)
+            // 1. Try exact match on 'name' or 'pastomat_name'
             let { data: terms, error: termError } = await (supabase as any)
                 .from('venipak_pickup_points')
                 .select('*')
-                .eq('name', data.terminal_id)
+                .or(`name.eq."${data.terminal_id}",pastomat_name.eq."${data.terminal_id}"`)
                 .limit(1)
                 .maybeSingle();
-
-            // 2. Fallback: Search by City and try fuzzy match
-            if (!terms && data.client_city) {
-                console.log(`VenipakService: Not found by exact match. Searching terminals in city: "${data.client_city}"...`);
-                // Note: Schema uses 'pastomat_city', not 'city'
-                const { data: cityTerms, error: cityError } = await (supabase as any)
-                    .from('venipak_pickup_points')
-                    .select('*')
-                    .ilike('pastomat_city', `%${data.client_city}%`)
-                    .limit(50);
-
-                if (cityError) {
-                    console.error('VenipakService: City lookup error:', cityError);
-                }
-
-                if (cityTerms && cityTerms.length > 0) {
-                    const candidateNames = cityTerms.map((t: any) => t.name).join(', ');
-                    console.log(`VenipakService: Found ${cityTerms.length} candidates in city: ${candidateNames}`);
-
-                    // Scoring function: Count how many words from user string appear in the DB record
-                    const getScore = (target: string, candidate: any) => {
-                        const normalize = (s: string) => s.toLowerCase().replace(/[^\w\s\u00C0-\u024F]/g, '').replace(/\s+/g, ' ').trim();
-                        const targetTokens = normalize(target).split(' ').filter(w => w.length > 2); // Ignore short words
-
-                        // Check against Name, Address, and ID
-                        const candidateText = normalize(`${candidate.name} ${candidate.pastomat_address} ${candidate.pastomat_id}`);
-
-                        let matches = 0;
-                        targetTokens.forEach(token => {
-                            if (candidateText.includes(token)) matches++;
-                        });
-
-                        return matches;
-                    };
-
-                    let bestMatch: any = null;
-                    let maxScore = 0;
-
-                    cityTerms.forEach((term: any) => {
-                        const score = getScore(data.terminal_id || '', term);
-                        console.log(`VenipakService: Scored "${term.name}": ${score}`);
-                        if (score > maxScore) {
-                            maxScore = score;
-                            bestMatch = term;
-                        }
-                    });
-
-                    if (bestMatch && maxScore > 0) {
-                        console.log(`VenipakService: Fuzzy Match Winner (Score: ${maxScore}):`, bestMatch);
-                        terms = bestMatch;
-                    } else {
-                        console.log('VenipakService: No sufficient fuzzy match found.');
-                    }
-                } else {
-                    console.log('VenipakService: No terminals found in city either.');
-                }
-            }
 
             if (termError) console.error('VenipakService: Terminal lookup error:', termError);
 
@@ -209,6 +152,7 @@ export const VenipakService = {
                 terminal = terms;
             } else {
                 console.warn('VenipakService: No terminal found for ID:', data.terminal_id);
+                return { success: false, error: `Exact Venipak terminal not found for: "${data.terminal_id}". Please check the terminal name.` };
             }
         } else {
             console.log('VenipakService: No terminal_id provided, defaulting to Courier.');

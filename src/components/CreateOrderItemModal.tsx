@@ -24,6 +24,7 @@ const CreateOrderItemModal: React.FC<CreateOrderItemModalProps> = ({ isOpen, onC
     const [quantity, setQuantity] = useState<number>(1);
     const [width, setWidth] = useState('');
     const [height, setHeight] = useState('');
+    const [length, setLength] = useState('');
     const [printType, setPrintType] = useState('Vienpusis');
 
     // Pricing State
@@ -35,6 +36,7 @@ const CreateOrderItemModal: React.FC<CreateOrderItemModalProps> = ({ isOpen, onC
 
     const [appliedRules, setAppliedRules] = useState<string[]>([]);
     const [isManualPrice, setIsManualPrice] = useState(false);
+    const [manualPaintPrice, setManualPaintPrice] = useState<string>('');
     const [showCostDetails, setShowCostDetails] = useState(false);
 
     const [error, setError] = useState<string | null>(null);
@@ -54,14 +56,17 @@ const CreateOrderItemModal: React.FC<CreateOrderItemModalProps> = ({ isOpen, onC
                 setMaterialId(item.material_id || '');
                 setUnitPrice(item.unit_price || 0);
                 setTotalPrice(item.total_price || 0);
+                setManualPaintPrice(item.manual_unit_paint_price?.toString() || '');
                 setIsManualPrice(true); // Default to manual if it has saved price
             } else {
                 // Reset form for create
                 setQuantity(1);
                 setProductId('');
                 setMaterialId('');
+                setManualPaintPrice('');
                 setWidth('');
                 setHeight('');
+                setLength('');
                 setUnitPrice(0);
                 setTotalPrice(0);
                 setTotalCost(0);
@@ -91,6 +96,7 @@ const CreateOrderItemModal: React.FC<CreateOrderItemModalProps> = ({ isOpen, onC
                 material_id: materialId,
                 width: width ? parseFloat(width) : undefined,
                 height: height ? parseFloat(height) : undefined,
+                manual_unit_paint_price: manualPaintPrice ? parseFloat(manualPaintPrice) : undefined,
             });
 
             setUnitPrice(result.unit_price);
@@ -102,7 +108,7 @@ const CreateOrderItemModal: React.FC<CreateOrderItemModalProps> = ({ isOpen, onC
 
         const debounce = setTimeout(calculate, 500);
         return () => clearTimeout(debounce);
-    }, [productId, quantity, materialId, width, height, printType, isManualPrice, selectedWorks]);
+    }, [productId, quantity, materialId, width, height, printType, isManualPrice, selectedWorks, manualPaintPrice]);
 
     // Recalculate total if manual price changes
     useEffect(() => {
@@ -140,6 +146,77 @@ const CreateOrderItemModal: React.FC<CreateOrderItemModalProps> = ({ isOpen, onC
             loadDefaultWorks();
         }
     }, [productId]);
+
+    // Force one-sided printing if Lipdukas, and reset invalid material
+    useEffect(() => {
+        if (productId) {
+            const selectedProduct = products.find(p => p.id === productId);
+            const pName = selectedProduct?.name?.toLowerCase() || '';
+            const pCategory = selectedProduct?.category?.toLowerCase() || '';
+            const isLipdukas = pName.includes('lipdukas');
+            const isRollSticker = pName.includes('rulon');
+            const isSiuntimas = pName.includes('siuntimas') || pCategory === 'siuntimas';
+            const isPaslaugos = pCategory === 'paslaugos';
+            
+            const isRuloninisLipdukasAntPop = pName.includes('ruloninis lipdukas ant popieriaus') || (isRollSticker && pName.includes('popier'));
+            const isRuloninisLipdukasPleveles = (pName.includes('ruloninis lipdukas') && pName.includes('plėvelės')) || (isRollSticker && pName.includes('plėvel'));
+            const isLipdukasAntPop = pName.includes('lipdukas ant popieriaus') && !pName.includes('rulon');
+            const isOtherSheetSticker = isLipdukas && !pName.includes('rulon') && !isLipdukasAntPop;
+
+            if (isLipdukas) {
+                setPrintType('Vienpusis');
+            }
+
+            if (isSiuntimas || isPaslaugos) {
+                setMaterialId('');
+                setPrintType('Vienpusis');
+            }
+
+            if (materialId) {
+                const selectedMat = materials.find(m => m.id === materialId);
+                if (selectedMat) {
+                    const mn = selectedMat.name.toLowerCase();
+                    let isValid = true;
+                    
+                    if (isRuloninisLipdukasAntPop) {
+                        isValid = mn.includes('coated wb') ||
+                                  mn.includes('inkjet high glossy') ||
+                                  (mn.includes('inkjet matte') && mn.includes('108'));
+                    } else if (isRuloninisLipdukasPleveles) {
+                        isValid = (mn.includes('inkjet glossy') && mn.includes('pp')) ||
+                                  (mn.includes('inkjet matte') && mn.includes('pp')) ||
+                                  mn.includes('inkjet glossy w pp 100');
+                    } else if (isLipdukasAntPop) {
+                        isValid = mn.includes('sticotac popierinis lipdukas');
+                    } else if (isOtherSheetSticker) {
+                        isValid = mn.includes('raflatac polylaser, plėvelė blizgi') ||
+                                  mn.includes('raflatac polylaser, plėvelė matinė') ||
+                                  mn.includes('raflatac polylaser, plėvelė skaidri blizgi');
+                    }
+                    
+                    if (!isRuloninisLipdukasAntPop && !isRuloninisLipdukasPleveles && mn.includes('inkjet')) {
+                        isValid = false;
+                    }
+
+                    // Raflatac only for sheet film stickers
+                    if (!isOtherSheetSticker && mn.includes('raflatac')) {
+                        isValid = false;
+                    }
+                    
+                    if (!isValid) {
+                        setMaterialId('');
+                    }
+                }
+            }
+
+            // --- Qty and Base defaults for Paslaugos ---
+            if (isPaslaugos || isSiuntimas) {
+                if (quantity === 100 || quantity === 0) {
+                    setQuantity(1);
+                }
+            }
+        }
+    }, [productId, products, materialId, materials]);
 
     const fetchProducts = async () => {
         const { data } = await (supabase as any).from('products').select('*').order('name');
@@ -182,21 +259,36 @@ const CreateOrderItemModal: React.FC<CreateOrderItemModalProps> = ({ isOpen, onC
         setError(null);
 
         try {
-            const selectedProduct = products.find(p => p.id === productId);
-            const itemData = {
-                order_id: orderId,
-                product_type: selectedProduct?.name || 'Unknown',
+                const selectedProduct = products.find(p => p.id === productId);
+                const pNameVal = selectedProduct?.name?.toLowerCase() || '';
+                const pCategory = selectedProduct?.category?.toLowerCase() || '';
+                const isNoMaterial = pNameVal.includes('siuntimas') || pCategory === 'siuntimas' || pCategory === 'paslaugos';
+                
+                if (!materialId && !isNoMaterial) {
+                    setError('Prašome pasirinkti medžiagą');
+                    setLoading(false);
+                    return;
+                }
+
+                const itemData = {
+                    order_id: orderId,
+                    product_type: selectedProduct?.name || 'Unknown',
                 material_id: materialId || null,
-                quantity: quantity,
+                cost_price: totalCost,
+                margin_percent: marginPercent,
+                item_works: selectedWorks,
                 width: width ? parseFloat(width) : null,
                 height: height ? parseFloat(height) : null,
                 print_type: printType,
-                unit_price: unitPrice,
-                total_price: totalPrice,
-                cost_price: totalCost,
-                margin_percent: marginPercent,
-                item_works: selectedWorks
             };
+
+            // Only include manual_unit_paint_price if it's a roll sticker 
+            // This prevents crashes if the DB column isn't added yet or if it's a sheet sticker
+            const isRollStickerInSubmit = pNameVal.includes('rulon');
+            
+            if (isRollStickerInSubmit) {
+                (itemData as any).manual_unit_paint_price = manualPaintPrice ? parseFloat(manualPaintPrice) : null;
+            }
 
             if (item?.id) {
                 // UPDATE
@@ -235,21 +327,68 @@ const CreateOrderItemModal: React.FC<CreateOrderItemModalProps> = ({ isOpen, onC
         }
     };
 
+    const filteredMaterials = materials.filter(m => {
+        const selectedProduct = products.find(p => p.id === productId);
+        const pName = selectedProduct?.name?.toLowerCase() || '';
+        
+        const isRuloninisLipdukasAntPop = pName.includes('ruloninis lipdukas ant popieriaus');
+        const isRuloninisLipdukasPleveles = pName.includes('ruloninis lipdukas') && pName.includes('plėvelės');
+        const isSheetSticker = pName.includes('lipdukas') && !pName.includes('rulon');
+        const isLipdukasAntPop = pName.includes('lipdukas ant popieriaus') && !pName.includes('rulon');
+        const isOtherSheetSticker = isSheetSticker && !isLipdukasAntPop;
+        
+        const mn = m.name.toLowerCase();
+
+        if (isRuloninisLipdukasAntPop) {
+            return mn.includes('coated wb') ||
+                   mn.includes('inkjet high glossy') ||
+                   (mn.includes('inkjet matte') && mn.includes('108'));
+        }
+
+        if (isRuloninisLipdukasPleveles) {
+            return (mn.includes('inkjet glossy') && mn.includes('pp')) ||
+                   (mn.includes('inkjet matte') && mn.includes('pp')) ||
+                   mn.includes('inkjet glossy w pp 100');
+        }
+
+        if (isLipdukasAntPop) {
+            return mn.includes('sticotac popierinis lipdukas');
+        }
+
+        if (isOtherSheetSticker) {
+            return mn.includes('raflatac polylaser, plėvelė blizgi') ||
+                   mn.includes('raflatac polylaser, plėvelė matinė') ||
+                   mn.includes('raflatac polylaser, plėvelė skaidri blizgi');
+        }
+
+        if (!isRuloninisLipdukasAntPop && !isRuloninisLipdukasPleveles && mn.includes('inkjet')) {
+            return false;
+        }
+
+        // Raflatac only for sheet film stickers
+        if (!isOtherSheetSticker && mn.includes('raflatac')) {
+            return false;
+        }
+
+        return true;
+    });
+
     if (!isOpen) return null;
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-            <div className="bg-white rounded-lg shadow-xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in duration-200">
-                <div className="flex items-center justify-between p-4 border-b bg-gray-50">
+            <div className="bg-white rounded-lg shadow-xl w-full max-w-lg flex flex-col max-h-[90vh] overflow-hidden animate-in fade-in zoom-in duration-200">
+                <div className="flex-shrink-0 flex items-center justify-between p-4 border-b bg-gray-50">
                     <h2 className="text-lg font-semibold text-gray-800">
                         {item ? 'Edit Order Item' : 'Add Order Item'}
                     </h2>
-                    <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors" aria-label="Close">
+                    <button onClick={onClose} type="button" className="text-gray-400 hover:text-gray-600 transition-colors" aria-label="Close">
                         <X size={20} />
                     </button>
                 </div>
 
-                <form onSubmit={handleSubmit} className="p-6 space-y-4">
+                <form onSubmit={handleSubmit} className="flex flex-col flex-1 overflow-hidden">
+                    <div className="p-6 space-y-4 overflow-y-auto flex-1">
                     {error && (
                         <div className="bg-red-50 text-red-600 p-3 rounded text-sm mb-4">
                             {error}
@@ -274,51 +413,109 @@ const CreateOrderItemModal: React.FC<CreateOrderItemModalProps> = ({ isOpen, onC
                         </select>
                     </div>
 
-                    <div>
-                        <label htmlFor="order-material" className="block text-sm font-medium text-gray-700 mb-1">
-                            Material / Paper
-                        </label>
-                        <select
-                            id="order-material"
-                            value={materialId}
-                            onChange={(e) => setMaterialId(e.target.value)}
-                            className="input-field"
-                        >
-                            <option value="">Select Material...</option>
-                            {materials.map(m => (
-                                <option key={m.id} value={m.id}>{m.name}</option>
-                            ))}
-                        </select>
-                    </div>
+                    {(() => {
+                        const selectedProduct = products.find(p => p.id === productId);
+                        const pCategory = selectedProduct?.category?.toLowerCase() || '';
+                        const pName = selectedProduct?.name?.toLowerCase() || '';
+                        const isNoMaterial = pCategory === 'paslaugos' || pCategory === 'siuntimas' || pName.includes('siuntimas');
+                        
+                        if (isNoMaterial) return null;
 
-                    <div className="grid grid-cols-2 gap-4">
-                        <div>
-                            <label htmlFor="order-width" className="block text-sm font-medium text-gray-700 mb-1">
-                                Width (mm)
-                            </label>
-                            <input
-                                id="order-width"
-                                type="text"
-                                value={width}
-                                onChange={(e) => setWidth(e.target.value)}
-                                className="input-field"
-                                placeholder="e.g. 210"
-                            />
-                        </div>
-                        <div>
-                            <label htmlFor="order-height" className="block text-sm font-medium text-gray-700 mb-1">
-                                Height (mm)
-                            </label>
-                            <input
-                                id="order-height"
-                                type="text"
-                                value={height}
-                                onChange={(e) => setHeight(e.target.value)}
-                                className="input-field"
-                                placeholder="e.g. 297"
-                            />
-                        </div>
-                    </div>
+                        return (
+                            <div>
+                                <label htmlFor="order-material" className="block text-sm font-medium text-gray-700 mb-1">
+                                    Material / Paper <span className="text-red-500">*</span>
+                                </label>
+                                <select
+                                    id="order-material"
+                                    value={materialId}
+                                    onChange={(e) => setMaterialId(e.target.value)}
+                                    className="input-field"
+                                    required
+                                >
+                                    <option value="">Select Material...</option>
+                                    {filteredMaterials.map(m => (
+                                        <option key={m.id} value={m.id}>{m.name}</option>
+                                    ))}
+                                </select>
+                            </div>
+                        );
+                    })()}
+
+                    {/* Dimensions — conditionally rendered */}
+                    {(() => {
+                        const product = products.find(p => p.id === productId);
+                        const pName = product?.name?.toLowerCase() || '';
+                        const pCategory = product?.category?.toLowerCase() || '';
+                        const isPredefined = (pName.includes('lankstinukas') || pName.includes('plakatas')) &&
+                            (pName.includes('a3') || pName.includes('a4'));
+                        const isDezute = pName.includes('dėžut') || pName.includes('dezut') || pName.includes('box');
+                        const isNoDimensions = pCategory === 'paslaugos' || pCategory === 'siuntimas' || pName.includes('siuntimas');
+
+                        if (isPredefined || isNoDimensions) return null;
+
+                        return (
+                            <div className={`grid gap-4 ${isDezute ? 'grid-cols-3' : 'grid-cols-2'}`}>
+                                <div>
+                                    <label htmlFor="order-width" className="block text-sm font-medium text-gray-700 mb-1">
+                                        Width (mm)
+                                    </label>
+                                    <input
+                                        id="order-width"
+                                        type="number"
+                                        max={products.find(p => p.id === productId)?.name?.toLowerCase().includes('ruloninis lipdukas') ? 110 : (products.find(p => p.id === productId)?.name?.toLowerCase().includes('lipdukas') ? 295 : undefined)}
+                                        value={width}
+                                        onChange={(e) => {
+                                            let val = e.target.value;
+                                            const pn = products.find(p => p.id === productId)?.name?.toLowerCase() || '';
+                                            const isRuloninis = pn.includes('ruloninis lipdukas');
+                                            const isSheetLipdukas = pn.includes('lipdukas') && !isRuloninis;
+                                            if (isRuloninis && parseFloat(val) > 110) val = '110';
+                                            else if (isSheetLipdukas && parseFloat(val) > 295) val = '295';
+                                            setWidth(val);
+                                        }}
+                                        className="input-field"
+                                        placeholder="e.g. 210"
+                                    />
+                                </div>
+                                <div>
+                                    <label htmlFor="order-height" className="block text-sm font-medium text-gray-700 mb-1">
+                                        Height (mm)
+                                    </label>
+                                    <input
+                                        id="order-height"
+                                        type="number"
+                                        max={products.find(p => p.id === productId)?.name?.toLowerCase().includes('lipdukas') ? 400 : undefined}
+                                        value={height}
+                                        onChange={(e) => {
+                                            let val = e.target.value;
+                                            const pn = products.find(p => p.id === productId)?.name?.toLowerCase() || '';
+                                            if (pn.includes('lipdukas') && parseFloat(val) > 400) val = '400';
+                                            setHeight(val);
+                                        }}
+                                        className="input-field"
+                                        placeholder="e.g. 297"
+                                    />
+                                </div>
+                                {isDezute && (
+                                    <div>
+                                        <label htmlFor="order-length" className="block text-sm font-medium text-gray-700 mb-1">
+                                            Length (mm)
+                                        </label>
+                                        <input
+                                            id="order-length"
+                                            type="number"
+                                            value={length}
+                                            onChange={(e) => setLength(e.target.value)}
+                                            className="input-field"
+                                            placeholder="e.g. 150"
+                                        />
+                                    </div>
+                                )}
+                            </div>
+                        );
+                    })()}
+
 
                     <div className="grid grid-cols-2 gap-4">
                         <div>
@@ -344,12 +541,46 @@ const CreateOrderItemModal: React.FC<CreateOrderItemModalProps> = ({ isOpen, onC
                                 value={printType}
                                 onChange={(e) => setPrintType(e.target.value)}
                                 className="input-field"
+                                disabled={
+                                    products.find(p => p.id === productId)?.name?.toLowerCase().includes('lipdukas') ||
+                                    products.find(p => p.id === productId)?.category?.toLowerCase() === 'paslaugos' ||
+                                    products.find(p => p.id === productId)?.category?.toLowerCase() === 'siuntimas' ||
+                                    products.find(p => p.id === productId)?.name?.toLowerCase().includes('siuntimas')
+                                }
                             >
                                 <option value="Vienpusis">One-sided</option>
                                 <option value="Dvipusis">Two-sided</option>
                             </select>
                         </div>
                     </div>
+
+                    {(() => {
+                        const pName = products.find(p => p.id === productId)?.name?.toLowerCase() || '';
+                        const isRollSticker = pName.includes('rulon');
+                        if (!isRollSticker) return null;
+
+                        return (
+                            <div className="animate-in fade-in slide-in-from-top-2">
+                                <label htmlFor="order-paint-manual" className="block text-sm font-medium text-gray-700 mb-1">
+                                    Manual Paint Price per piece
+                                </label>
+                                <input
+                                    id="order-paint-manual"
+                                    type="number"
+                                    step="0.001"
+                                    min="0"
+                                    value={manualPaintPrice}
+                                    onChange={(e) => setManualPaintPrice(e.target.value)}
+                                    className="input-field border-accent-teal/50 focus:border-accent-teal bg-accent-teal/5"
+                                    placeholder="e.g. 0.05"
+                                    title="Override area-based paint calculation with a fixed price per individual sticker"
+                                />
+                                <p className="text-[10px] text-gray-400 mt-1 italic">
+                                    Only for roll stickers. Overrides area-based cost with price per unit.
+                                </p>
+                            </div>
+                        );
+                    })()}
 
                     {/* Additional Works Section */}
                     <div className="bg-gray-50 p-4 rounded-md border border-gray-200 space-y-3">
@@ -358,6 +589,8 @@ const CreateOrderItemModal: React.FC<CreateOrderItemModalProps> = ({ isOpen, onC
                             <div className="flex items-center gap-2">
                                 <select
                                     className="text-xs border rounded p-1 max-w-[150px]"
+                                    aria-label="Add additional work"
+                                    title="Add additional work"
                                     onChange={(e) => {
                                         addWork(e.target.value);
                                         e.target.value = '';
@@ -377,16 +610,18 @@ const CreateOrderItemModal: React.FC<CreateOrderItemModalProps> = ({ isOpen, onC
                                     <div key={idx} className="flex items-center gap-2 text-sm bg-white p-2 rounded border border-gray-100">
                                         <span className="flex-1 font-medium text-gray-700">{work.name}</span>
                                         <div className="flex items-center gap-1">
-                                            <label className="text-[10px] text-gray-400">Qty/Min:</label>
+                                            <label htmlFor={`work-duration-${idx}`} className="text-[10px] text-gray-400">Qty/Min:</label>
                                             <input
+                                                id={`work-duration-${idx}`}
                                                 type="number"
+                                                title="Quantity or Duration"
                                                 value={work.duration}
                                                 onChange={(e) => updateWorkDuration(idx, parseFloat(e.target.value))}
                                                 className="w-16 border rounded px-1 py-0.5 text-right"
                                                 step="0.1"
                                             />
                                         </div>
-                                        <button type="button" onClick={() => removeWork(idx)} className="text-red-400 hover:text-red-600">
+                                        <button type="button" onClick={() => removeWork(idx)} className="text-red-400 hover:text-red-600" aria-label={`Remove ${work.name}`} title={`Remove ${work.name}`}>
                                             <Trash2 size={14} />
                                         </button>
                                     </div>
@@ -516,12 +751,13 @@ const CreateOrderItemModal: React.FC<CreateOrderItemModalProps> = ({ isOpen, onC
                             </div>
                         )}
                     </div>
+                    </div>
 
-                    <div className="flex justify-end gap-3 pt-4 border-t mt-6">
+                    <div className="flex-shrink-0 flex justify-end gap-3 p-4 border-t bg-gray-50 mt-auto">
                         <button
                             type="button"
                             onClick={onClose}
-                            className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 font-medium"
+                            className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 bg-white hover:bg-gray-50 font-medium transition-colors"
                         >
                             Cancel
                         </button>

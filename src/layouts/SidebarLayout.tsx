@@ -1,13 +1,14 @@
 import React from 'react';
 import { Outlet, NavLink } from 'react-router-dom';
-import { LayoutDashboard, Users, ShoppingCart, Box, Settings, LogOut, Ruler, BarChart3, Calculator, ListTodo, Hammer, Lightbulb, Stamp } from 'lucide-react';
+import { LayoutDashboard, Users, ShoppingCart, Box, Settings, LogOut, Ruler, BarChart3, Calculator, ListTodo, Hammer, Lightbulb, Stamp, UserCheck } from 'lucide-react';
 import clsx from 'clsx';
 import { useAuth } from '../contexts/AuthContext';
 import UpdatePasswordModal from '../components/UpdatePasswordModal';
 import { supabase } from '../lib/supabase';
+import ChatWidget from '../components/ChatWidget';
 
 const SidebarLayout: React.FC = () => {
-    const { user, showPasswordReset, setShowPasswordReset } = useAuth();
+    const { user, profile, showPasswordReset, setShowPasswordReset } = useAuth();
     const [pendingTaskCount, setPendingTaskCount] = React.useState(0);
 
     const fetchTaskCount = async () => {
@@ -69,21 +70,26 @@ const SidebarLayout: React.FC = () => {
         };
     }, [user]);
 
-    const navItems = [
+    let navItems = [
         { icon: LayoutDashboard, label: 'Dashboard', to: '/' },
-        { icon: ListTodo, label: 'Tasks', to: '/tasks' },
+        { icon: ListTodo, label: 'Tasks', to: '/tasks', adminOnly: true },
         { icon: ShoppingCart, label: 'Orders', to: '/orders' },
-        { icon: Users, label: 'Clients', to: '/clients' },
-        { icon: ShoppingCart, label: 'Products', to: '/products' },
-        { icon: Box, label: 'Materials', to: '/materials' },
-        { icon: Hammer, label: 'Works', to: '/works' },
-        { icon: Ruler, label: 'Calc Rules', to: '/rules' },
+        { icon: Users, label: 'Clients', to: '/clients', adminOnly: true },
+        { icon: ShoppingCart, label: 'Products', to: '/products', adminOnly: true },
+        { icon: Box, label: 'Materials', to: '/materials', adminOnly: true },
+        { icon: Hammer, label: 'Works', to: '/works', adminOnly: true },
+        { icon: Ruler, label: 'Calc Rules', to: '/rules', adminOnly: true },
         { icon: Calculator, label: 'Calculator', to: '/calculator' },
-        { icon: BarChart3, label: 'Reporting', to: '/reporting' },
-        { icon: Lightbulb, label: 'AI Settings', to: '/ai-settings' },
-        { icon: Stamp, label: 'Metalografija', to: '/metalografija' },
-        { icon: Settings, label: 'Settings', to: '/settings' },
+        { icon: BarChart3, label: 'Reporting', to: '/reporting', adminOnly: true },
+        { icon: UserCheck, label: 'User Approvals', to: '/users', adminOnly: true },
+        { icon: Lightbulb, label: 'AI Settings', to: '/ai-settings', adminOnly: true },
+        { icon: Stamp, label: 'Metalografija', to: '/metalografija', adminOnly: true },
+        { icon: Settings, label: 'Settings', to: '/settings', adminOnly: true },
     ].filter(item => item.label !== 'Settings' || user?.email?.includes('rytis'));
+
+    if (profile?.role === 'client') {
+        navItems = navItems.filter(item => !item.adminOnly);
+    }
 
     return (
         <div className="flex h-screen bg-background">
@@ -138,6 +144,7 @@ const SidebarLayout: React.FC = () => {
             {/* Main Content */}
             <main className="flex-1 overflow-auto p-8 relative">
                 <Outlet />
+                <ChatWidget />
             </main>
 
             <UpdatePasswordModal

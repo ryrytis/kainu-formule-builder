@@ -14,6 +14,7 @@ import { SharePointService } from '../lib/SharePointService';
 import { generateOrderNumber } from '../lib/orderUtils';
 import TaskList, { Task } from '../components/TaskList';
 import CreateTaskModal from '../components/CreateTaskModal';
+import ChangeClientModal from '../components/ChangeClientModal';
 
 type Order = Database['public']['Tables']['orders']['Row'] & {
     clients: {
@@ -41,6 +42,7 @@ const OrderDetails: React.FC = () => {
     const [isAddItemModalOpen, setIsAddItemModalOpen] = useState(false);
     const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false);
     const [selectedItem, setSelectedItem] = useState<any | null>(null);
+    const [isChangeClientModalOpen, setIsChangeClientModalOpen] = useState(false);
 
     // Tasks State
     const [tasks, setTasks] = useState<Task[]>([]);
@@ -485,7 +487,16 @@ const OrderDetails: React.FC = () => {
             {/* Client Info Card */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="card md:col-span-2">
-                    <h3 className="section-title">Client Information</h3>
+                    <div className="flex justify-between items-center mb-2">
+                        <h3 className="section-title">Client Information</h3>
+                        <button 
+                            onClick={() => setIsChangeClientModalOpen(true)}
+                            className="p-1 text-gray-400 hover:text-accent-teal hover:bg-teal-50 rounded transition-colors"
+                            title="Change Client"
+                        >
+                            <Pencil size={16} />
+                        </button>
+                    </div>
                     <div className="grid grid-cols-2 gap-4 mt-4">
                         <div>
                             <p className="label">Client Name</p>
@@ -703,6 +714,16 @@ const OrderDetails: React.FC = () => {
                 onClose={() => setIsInvoiceModalOpen(false)}
                 order={order}
             />
+
+            {order && (
+                <ChangeClientModal
+                    isOpen={isChangeClientModalOpen}
+                    onClose={() => setIsChangeClientModalOpen(false)}
+                    currentClientId={order.client_id}
+                    orderId={order.id}
+                    onClientChanged={fetchOrderDetails}
+                />
+            )}
         </div >
     );
 };

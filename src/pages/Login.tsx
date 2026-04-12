@@ -4,7 +4,9 @@ import { supabase } from '../lib/supabase';
 import { ArrowRight } from 'lucide-react';
 
 const Login: React.FC = () => {
-    const [email, setEmail] = useState(''); // Added email state
+    const [isSignUp, setIsSignUp] = useState(false);
+    const [companyName, setCompanyName] = useState('');
+    const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -17,12 +19,36 @@ const Login: React.FC = () => {
         setError(null);
 
         try {
-            const { error } = await supabase.auth.signInWithPassword({
-                email,
-                password,
-            });
-            if (error) throw error;
-            navigate('/');
+            if (isSignUp) {
+                if (!companyName) {
+                    throw new Error('Company name is required for registration.');
+                }
+                const { error, data } = await supabase.auth.signUp({
+                    email,
+                    password,
+                    options: {
+                        data: {
+                            company_name: companyName
+                        }
+                    }
+                });
+                if (error) throw error;
+                // If email confirmation is required, inform user. Otherwise navigate (it will automatically catch them in /pending)
+                if (data.user?.identities?.length === 0) {
+                     // Sometimes means already registered
+                     throw new Error('User already exists. Try logging in.');
+                }
+                setMessage('Sign up successful! Re-routing...');
+                // Usually signUp automatically signs them in if email confirm is off. Our ProtectedRoute catches them.
+                setTimeout(() => navigate('/pending'), 1000);
+            } else {
+                const { error } = await supabase.auth.signInWithPassword({
+                    email,
+                    password,
+                });
+                if (error) throw error;
+                navigate('/');
+            }
         } catch (err: any) {
             setError(err.message || 'Authentication failed');
         } finally {
@@ -81,19 +107,47 @@ const Login: React.FC = () => {
                 <div className="w-full max-w-md">
                     <div className="mb-10 text-center lg:text-left">
                         <h2 className="text-3xl font-bold text-primary mb-2">
-                            Welcome Back
+                            {isSignUp ? 'Create an Account' : 'Welcome Back'}
                         </h2>
                         {message && (
-                            <div className="p-4 bg-green-50 border-l-4 border-green-500 text-green-700 text-sm">
+                            <div className="p-4 bg-green-50 border-l-4 border-green-500 text-green-700 text-sm mb-4">
                                 {message}
                             </div>
                         )}
+                        <p className="text-gray-500 text-sm">
+                            {isSignUp ? 'Already have an account?' : "Don't have an account?"}{' '}
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setIsSignUp(!isSignUp);
+                                    setError(null);
+                                    setMessage(null);
+                                }}
+                                className="text-accent-teal font-bold hover:underline"
+                            >
+                                {isSignUp ? 'Log in' : 'Sign up'}
+                            </button>
+                        </p>
                     </div>
 
                     <form onSubmit={handleAuth} className="space-y-6">
                         {error && (
                             <div className="p-4 bg-red-50 border-l-4 border-red-500 text-red-700 text-sm">
                                 {error}
+                            </div>
+                        )}
+
+                        {isSignUp && (
+                            <div className="space-y-1 animate-in fade-in slide-in-from-top-2">
+                                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Company Name</label>
+                                <input
+                                    type="text"
+                                    value={companyName}
+                                    onChange={(e) => setCompanyName(e.target.value)}
+                                    className="w-full px-0 py-3 bg-transparent border-b-2 border-gray-200 focus:border-accent-teal transition-colors outline-none text-primary placeholder-gray-300 rounded-none text-lg"
+                                    placeholder="Your Company OÜ"
+                                    required={isSignUp}
+                                />
                             </div>
                         )}
 
@@ -121,14 +175,16 @@ const Login: React.FC = () => {
                             />
                         </div>
 
-                        <div className="flex justify-end">
-                            <button
-                                type="button"
-                                onClick={handleForgotPassword}
-                                className="text-xs font-bold text-accent-teal hover:underline uppercase tracking-wider"
-                            >
-                                Forgot Password?
-                            </button>
+                        <div className="flex justify-end h-6">
+                            {!isSignUp && (
+                                <button
+                                    type="button"
+                                    onClick={handleForgotPassword}
+                                    className="text-xs font-bold text-accent-teal hover:underline uppercase tracking-wider"
+                                >
+                                    Forgot Password?
+                                </button>
+                            )}
                         </div>
 
                         <button
@@ -136,13 +192,13 @@ const Login: React.FC = () => {
                             disabled={loading}
                             className="w-full bg-accent-teal text-white py-4 mt-8 font-bold tracking-widest uppercase hover:bg-[#359aa0] transition-all flex items-center justify-between px-6 group"
                         >
-                            <span>{loading ? 'Processing...' : 'Login'}</span>
+                            <span>{loading ? 'Processing...' : isSignUp ? 'Sign Up' : 'Login'}</span>
                             {!loading && <ArrowRight className="group-hover:translate-x-1 transition-transform" size={20} />}
                         </button>
                     </form>
 
                     <div className="mt-8 text-center text-sm text-gray-400">
-                        Admin access only. New users must be invited via Supabase.
+                        Signups are subject to manual administrative approval.
                     </div>
                 </div>
             </div>

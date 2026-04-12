@@ -230,8 +230,8 @@ export const SaskaitaService = {
                 discount_value: "0",
                 issued_by: "Agniete Suknelevičienė",
                 issued_to: clientName,
-                note_enabled: true,
-                note: order.notes || "",
+                note_enabled: false,
+                note: "",
                 comment_enabled: true,
                 comment: null,
                 banks: [

@@ -6,6 +6,9 @@ import ClientSelect from './ClientSelect';
 import { SharePointService } from '../lib/SharePointService';
 import { generateOrderNumber } from '../lib/orderUtils';
 import { EmailService } from '../lib/EmailService';
+import OrderSelect from './OrderSelect';
+import { clsx } from 'clsx';
+import { useAuth } from '../contexts/AuthContext';
 
 interface CreateOrderModalProps {
     isOpen: boolean;
@@ -21,6 +24,7 @@ interface CreateOrderModalProps {
         print_type: string;
         unit_price: number;
         total_price: number;
+        manual_unit_paint_price?: number;
     };
 }
 
@@ -37,23 +41,39 @@ const CreateOrderModal: React.FC<CreateOrderModalProps> = ({ isOpen, onClose, on
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
+    const [isExistingOrderMode, setIsExistingOrderMode] = useState(false);
+    const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
+
+    const { profile } = useAuth();
+    const isAdmin = profile?.role === 'admin';
+
     // Reset state when modal opens
     useEffect(() => {
         if (isOpen) {
             fetchNextOrderNumber();
             if (initialItem) {
                 // Optional: Pre-fill notes or other fields if needed
+                if (!isAdmin && profile?.client_id) {
+                    setClientId(profile.client_id);
+                    setStatus('Draft');
+                }
             } else {
                 // Reset fields if standard open
-                setClientId(null);
+                if (!isAdmin && profile?.client_id) {
+                    setClientId(profile.client_id);
+                } else {
+                    setClientId(null);
+                }
                 setIsNewClientMode(false);
                 setNewClientName('');
                 setNewClientEmail('');
                 setNotes('');
-                setStatus('New');
+                setStatus(isAdmin ? 'New' : 'Draft');
+                setIsExistingOrderMode(false);
+                setSelectedOrderId(null);
             }
         }
-    }, [isOpen, initialItem]);
+    }, [isOpen, initialItem, isAdmin, profile]);
 
     if (!isOpen) return null;
 
@@ -74,88 +94,124 @@ const CreateOrderModal: React.FC<CreateOrderModalProps> = ({ isOpen, onClose, on
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        setError(null);
 
-        if (!isNewClientMode && !clientId) {
-            setError('Please select a client');
-            return;
+        if (isExistingOrderMode) {
+            if (!selectedOrderId) {
+                setError('Prašome pasirinkti užsakymą');
+                return;
+            }
+        } else {
+            if (!isNewClientMode && !clientId) {
+                setError('Please select a client');
+                return;
+            }
+
+            if (isNewClientMode && (!newClientName || !newClientEmail)) {
+                setError('Please fill in client name and email');
+                return;
+            }
         }
 
-        if (isNewClientMode && (!newClientName || !newClientEmail)) {
-            setError('Please fill in client name and email');
-            return;
+        if (initialItem && !initialItem.material_id) {
+            const isSiuntimas = initialItem.product_type?.toLowerCase().includes('siuntimas');
+            if (!isSiuntimas) {
+                setError('Prieš sukuriant užsakymą, skaičiuoklėje privaloma pasirinkti medžiagą');
+                return;
+            }
         }
 
         setLoading(true);
         setError(null);
-
         try {
             let finalClientId = clientId;
+            let finalOrderId = selectedOrderId;
 
-            // 1. Handle New Client Creation
-            if (isNewClientMode) {
-                const { data: newClient, error: clientError } = await (supabase as any)
-                    .from('clients')
-                    .insert([{
-                        name: newClientName,
-                        email: newClientEmail,
-                        form_link_status: 'pending'
-                    }])
-                    .select('id')
-                    .single();
+            if (!isExistingOrderMode) {
+                // 1. Handle New Client Creation
+                if (isNewClientMode) {
+                    const { data: newClient, error: clientError } = await (supabase as any)
+                        .from('clients')
+                        .insert([{
+                            name: newClientName,
+                            email: newClientEmail,
+                            form_link_status: 'pending'
+                        }])
+                        .select('id')
+                        .single();
 
-                if (clientError) throw clientError;
-                finalClientId = newClient.id;
+                    if (clientError) throw clientError;
+                    finalClientId = newClient.id;
 
-                // Send Welcome Email
-                if (finalClientId) {
-                    console.log("Sending welcome email to:", newClientEmail);
-                    await EmailService.sendWelcomeEmail(finalClientId, newClientName, newClientEmail);
+                    // Send Welcome Email
+                    if (finalClientId) {
+                        console.log("Sending welcome email to:", newClientEmail);
+                        await EmailService.sendWelcomeEmail(finalClientId, newClientName, newClientEmail);
+                    }
+
+                } else if (clientId && clientId.includes('@') && !clientId.match(/^[0-9a-f]{8}-/)) {
+                    // Legacy support for email-only selection (if any remains)
+                    // This block might be redundant if we force the new UI, but keeping for safety
+                    const email = clientId;
+                    const { data: newClient, error: clientError } = await (supabase as any)
+                        .from('clients')
+                        .insert([{
+                            name: email,
+                            email: email,
+                            form_link_status: 'pending'
+                        }])
+                        .select('id')
+                        .single();
+
+                    if (clientError) throw clientError;
+                    finalClientId = newClient.id;
                 }
 
-            } else if (clientId && clientId.includes('@') && !clientId.match(/^[0-9a-f]{8}-/)) {
-                // Legacy support for email-only selection (if any remains)
-                // This block might be redundant if we force the new UI, but keeping for safety
-                const email = clientId;
-                const { data: newClient, error: clientError } = await (supabase as any)
-                    .from('clients')
-                    .insert([{
-                        name: email,
-                        email: email,
-                        form_link_status: 'pending'
-                    }])
-                    .select('id')
+                // 2. Create Order
+                // Calculate initial total price
+                const initialTotal = initialItem ? initialItem.total_price : 0;
+
+                const { data, error } = await (supabase as any)
+                    .from('orders')
+                    .insert([
+                        {
+                            client_id: finalClientId,
+                            order_number: orderNumber,
+                            status: isAdmin ? status : 'Draft',
+                            notes: notes,
+                            total_price: initialTotal
+                        }
+                    ])
+                    .select(`*, clients(name)`) // Select client name for SharePoint
                     .single();
 
-                if (clientError) throw clientError;
-                finalClientId = newClient.id;
+                if (error) throw error;
+                finalOrderId = data.id;
+
+                // 3. SharePoint Workflow Trigger
+                if (isAdmin && data?.clients?.name && data?.order_number) {
+                    console.log("Triggering SharePoint folder creation...");
+                    SharePointService.createOrderFolder(data.clients.name, data.order_number, data.status)
+                        .then(async (res) => {
+                            if (res.success && res.folderUrl) {
+                                console.log("Folder created:", res.folderUrl);
+                                // SAVE URL TO DATABASE
+                                await (supabase as any)
+                                    .from('orders')
+                                    .update({ workflow_link: res.folderUrl })
+                                    .eq('id', data.id);
+                            }
+                        })
+                        .catch(e => console.error("SharePoint trigger failed", e));
+                }
             }
 
-            // 2. Create Order
-            // Calculate initial total price
-            const initialTotal = initialItem ? initialItem.total_price : 0;
-
-            const { data, error } = await (supabase as any)
-                .from('orders')
-                .insert([
-                    {
-                        client_id: finalClientId,
-                        order_number: orderNumber,
-                        status: status,
-                        notes: notes,
-                        total_price: initialTotal
-                    }
-                ])
-                .select(`*, clients(name)`) // Select client name for SharePoint
-                .single();
-
-            if (error) throw error;
-
             // 2. Insert Initial Item if exists
-            if (initialItem && data) {
+            if (initialItem && finalOrderId) {
                 const { error: itemError } = await (supabase as any)
                     .from('order_items')
                     .insert([{
-                        order_id: data.id,
+                        order_id: finalOrderId,
                         product_type: initialItem.product_type,
                         material_id: initialItem.material_id || null,
                         width: initialItem.width,
@@ -163,38 +219,36 @@ const CreateOrderModal: React.FC<CreateOrderModalProps> = ({ isOpen, onClose, on
                         quantity: initialItem.quantity,
                         print_type: initialItem.print_type,
                         unit_price: initialItem.unit_price,
-                        total_price: initialItem.total_price
+                        total_price: initialItem.total_price,
+                        manual_unit_paint_price: initialItem.manual_unit_paint_price || null
                     }]);
 
                 if (itemError) {
                     console.error("Failed to add initial item", itemError);
-                    // We continue even if item fails, user can add manually
                 }
-            }
 
-            // 3. SharePoint Workflow Trigger
-            if (data?.clients?.name && data?.order_number) {
-                console.log("Triggering SharePoint folder creation...");
-                SharePointService.createOrderFolder(data.clients.name, data.order_number, data.status)
-                    .then(async (res) => {
-                        if (res.success && res.folderUrl) {
-                            console.log("Folder created:", res.folderUrl);
-                            // SAVE URL TO DATABASE
-                            await (supabase as any)
-                                .from('orders')
-                                .update({ workflow_link: res.folderUrl })
-                                .eq('id', data.id);
-                        }
-                    })
-                    .catch(e => console.error("SharePoint trigger failed", e));
+                if (isExistingOrderMode) {
+                    // Update existing order total price
+                    const { data: allItems } = await (supabase as any)
+                        .from('order_items')
+                        .select('total_price')
+                        .eq('order_id', finalOrderId);
+
+                    const newOrderTotal = allItems?.reduce((sum: number, item: any) => sum + (item.total_price || 0), 0) || 0;
+
+                    await (supabase as any)
+                        .from('orders')
+                        .update({ total_price: newOrderTotal })
+                        .eq('id', finalOrderId);
+                }
             }
 
             onOrderCreated(); // Refresh list callback
             onClose(); // Close modal
 
-            // 4. Redirect to the new order
-            if (data?.id) {
-                navigate(`/orders/${data.id}`);
+            // 4. Redirect to the order
+            if (finalOrderId) {
+                navigate(`/orders/${finalOrderId}`);
             }
         } catch (err: any) {
             setError(err.message || 'Failed to create order');
@@ -208,7 +262,7 @@ const CreateOrderModal: React.FC<CreateOrderModalProps> = ({ isOpen, onClose, on
             <div className="bg-white rounded-lg shadow-xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in duration-200">
                 <div className="flex items-center justify-between p-4 border-b bg-gray-50">
                     <h2 className="text-lg font-semibold text-gray-800">
-                        {initialItem ? 'Create Order from Calculation' : 'Create New Order'}
+                        {initialItem ? (isExistingOrderMode ? 'Papildyti užsakymą' : 'Sukurti užsakymą iš skaičiuoklės') : 'Sukurti naują užsakymą'}
                     </h2>
                     <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors" aria-label="Close">
                         <X size={20} />
@@ -223,6 +277,31 @@ const CreateOrderModal: React.FC<CreateOrderModalProps> = ({ isOpen, onClose, on
                     )}
 
                     {initialItem && (
+                        <div className="flex p-1 bg-gray-100 rounded-md mb-4">
+                            <button
+                                type="button"
+                                onClick={() => setIsExistingOrderMode(false)}
+                                className={clsx(
+                                    "flex-1 py-1.5 text-xs font-bold uppercase rounded transition-all",
+                                    !isExistingOrderMode ? "bg-white text-accent-teal shadow-sm" : "text-gray-400 hover:text-gray-600"
+                                )}
+                            >
+                                Naujas užsakymas
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setIsExistingOrderMode(true)}
+                                className={clsx(
+                                    "flex-1 py-1.5 text-xs font-bold uppercase rounded transition-all",
+                                    isExistingOrderMode ? "bg-white text-accent-teal shadow-sm" : "text-gray-400 hover:text-gray-600"
+                                )}
+                            >
+                                Papildyti esamą
+                            </button>
+                        </div>
+                    )}
+
+                    {initialItem && (
                         <div className="bg-blue-50 p-3 rounded text-sm text-blue-800 mb-4 flex justify-between items-center">
                             <span>
                                 <strong>Item:</strong> {initialItem.product_type} ({initialItem.width}x{initialItem.height}mm, Qty: {initialItem.quantity})
@@ -231,7 +310,23 @@ const CreateOrderModal: React.FC<CreateOrderModalProps> = ({ isOpen, onClose, on
                         </div>
                     )}
 
-                    {isNewClientMode ? (
+                    {isExistingOrderMode ? (
+                        <div className="space-y-4 animate-in fade-in slide-in-from-top-2">
+                             {isAdmin && (
+                                <ClientSelect
+                                    value={clientId}
+                                    onChange={setClientId}
+                                />
+                             )}
+                            {clientId && (
+                                <OrderSelect
+                                    clientId={clientId}
+                                    value={selectedOrderId}
+                                    onChange={setSelectedOrderId}
+                                />
+                            )}
+                        </div>
+                    ) : isNewClientMode && isAdmin ? (
                         <div className="bg-gray-50 p-4 rounded-md border border-gray-200 relative animate-in fade-in slide-in-from-top-2">
                             <button
                                 type="button"
@@ -266,7 +361,7 @@ const CreateOrderModal: React.FC<CreateOrderModalProps> = ({ isOpen, onClose, on
                                 </div>
                             </div>
                         </div>
-                    ) : (
+                    ) : isAdmin ? (
                         <ClientSelect
                             value={clientId}
                             onChange={setClientId}
@@ -275,52 +370,59 @@ const CreateOrderModal: React.FC<CreateOrderModalProps> = ({ isOpen, onClose, on
                                 setNewClientName(name);
                             }}
                         />
+                    ) : null}
+
+                    {!isExistingOrderMode && (
+                        <>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-1">
+                                    <label htmlFor="order-number" className="text-xs font-bold text-gray-500 uppercase">
+                                        Order Number <span className="text-red-500">*</span>
+                                    </label>
+                                    <input
+                                        id="order-number"
+                                        type="text"
+                                        value={orderNumber}
+                                        onChange={(e) => setOrderNumber(e.target.value)}
+                                        className="w-full border-b-2 border-gray-200 p-2 focus:border-accent-teal outline-none transition-colors font-mono text-lg bg-white"
+                                        required
+                                    />
+                                </div>
+                                {isAdmin && (
+                                    <div>
+                                        <label htmlFor="order-status" className="text-xs font-bold text-gray-500 uppercase mb-1 block">
+                                            Status
+                                        </label>
+                                        <select
+                                            id="order-status"
+                                            value={status}
+                                            onChange={(e) => setStatus(e.target.value)}
+                                            className="w-full border-b-2 border-gray-200 p-2 focus:border-accent-teal outline-none transition-colors bg-white mt-1"
+                                        >
+                                            <option value="Draft">Draft</option>
+                                            <option value="New">New</option>
+                                            <option value="In Progress">In Progress</option>
+                                            <option value="Ready">Ready</option>
+                                            <option value="Completed">Completed</option>
+                                        </select>
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="space-y-1">
+                                <label htmlFor="order-notes" className="text-xs font-bold text-gray-500 uppercase">
+                                    Notes
+                                </label>
+                                <textarea
+                                    id="order-notes"
+                                    value={notes}
+                                    onChange={(e) => setNotes(e.target.value)}
+                                    className="w-full border-2 border-gray-200 p-3 focus:border-accent-teal outline-none transition-colors resize-none min-h-[100px]"
+                                    placeholder="Add detailed instructions..."
+                                />
+                            </div>
+                        </>
                     )}
-
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-1">
-                            <label htmlFor="order-number" className="text-xs font-bold text-gray-500 uppercase">
-                                Order Number <span className="text-red-500">*</span>
-                            </label>
-                            <input
-                                id="order-number"
-                                type="text"
-                                value={orderNumber}
-                                onChange={(e) => setOrderNumber(e.target.value)}
-                                className="w-full border-b-2 border-gray-200 p-2 focus:border-accent-teal outline-none transition-colors font-mono text-lg bg-white"
-                                required
-                            />
-                        </div>
-                        <div>
-                            <label htmlFor="order-status" className="text-xs font-bold text-gray-500 uppercase mb-1 block">
-                                Status
-                            </label>
-                            <select
-                                id="order-status"
-                                value={status}
-                                onChange={(e) => setStatus(e.target.value)}
-                                className="w-full border-b-2 border-gray-200 p-2 focus:border-accent-teal outline-none transition-colors bg-white mt-1"
-                            >
-                                <option value="New">New</option>
-                                <option value="In Progress">In Progress</option>
-                                <option value="Ready">Ready</option>
-                                <option value="Completed">Completed</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div className="space-y-1">
-                        <label htmlFor="order-notes" className="text-xs font-bold text-gray-500 uppercase">
-                            Notes
-                        </label>
-                        <textarea
-                            id="order-notes"
-                            value={notes}
-                            onChange={(e) => setNotes(e.target.value)}
-                            className="w-full border-2 border-gray-200 p-3 focus:border-accent-teal outline-none transition-colors resize-none min-h-[100px]"
-                            placeholder="Add detailed instructions..."
-                        />
-                    </div>
 
                     <div className="flex justify-end gap-3 pt-6 border-t border-gray-100 mt-6">
                         <button
@@ -336,7 +438,7 @@ const CreateOrderModal: React.FC<CreateOrderModalProps> = ({ isOpen, onClose, on
                             className="btn-accent flex items-center gap-2"
                         >
                             {loading && <Loader2 className="animate-spin" size={16} />}
-                            {initialItem ? 'Create Order & Item' : 'Create Order'}
+                            {initialItem ? (isExistingOrderMode ? 'Papildyti užsakymą' : 'Create Order & Item') : 'Create Order'}
                         </button>
                     </div>
                 </form>

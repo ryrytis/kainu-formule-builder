@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { Link, useNavigate } from 'react-router-dom';
-import { ShoppingCart, Users, AlertCircle, Clock, ArrowRight } from 'lucide-react';
+import { ShoppingCart, Users, AlertCircle, Clock, ArrowRight, Receipt } from 'lucide-react';
 import { Database } from '../lib/database.types';
 
 type Order = Database['public']['Tables']['orders']['Row'] & {
@@ -13,7 +13,8 @@ const Dashboard: React.FC = () => {
     const [stats, setStats] = useState({
         activeOrders: 0,
         totalClients: 0,
-        pendingActions: 0
+        pendingActions: 0,
+        notInvoicedSum: 0
     });
     const [recentOrders, setRecentOrders] = useState<Order[]>([]);
     const [loading, setLoading] = useState(true);
@@ -28,6 +29,7 @@ const Dashboard: React.FC = () => {
             const { count: activeCount } = await supabase
                 .from('orders')
                 .select('*', { count: 'exact', head: true })
+                .eq('invoiced', false)
                 .neq('status', 'Completed')
                 .neq('status', 'Cancelled');
 
@@ -41,10 +43,20 @@ const Dashboard: React.FC = () => {
                 .select('*', { count: 'exact', head: true })
                 .eq('status', 'New');
 
+            // "Not Invoiced" sum
+            const { data: notInvoicedOrders } = await supabase
+                .from('orders')
+                .select('total_price')
+                .eq('invoiced', false)
+                .neq('status', 'Cancelled');
+
+            const notInvoicedTotal = (notInvoicedOrders as any[])?.reduce((sum, order) => sum + (order.total_price || 0), 0) || 0;
+
             setStats({
                 activeOrders: activeCount || 0,
                 totalClients: clientCount || 0,
-                pendingActions: newCount || 0
+                pendingActions: newCount || 0,
+                notInvoicedSum: notInvoicedTotal
             });
 
             // 2. Fetch Recent Orders
@@ -69,10 +81,10 @@ const Dashboard: React.FC = () => {
                 <h1 className="text-3xl font-bold text-primary tracking-tight">Dashboard</h1>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 {/* Stat Card 1 */}
                 <div
-                    onClick={() => navigate('/orders')}
+                    onClick={() => navigate('/orders?filter=Not Invoiced')}
                     className="card flex items-center gap-4 border-l-4 border-blue-500 cursor-pointer hover:shadow-md transition-shadow group"
                 >
                     <div className="p-3 bg-blue-50 rounded-full text-blue-600 group-hover:scale-110 transition-transform">
@@ -109,6 +121,20 @@ const Dashboard: React.FC = () => {
                     <div>
                         <p className="text-sm text-gray-500 font-medium uppercase tracking-wide">New Orders</p>
                         <p className="text-2xl font-bold text-gray-900">{stats.pendingActions}</p>
+                    </div>
+                </div>
+
+                {/* Stat Card 4 */}
+                <div
+                    onClick={() => navigate('/orders?filter=Not Invoiced')}
+                    className="card flex items-center gap-4 border-l-4 border-rose-500 cursor-pointer hover:shadow-md transition-shadow group"
+                >
+                    <div className="p-3 bg-rose-50 rounded-full text-rose-600 group-hover:scale-110 transition-transform">
+                        <Receipt size={24} />
+                    </div>
+                    <div>
+                        <p className="text-sm text-gray-500 font-medium uppercase tracking-wide">Not Invoiced</p>
+                        <p className="text-2xl font-bold text-gray-900">€{stats.notInvoicedSum.toFixed(2)}</p>
                     </div>
                 </div>
             </div>

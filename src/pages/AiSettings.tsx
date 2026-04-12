@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
-import { Plus, Search, Edit, Trash2, Loader2, Save, X, Lightbulb, ToggleLeft, ToggleRight } from 'lucide-react';
+import { Plus, Search, Edit, Trash2, Loader2, Save, X, Lightbulb, ToggleLeft, ToggleRight, Lock } from 'lucide-react';
 import { Database } from '../lib/database.types';
+import clsx from 'clsx';
 
 type KnowledgeC = Database['public']['Tables']['ai_knowledge']['Row'];
 
@@ -18,7 +19,8 @@ const AiSettings: React.FC = () => {
         content: '',
         category: 'General',
         priority: '5',
-        is_active: true
+        is_active: true,
+        is_internal: false
     });
     const [submitting, setSubmitting] = useState(false);
 
@@ -51,7 +53,8 @@ const AiSettings: React.FC = () => {
             content: rule.content,
             category: rule.category,
             priority: rule.priority.toString(),
-            is_active: rule.is_active
+            is_active: rule.is_active,
+            is_internal: rule.is_internal || false
         });
         setIsModalOpen(true);
     };
@@ -92,7 +95,8 @@ const AiSettings: React.FC = () => {
                 content: formData.content,
                 category: formData.category,
                 priority: parseInt(formData.priority) || 0,
-                is_active: formData.is_active
+                is_active: formData.is_active,
+                is_internal: formData.is_internal
             };
 
             if (editingId) {
@@ -126,7 +130,8 @@ const AiSettings: React.FC = () => {
             content: '',
             category: 'General',
             priority: '5',
-            is_active: true
+            is_active: true,
+            is_internal: false
         });
     };
 
@@ -217,6 +222,7 @@ const AiSettings: React.FC = () => {
                                 <th className="py-4 px-4 font-medium">Topic</th>
                                 <th className="py-4 px-4 font-medium">Content (Rule)</th>
                                 <th className="py-4 px-4 font-medium">Category</th>
+                                <th className="py-4 px-4 font-medium text-center italic">Scope</th>
                                 <th className="py-4 px-4 font-medium text-center">Priority</th>
                                 <th className="py-4 px-4 font-medium text-center">Status</th>
                                 <th className="py-4 px-4 font-medium text-right">Actions</th>
@@ -224,9 +230,9 @@ const AiSettings: React.FC = () => {
                         </thead>
                         <tbody className="divide-y divide-gray-50">
                             {loading ? (
-                                <tr><td colSpan={6} className="py-8 text-center text-gray-500">Loading knowledge...</td></tr>
+                                <tr><td colSpan={7} className="py-8 text-center text-gray-500">Loading knowledge...</td></tr>
                             ) : filteredRules.length === 0 ? (
-                                <tr><td colSpan={6} className="py-8 text-center text-gray-500">No rules found.</td></tr>
+                                <tr><td colSpan={7} className="py-8 text-center text-gray-500">No rules found.</td></tr>
                             ) : (
                                 filteredRules.map((rule) => (
                                     <tr key={rule.id} className="hover:bg-gray-50 transition-colors">
@@ -237,9 +243,23 @@ const AiSettings: React.FC = () => {
                                                 {rule.category}
                                             </span>
                                         </td>
+                                        <td className="py-4 px-4 text-center align-top">
+                                            <span className={clsx(
+                                                "px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider",
+                                                rule.is_internal 
+                                                    ? "bg-amber-100 text-amber-700 border border-amber-200" 
+                                                    : "bg-blue-100 text-blue-700 border border-blue-200"
+                                            )}>
+                                                {rule.is_internal ? 'Internal' : 'External'}
+                                            </span>
+                                        </td>
                                         <td className="py-4 px-4 text-center align-top">{rule.priority}</td>
                                         <td className="py-4 px-4 text-center align-top">
-                                            <button onClick={() => handleToggleActive(rule)} className="text-gray-400 hover:text-primary transition-colors">
+                                            <button 
+                                                onClick={() => handleToggleActive(rule)} 
+                                                className="text-gray-400 hover:text-primary transition-colors"
+                                                title={rule.is_active ? "Deactivate" : "Activate"}
+                                            >
                                                 {rule.is_active ? <ToggleRight size={24} className="text-green-500" /> : <ToggleLeft size={24} />}
                                             </button>
                                         </td>
@@ -277,7 +297,11 @@ const AiSettings: React.FC = () => {
                             <h2 className="text-xl font-bold text-gray-800">
                                 {editingId ? 'Edit Knowledge' : 'Add Knowledge'}
                             </h2>
-                            <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-gray-600">
+                            <button 
+                                onClick={() => setIsModalOpen(false)} 
+                                className="text-gray-400 hover:text-gray-600"
+                                title="Close modal"
+                            >
                                 <X size={24} />
                             </button>
                         </div>
@@ -316,6 +340,7 @@ const AiSettings: React.FC = () => {
                                         className="input-field"
                                         value={formData.priority}
                                         onChange={e => setFormData({ ...formData, priority: e.target.value })}
+                                        title="Knowledge priority (1-10)"
                                     />
                                 </div>
                             </div>
@@ -332,15 +357,33 @@ const AiSettings: React.FC = () => {
                                 />
                             </div>
 
-                            <div className="flex items-center gap-2">
-                                <label className="text-sm font-bold text-gray-700">Active?</label>
-                                <button
-                                    type="button"
-                                    onClick={() => setFormData({ ...formData, is_active: !formData.is_active })}
-                                    className="text-gray-500 hover:text-primary"
-                                >
-                                    {formData.is_active ? <ToggleRight size={28} className="text-green-500" /> : <ToggleLeft size={28} />}
-                                </button>
+                            <div className="flex items-center gap-6 pb-2">
+                                <div className="flex items-center gap-2">
+                                    <label className="text-sm font-bold text-gray-700">Active?</label>
+                                    <button
+                                        type="button"
+                                        onClick={() => setFormData({ ...formData, is_active: !formData.is_active })}
+                                        className="text-gray-400 hover:text-primary transition-colors"
+                                        title={formData.is_active ? "Active" : "Inactive"}
+                                    >
+                                        {formData.is_active ? <ToggleRight size={28} className="text-green-500" /> : <ToggleLeft size={28} />}
+                                    </button>
+                                </div>
+
+                                <div className="flex items-center gap-2">
+                                    <label className="text-sm font-bold text-gray-700 flex items-center gap-1">
+                                        Internal?
+                                        <Lock size={14} className={formData.is_internal ? "text-amber-500" : "text-gray-300"} />
+                                    </label>
+                                    <button
+                                        type="button"
+                                        onClick={() => setFormData({ ...formData, is_internal: !formData.is_internal })}
+                                        className="text-gray-400 hover:text-primary transition-colors"
+                                        title={formData.is_internal ? "Internal (Staff Only)" : "External (Public)"}
+                                    >
+                                        {formData.is_internal ? <ToggleRight size={28} className="text-amber-500" /> : <ToggleLeft size={28} />}
+                                    </button>
+                                </div>
                             </div>
 
                             <div className="pt-4 flex justify-end gap-3">

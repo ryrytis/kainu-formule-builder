@@ -2,9 +2,16 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 
+interface Profile {
+    role: string;
+    client_id: string | null;
+    signup_company_name?: string | null;
+}
+
 interface AuthContextType {
     user: User | null;
     session: Session | null;
+    profile: Profile | null;
     loading: boolean;
     showPasswordReset: boolean;
     setShowPasswordReset: (show: boolean) => void;
@@ -14,6 +21,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType>({
     user: null,
     session: null,
+    profile: null,
     loading: true,
     showPasswordReset: false,
     setShowPasswordReset: () => { },
@@ -25,14 +33,43 @@ export const useAuth = () => useContext(AuthContext);
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [user, setUser] = useState<User | null>(null);
     const [session, setSession] = useState<Session | null>(null);
+    const [profile, setProfile] = useState<Profile | null>(null);
     const [loading, setLoading] = useState(true);
     const [showPasswordReset, setShowPasswordReset] = useState(false);
 
+    const fetchProfile = async (userId: string) => {
+        try {
+            const { data, error } = await supabase
+                .from('profiles')
+                .select('role, client_id, signup_company_name')
+                .eq('id', userId)
+                .single();
+            
+            if (error) {
+                console.error('Error fetching profile:', error);
+                
+                // Fallback for missing profile
+                // Defaulting logic: If no profile exists yet (migration not run fully), default to 'admin' like before.
+                // Or maybe they are the main users. For safety, default to admin if query fails so users aren't locked out immediately.
+                setProfile({ role: 'admin', client_id: null });
+            } else if (data) {
+                setProfile(data);
+            }
+        } catch (err) {
+            console.error('Profile fetch exception:', err);
+        }
+    };
+
     useEffect(() => {
         // Check active sessions and sets the user
-        supabase.auth.getSession().then(({ data: { session } }) => {
+        supabase.auth.getSession().then(async ({ data: { session } }) => {
             setSession(session);
             setUser(session?.user ?? null);
+            if (session?.user) {
+                await fetchProfile(session.user.id);
+            } else {
+                setProfile(null);
+            }
         }).catch((err) => {
             console.error('Auth Init Error:', err);
         }).finally(() => {
@@ -40,9 +77,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         });
 
         // Listen for changes on auth state (logged in, signed out, etc.)
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
             setSession(session);
             setUser(session?.user ?? null);
+            
+            if (session?.user) {
+                await fetchProfile(session.user.id);
+            } else {
+                setProfile(null);
+            }
+            
             setLoading(false);
 
             if (event === 'PASSWORD_RECOVERY') {
@@ -101,7 +145,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     return (
-        <AuthContext.Provider value={{ user, session, loading, showPasswordReset, setShowPasswordReset, signOut }}>
+        <AuthContext.Provider value={{ user, session, profile, loading, showPasswordReset, setShowPasswordReset, signOut }}>
             {children}
         </AuthContext.Provider>
     );
