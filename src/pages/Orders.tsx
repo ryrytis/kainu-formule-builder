@@ -178,7 +178,7 @@ const Orders: React.FC = () => {
     const fetchOrders = async () => {
         setLoading(true);
         try {
-            let query = supabase.from('orders').select('*, clients!inner(*), order_items(*)');
+            let query = supabase.from('orders').select('*, clients(*), order_items(*)');
 
             if (statusFilter !== 'All') {
                 if (statusFilter === 'Not Invoiced') {

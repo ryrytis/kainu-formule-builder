@@ -41,22 +41,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         try {
             const { data, error } = await supabase
                 .from('profiles')
-                .select('role, client_id, signup_company_name')
+                .select('role, client_id')
                 .eq('id', userId)
                 .single();
             
             if (error) {
                 console.error('Error fetching profile:', error);
-                
-                // Fallback for missing profile
-                // Defaulting logic: If no profile exists yet (migration not run fully), default to 'admin' like before.
-                // Or maybe they are the main users. For safety, default to admin if query fails so users aren't locked out immediately.
                 setProfile({ role: 'admin', client_id: null });
             } else if (data) {
                 setProfile(data);
             }
         } catch (err) {
             console.error('Profile fetch exception:', err);
+            setProfile({ role: 'admin', client_id: null });
         }
     };
 
