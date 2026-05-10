@@ -11,6 +11,7 @@ interface CreateClientModalProps {
 
 const CreateClientModal: React.FC<CreateClientModalProps> = ({ isOpen, onClose, onSuccess, clientToEdit }) => {
     const [loading, setLoading] = useState(false);
+    const [priceLists, setPriceLists] = useState<any[]>([]);
     const [formData, setFormData] = useState({
         name: '',
         email: '',
@@ -25,7 +26,8 @@ const CreateClientModal: React.FC<CreateClientModalProps> = ({ isOpen, onClose, 
         person_type: 'Person' as 'Person' | 'Legal',
         delivery_method: 'Pickup',
         parcel_locker: '',
-        notes: ''
+        notes: '',
+        price_list_id: ''
     });
 
     const [lockerSearch, setLockerSearch] = useState('');
@@ -33,6 +35,14 @@ const CreateClientModal: React.FC<CreateClientModalProps> = ({ isOpen, onClose, 
     const [isLoadingLockers, setIsLoadingLockers] = useState(false);
     const [isLockerDropdownOpen, setIsLockerDropdownOpen] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        const fetchPriceLists = async () => {
+            const { data } = await supabase.from('price_lists').select('id, name').order('name');
+            if (data) setPriceLists(data);
+        };
+        fetchPriceLists();
+    }, []);
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -89,7 +99,8 @@ const CreateClientModal: React.FC<CreateClientModalProps> = ({ isOpen, onClose, 
                 person_type: clientToEdit.person_type || 'Person',
                 delivery_method: clientToEdit.delivery_method || 'Pickup',
                 parcel_locker: clientToEdit.parcel_locker || '',
-                notes: clientToEdit.notes || ''
+                notes: clientToEdit.notes || '',
+                price_list_id: clientToEdit.price_list_id || ''
             });
             if (clientToEdit.parcel_locker) {
                 setLockerSearch(clientToEdit.parcel_locker);
@@ -109,7 +120,8 @@ const CreateClientModal: React.FC<CreateClientModalProps> = ({ isOpen, onClose, 
                 person_type: 'Person',
                 delivery_method: 'Pickup',
                 parcel_locker: '',
-                notes: ''
+                notes: '',
+                price_list_id: ''
             });
         }
     }, [clientToEdit, isOpen]);
@@ -120,7 +132,7 @@ const CreateClientModal: React.FC<CreateClientModalProps> = ({ isOpen, onClose, 
 
         try {
             // Clean up payload based on logic
-            const payload = { ...formData };
+            const payload: any = { ...formData };
             if (payload.person_type === 'Person') {
                 payload.company = '';
                 payload.company_code = '';
@@ -134,6 +146,10 @@ const CreateClientModal: React.FC<CreateClientModalProps> = ({ isOpen, onClose, 
                 alert('Company Name is required for Legal Persons.');
                 setLoading(false);
                 return;
+            }
+
+            if (!payload.price_list_id) {
+                payload.price_list_id = null;
             }
 
             // Validation for mandatory Email and Phone
@@ -255,6 +271,23 @@ const CreateClientModal: React.FC<CreateClientModalProps> = ({ isOpen, onClose, 
                                 onChange={e => setFormData({ ...formData, city: e.target.value })}
                                 className="w-full border-b-2 border-gray-200 p-2 focus:border-accent-teal outline-none transition-colors"
                             />
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-6 border-t border-gray-100 pt-6">
+                        <div className="space-y-1 md:w-1/2">
+                            <label htmlFor="price-list" className="text-xs font-bold text-gray-500 uppercase">Assigned Price List (Optional)</label>
+                            <select
+                                id="price-list"
+                                value={formData.price_list_id}
+                                onChange={e => setFormData({ ...formData, price_list_id: e.target.value })}
+                                className="w-full border-b-2 border-gray-200 p-2 focus:border-accent-teal outline-none transition-colors"
+                            >
+                                <option value="">Standard Pricing (No Override)</option>
+                                {priceLists.map(list => (
+                                    <option key={list.id} value={list.id}>{list.name}</option>
+                                ))}
+                            </select>
                         </div>
                     </div>
 

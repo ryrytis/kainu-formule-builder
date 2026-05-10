@@ -22,6 +22,8 @@ import ClientOnboarding from './pages/ClientOnboarding';
 import Works from './pages/Works';
 import AiSettings from './pages/AiSettings';
 import MetalografijaOrder from './pages/MetalografijaOrder';
+import PriceLists from './pages/PriceLists';
+import ClientPortal from './pages/ClientPortal';
 
 function App() {
     return (
@@ -31,6 +33,7 @@ function App() {
                     <Route path="/login" element={<Login />} />
                     <Route path="/pending" element={<PendingApproval />} />
                     <Route path="/onboarding/:clientId" element={<ClientOnboarding />} />
+                    <Route path="/portal/:clientId" element={<ClientPortal />} />
 
                     <Route element={<ProtectedRoute />}>
                         <Route path="/" element={<SidebarLayout />}>
@@ -45,6 +48,7 @@ function App() {
                                 <Route path="clients" element={<Clients />} />
                                 <Route path="materials" element={<Materials />} />
                                 <Route path="products" element={<Products />} />
+                                <Route path="price-lists" element={<PriceLists />} />
                                 <Route path="products/:id/pricing" element={<ProductPricingMatrix />} />
                                 <Route path="works" element={<Works />} />
                                 <Route path="reporting" element={<Reporting />} />

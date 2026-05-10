@@ -159,15 +159,37 @@ const CalculationRules: React.FC = () => {
                                 </td>
                                 <td className="px-6 py-4 text-sm text-gray-600">
                                     <div className="flex flex-col gap-1">
-                                        {rule.products ? (
+                                        {rule.product_ids && rule.product_ids.length > 1 ? (
+                                            <span className="bg-blue-50 text-blue-800 text-xs px-2 py-0.5 rounded w-fit font-bold border border-blue-100">
+                                                📦 {rule.product_ids.length} Products
+                                            </span>
+                                        ) : rule.products ? (
                                             <span className="bg-blue-50 text-blue-800 text-xs px-2 py-0.5 rounded w-fit">
                                                 Prod: {rule.products.name}
                                             </span>
-                                        ) : <span className="text-gray-400 text-xs">All Products</span>}
+                                        ) : rule.product_ids && rule.product_ids.length === 1 ? (
+                                            <span className="bg-blue-50 text-blue-800 text-xs px-2 py-0.5 rounded w-fit">
+                                                1 Product
+                                            </span>
+                                        ) : rule.product_categories && rule.product_categories.length > 0 ? (
+                                            <span className="bg-indigo-50 text-indigo-800 text-xs px-2 py-0.5 rounded w-fit font-bold border border-indigo-100">
+                                                📁 {rule.product_categories.length} Categories
+                                            </span>
+                                        ) : rule.product_category ? (
+                                            <span className="bg-indigo-50 text-indigo-800 text-xs px-2 py-0.5 rounded w-fit font-bold">
+                                                Cat: {rule.product_category}
+                                            </span>
+                                        ) : <span className="text-gray-400 text-xs italic">All Products (Global)</span>}
 
                                         {rule.lamination && (
                                             <span className="bg-purple-50 text-purple-800 text-xs px-2 py-0.5 rounded w-fit">
                                                 Lam: {rule.lamination}
+                                            </span>
+                                        )}
+
+                                        {rule.print_type && (
+                                            <span className="bg-teal-50 text-teal-800 text-xs px-2 py-0.5 rounded w-fit font-black border border-teal-100">
+                                                Mode: {rule.print_type}
                                             </span>
                                         )}
 

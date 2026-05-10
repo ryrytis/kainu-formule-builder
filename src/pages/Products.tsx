@@ -90,6 +90,7 @@ const Products: React.FC = () => {
                     <table className="w-full text-left border-separate border-spacing-0">
                         <thead>
                             <tr className="border-b border-gray-100 text-gray-500 text-sm">
+                                <th className="py-4 px-4 font-medium">Image</th>
                                 <th className="py-4 px-4 font-medium">Name</th>
                                 <th className="py-4 px-4 font-medium">Category</th>
                                 <th className="py-4 px-4 font-medium">Base Price</th>
@@ -112,6 +113,17 @@ const Products: React.FC = () => {
                             ) : (
                                 filteredProducts.map((product) => (
                                     <tr key={product.id} className="hover:bg-gray-50 transition-colors group">
+                                        <td className="py-4 px-4">
+                                            {product.image_url ? (
+                                                <div className="w-10 h-10 border border-gray-100 overflow-hidden bg-white shadow-sm">
+                                                    <img src={product.image_url} alt={product.name} className="w-full h-full object-cover" />
+                                                </div>
+                                            ) : (
+                                                <div className="w-10 h-10 border-2 border-dashed border-gray-100 flex items-center justify-center text-gray-200">
+                                                    <Box size={16} />
+                                                </div>
+                                            )}
+                                        </td>
                                         <td className="py-4 px-4 font-medium text-primary">
                                             {product.name}
                                         </td>

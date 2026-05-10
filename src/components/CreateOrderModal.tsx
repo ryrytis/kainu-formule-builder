@@ -20,6 +20,7 @@ interface CreateOrderModalProps {
         material_id: string; // Name or ID
         width: number;
         height: number;
+        length?: number;
         quantity: number;
         print_type: string;
         unit_price: number;
@@ -216,6 +217,7 @@ const CreateOrderModal: React.FC<CreateOrderModalProps> = ({ isOpen, onClose, on
                         material_id: initialItem.material_id || null,
                         width: initialItem.width,
                         height: initialItem.height,
+                        depth: initialItem.length || null,
                         quantity: initialItem.quantity,
                         print_type: initialItem.print_type,
                         unit_price: initialItem.unit_price,
@@ -304,7 +306,7 @@ const CreateOrderModal: React.FC<CreateOrderModalProps> = ({ isOpen, onClose, on
                     {initialItem && (
                         <div className="bg-blue-50 p-3 rounded text-sm text-blue-800 mb-4 flex justify-between items-center">
                             <span>
-                                <strong>Item:</strong> {initialItem.product_type} ({initialItem.width}x{initialItem.height}mm, Qty: {initialItem.quantity})
+                                <strong>Item:</strong> {initialItem.product_type} ({initialItem.width}x{initialItem.height}{initialItem.length ? `x${initialItem.length}` : ''}mm, Qty: {initialItem.quantity})
                             </span>
                             <span className="font-bold">€{initialItem.total_price.toFixed(2)}</span>
                         </div>

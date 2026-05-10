@@ -6,6 +6,7 @@ export interface PricingRequest {
     product_id: string;
     quantity: number;
     lamination?: string;        // 'None' | 'Matt' | 'Gloss' | 'SoftTouch'
+    lamination_sides?: 1 | 2;   // 1 or 2 sides
     selected_extras?: string[]; // extra_name values, e.g. ['Foil', 'Rounded Corners']
     client_discount_koef?: number;
     production_mode?: 'printed' | 'cut_only'; // printed → SRA3, cut_only → 500×700mm
@@ -16,7 +17,15 @@ export interface PricingRequest {
     length?: number; // mm — for boxes (W × H × L)
     material_id?: string;
     print_type?: string;
+    // Booklet components
+    cover_material_id?: string;
+    cover_print_type?: string;
+    inner_material_id?: string;
+    inner_print_type?: string;
+    inner_pages?: number;
+    
     manual_unit_paint_price?: number;
+    client_price_list_id?: string;
 }
 
 export interface ExtraLine {
@@ -81,6 +90,7 @@ export const RULE_TYPES = {
     EXTRA_COST_SHEET: 'Extra Cost per Sheet',
     QTY_ADJUSTMENT: 'Qty Adjustment',    // +10% for 50 pcs, -5% for 200, -10% for 500, etc.
     CLIENT_DISCOUNT: 'Client Discount',
+    QTY_DISCOUNT: 'Qty Discount',
     // Legacy (backward compatible)
     BASE_PRICE_UNIT: 'Base Price per unit',
     QTY_MULTIPLIER: 'Qty Multiplier',
@@ -98,6 +108,8 @@ export const RULE_TYPES = {
     SHEET_STICKER_SPACING: 'Sheet Sticker Spacing',
     SHEET_STICKER_BLEED: 'Sheet Sticker Bleed',
     SHEET_PRINT_PRICE: 'Sheet Print Cost',
+    SHEET_PRINT_OPERATION: 'Sheet Print Operation',
+    SHEET_CUTTING_PRICE: 'Sheet Cutting Cost',
     SHEET_MARGIN: 'Sheet Default Margin',
     SHEET_SETUP_WASTE: 'Sheet Setup Waste',
 } as const;
@@ -109,11 +121,16 @@ const CUT_SHEET = { width: 500, height: 700, name: '500×700' }; // For unprinte
 
 function calculateSheetLayout(
     itemW: number, itemH: number,
-    sheet = SRA3
+    sheet = SRA3,
+    spacing = 0
 ): SheetCalcDetails {
+    // Add spacing to item dimensions for yield calculation
+    const effectiveW = itemW + spacing;
+    const effectiveH = itemH + spacing;
+
     // Try both orientations and pick the best
-    const layoutA = Math.floor(sheet.width / itemW) * Math.floor(sheet.height / itemH);
-    const layoutB = Math.floor(sheet.width / itemH) * Math.floor(sheet.height / itemW);
+    const layoutA = Math.floor(sheet.width / effectiveW) * Math.floor(sheet.height / effectiveH);
+    const layoutB = Math.floor(sheet.width / effectiveH) * Math.floor(sheet.height / effectiveW);
     const itemsPerSheet = Math.max(layoutA, layoutB);
 
     return {
@@ -155,44 +172,9 @@ function computeSheets(layout: SheetCalcDetails, quantity: number, pages = 1, se
     };
 }
 
-/**
- * For a crash-lock (greito uždarymo) or similar box, compute the unfolded blank dimensions.
- * Blank W ≈ 2×(W+L) + 15mm glue flap
- * Blank H ≈ H + W  (top lock ≈ H/2, bottom crash-lock ≈ H/2, or roughly = W)
- * +3mm bleed per side (=6mm each dimension)
- */
-function getBoxBlankDimensions(w: number, h: number, l: number): { blankW: number; blankH: number } {
-    const BLEED = 3; // mm each side
-    const blankW = 2 * (w + l) + 15 + BLEED * 2; // glue flap + bleed
-    const blankH = h + w + BLEED * 2;             // top+bottom locks + bleed
-    return { blankW, blankH };
-}
 
-/**
- * Lid blank dimensions for a separate-lid (su dangteliu) box.
- * Lid is ~5mm bigger on W and L, and typically H_lid ≈ H * 0.35 (shallow lid)
- */
-function getLidBlankDimensions(w: number, h: number, l: number): { blankW: number; blankH: number } {
-    const BLEED = 3;
-    const lidW = w + 5;
-    const lidL = l + 5;
-    const lidH = Math.round(h * 0.35);
-    const blankW = 2 * (lidW + lidL) + 15 + BLEED * 2;
-    const blankH = lidH + lidW + BLEED * 2;
-    return { blankW, blankH };
-}
 
-/**
- * For a sleeve (Įmautė), the blank wraps around width and length.
- * Blank W = 2*(W+L) + 15mm glue flap + bleed
- * Blank H = H + bleed
- */
-function getSleeveBlankDimensions(w: number, h: number, l: number): { blankW: number; blankH: number } {
-    const BLEED = 3;
-    const blankW = 2 * (w + l) + 15 + BLEED * 2;
-    const blankH = h + BLEED * 2;
-    return { blankW, blankH };
-}
+
 
 function getFixedYieldForStandardSize(productName: string): number | null {
     const nameLower = productName.toLowerCase();
@@ -260,9 +242,17 @@ export const PricingService = {
      * Fetch available extras for a product (from rules with extra_name).
      */
     getAvailableExtras: async (productId?: string): Promise<{ name: string; rule_type: string; value: number }[]> => {
+        // Fetch product category first if productId is provided
+        let productCategory: string | null = null;
+        if (productId) {
+            const { data: prod } = await (supabase as any)
+                .from('products').select('category').eq('id', productId).maybeSingle();
+            if (prod) productCategory = prod.category;
+        }
+
         const { data } = await (supabase as any)
             .from('calculation_rules')
-            .select('extra_name, rule_type, value, product_id')
+            .select('extra_name, rule_type, value, product_id, product_category')
             .eq('is_active', true)
             .in('rule_type', [
                 RULE_TYPES.EXTRA_COST_UNIT,
@@ -274,18 +264,43 @@ export const PricingService = {
 
         if (!data) return [];
 
-        // Filter: rules for this product OR global (null product_id)
-        const filtered = data.filter((r: any) => !r.product_id || r.product_id === productId);
+        // Filter: rules for this product OR category OR global (null product_id AND null product_category)
+        const filtered = data.filter((r: any) => {
+            // Match specific product
+            if (r.product_id && r.product_id === productId) return true;
+            if (r.product_ids && productId && r.product_ids.includes(productId)) return true;
+            
+            // Match category
+            if (r.product_category && r.product_category === productCategory) return true;
+            if (r.product_categories && productCategory && r.product_categories.includes(productCategory)) return true;
+            
+            // Global rule
+            if (!r.product_id && !r.product_category && (!r.product_ids || r.product_ids.length === 0) && (!r.product_categories || r.product_categories.length === 0)) return true;
+            
+            return false;
+        });
 
-        // Deduplicate by extra_name, prefer product-specific
+        // Deduplicate by extra_name, prefer specific product rules over category rules, and category over global
         const map = new Map<string, any>();
         for (const r of filtered) {
             const key = r.extra_name || r.rule_type;
-            if (!map.has(key) || r.product_id) {
-                map.set(key, { name: key, rule_type: r.rule_type, value: r.value });
+            const existing = map.get(key);
+            
+            // Priority: Product ID > Product Category > Global
+            const currentPriority = r.product_id ? 3 : (r.product_category ? 2 : 1);
+            const existingPriority = existing ? (existing._productId ? 3 : (existing._category ? 2 : 1)) : 0;
+
+            if (!existing || currentPriority > existingPriority) {
+                map.set(key, { 
+                    name: key, 
+                    rule_type: r.rule_type, 
+                    value: r.value,
+                    _productId: r.product_id,
+                    _category: r.product_category
+                });
             }
         }
-        return Array.from(map.values());
+        return Array.from(map.values()).map(({ _productId, _category, ...rest }) => rest);
     },
 
     /**
@@ -310,24 +325,50 @@ export const PricingService = {
             product_id,
             quantity,
             lamination,
+            lamination_sides,
             selected_extras = [],
             client_discount_koef,
             width,
             height,
-            length,
+
             production_mode,
             pages: requestedPages,
             material_id,
             print_type,
-            manual_unit_paint_price
+
+            cover_material_id,
+            cover_print_type,
+            inner_material_id,
+            inner_print_type,
+            inner_pages,
+
+            manual_unit_paint_price,
+            client_price_list_id,
+            length: itemLength // Renamed to avoid collision with array.length if any
         } = request;
 
         const appliedRules: string[] = [];
         const qty100 = quantity / 100;
 
+        // ── STEP -1: Client Price List Override ──────────────────────────────
+        let priceListOverrideBasePrice: number | null = null;
+        if (client_price_list_id && product_id) {
+            const { data: plItem } = await (supabase as any)
+                .from('price_list_items')
+                .select('custom_base_price')
+                .eq('price_list_id', client_price_list_id)
+                .eq('product_id', product_id)
+                .maybeSingle();
+
+            if (plItem) {
+                priceListOverrideBasePrice = plItem.custom_base_price;
+            }
+        }
+
         // ── STEP 0: Matrix Pricing (Override) ────────────────────────────────
         // Check if there's a fixed price defined in the matrix for this configuration
-        if (product_id) {
+        // Skip matrix pricing if client has a custom price list item
+        if (product_id && priceListOverrideBasePrice === null) {
             const { data: matrixRows } = await (supabase as any)
                 .from('product_pricing_matrices')
                 .select('*')
@@ -379,15 +420,91 @@ export const PricingService = {
         }
 
         // ── Fetch rules (standard calculation) ───────────────────────────────
+        // ── STEP 0: Fetch Product & Material Info ───────────────────────────
+        let prodName = '';
+        let prodCategory = '';
+        let prodBase = 0;
+        let isRollSticker = false;
+        let isPaperSticker = false;
+        let isSheetLipdukas = false;
+        let isBox = false;
+        let isSleeve = false;
+        let isKarulis = false;
+        let isBooklet = false;
+        let materialPricePerSheet = 0;
+        let coverMatPrice = 0;
+        let innerMatPrice = 0;
+
+        let itemW = width || 0;
+        let itemH = height || 0;
+        let pages = requestedPages || 0;
+
+        let currentProduct: any = null;
+        if (product_id) {
+            const { data: prod } = await (supabase as any)
+                .from('products').select('name, base_price, category, item_spacing').eq('id', product_id).maybeSingle();
+            if (prod) {
+                currentProduct = prod;
+                prodName = prod.name;
+                prodCategory = prod.category || '';
+                prodBase = prod.base_price || 0;
+                
+                const nameLower = prodName.toLowerCase();
+                const catLower = prodCategory.toLowerCase();
+                isRollSticker = nameLower.includes('rulon') && nameLower.includes('lipdukas');
+                isPaperSticker = nameLower.includes('popieriaus');
+                isSheetLipdukas = nameLower.includes('lipdukas') && !isRollSticker;
+                const isInsert = nameLower.includes('įdėkl') || nameLower.includes('idekl');
+                isBox = (catLower.includes('dėžut') || nameLower.includes('dėžut')) && !isInsert;
+                isSleeve = catLower.includes('mov') || nameLower.includes('mov') || nameLower.includes('įmaut') || nameLower.includes('imaut');
+                isKarulis = catLower.includes('karul') || nameLower.includes('karul') || isInsert;
+
+                // Auto-detect dimensions from name if missing
+                if (!itemW || !itemH) {
+                    for (const [key, size] of Object.entries(STANDARD_SIZES)) {
+                        if (nameLower.includes(key)) {
+                            itemW = size.w;
+                            itemH = size.h;
+                            if (size.pages && !pages) {
+                                pages = size.pages;
+                            }
+                            appliedRules.push(`Auto-detect: ${key} (${itemW}×${itemH}mm${(pages || 0) > 1 ? `, ${pages} pages` : ''})`);
+                            break;
+                        }
+                    }
+                }
+
+                (request as any)._cachedBasePrice = prodBase;
+                (request as any)._cachedName = prodName;
+                (request as any)._cachedCategory = prodCategory;
+            }
+        }
+
         const { data: allRules } = await (supabase as any)
             .from('calculation_rules')
             .select('*')
             .eq('is_active', true)
-            .order('priority', { ascending: false });
+            .order('priority', { ascending: false })
+            .order('min_quantity', { ascending: false, nullsFirst: false });
 
         const rules = allRules || [];
 
-        const matchesProduct = (rule: any) => !rule.product_id || rule.product_id === product_id;
+        const matchesProduct = (rule: any) => {
+            // Product match
+            if (rule.product_id && rule.product_id === product_id) return true;
+            if (rule.product_ids && product_id && rule.product_ids.includes(product_id)) return true;
+            
+            // Category match
+            if (rule.product_category && rule.product_category === prodCategory) return true;
+            if (rule.product_categories && prodCategory && rule.product_categories.includes(prodCategory)) return true;
+            
+            // Global rule (only if no specific filters are set)
+            const isGlobal = !rule.product_id && !rule.product_category && 
+                             (!rule.product_ids || rule.product_ids.length === 0) && 
+                             (!rule.product_categories || rule.product_categories.length === 0);
+            return isGlobal;
+        };
+
         const matchesQty = (rule: any) => {
             const minOk = !rule.min_quantity || quantity >= rule.min_quantity;
             const maxOk = !rule.max_quantity || quantity <= rule.max_quantity;
@@ -396,12 +513,6 @@ export const PricingService = {
 
         // ── STEP 1: Sheet Calculation (if dimensions available) ──────────────
         let sheetCalc: SheetCalcDetails | undefined;
-        let itemW = width || 0;
-        let itemH = height || 0;
-        let pages = requestedPages || 0;
-        let isRollSticker = false;
-        let isPaperSticker = false;
-        let isSheetLipdukas = false;
 
         const { multiplier: setupMultiplier, percentage: setupPercent } = getSetupWasteMultiplier(rules, product_id, quantity);
         if (setupPercent !== 20) {
@@ -411,52 +522,29 @@ export const PricingService = {
         // Pick sheet based on production mode
         const sheet = production_mode === 'cut_only' ? CUT_SHEET : SRA3;
 
-        // Auto-detect standard sizes and fetch product details early
-        if (product_id) {
-            const { data: prod } = await (supabase as any)
-                .from('products').select('name, base_price, category').eq('id', product_id).single();
-            if (prod?.name) {
-                const nameLower = prod.name.toLowerCase();
-                isRollSticker = nameLower.includes('rulon') && nameLower.includes('lipdukas');
-                isPaperSticker = nameLower.includes('popieriaus');
-                isSheetLipdukas = nameLower.includes('lipdukas') && !isRollSticker;
-                
-                if (!itemW || !itemH) {
-                    for (const [key, size] of Object.entries(STANDARD_SIZES)) {
-                        if (nameLower.includes(key)) {
-                            itemW = size.w;
-                            itemH = size.h;
-                            if (size.pages && !requestedPages) {
-                                pages = size.pages;
-                            }
-                            appliedRules.push(`Auto-detect: ${key} (${itemW}×${itemH}mm${pages > 1 ? `, ${pages} pages` : ''})`);
-                            break;
-                        }
-                    }
-                }
+        // ── Box/Sleeve blank override: compute unfolded blank W×H from W×H×L
+        if ((isBox || isSleeve) && itemW > 0 && itemH > 0 && itemLength && itemLength > 0) {
+            const originalW = itemW;
+            const originalH = itemH;
+            const originalL = itemLength;
 
-                (request as any)._cachedBasePrice = prod.base_price;
-                (request as any)._cachedName = prod.name;
-                (request as any)._cachedCategory = prod.category;
+            if (isSleeve) {
+                // Sleeve (Mova/Įmautė): Unfolded width = 2*(W+H) + gluing flap, Height = Length
+                itemW = 2 * (originalW + originalH) + 20; // 20mm glue flap
+                itemH = originalL;
+                appliedRules.push(`BOM Sleeve Blank: 2×(${originalW}+${originalH})+20 = ${itemW}mm, Length=${itemH}mm`);
+            } else if (isBox) {
+                // Box (Dėžutė): Unfolded width = 2*(W+L) + gluing flap, Height = H + W (flaps)
+                itemW = 2 * (originalW + originalL) + 30; // 30mm glue flap
+                itemH = originalH + originalW;
+                appliedRules.push(`BOM Box Blank: 2×(${originalW}+${originalL})+30 = ${itemW}mm, Height+Width=${itemH}mm`);
             }
         }
 
-        // ── Box/Sleeve blank override: compute unfolded blank W×H from W×H×L
-        const prodNameLowerEarly = ((request as any)._cachedName || '').toLowerCase();
-        const isBox = prodNameLowerEarly.includes('dėžut') || prodNameLowerEarly.includes('dezut');
-        const isSleeve = prodNameLowerEarly.includes('įmaut') || prodNameLowerEarly.includes('imaut');
-
-        if ((isBox || isSleeve) && width && height && length) {
-            const { blankW, blankH } = isSleeve 
-                ? getSleeveBlankDimensions(width, height, length)
-                : getBoxBlankDimensions(width, height, length);
-            itemW = blankW;
-            itemH = blankH;
-            appliedRules.push(`${isSleeve ? 'Sleeve' : 'Box'} blank: ${width}×${height}×${length}mm → unfolded ${Math.round(blankW)}×${Math.round(blankH)}mm (incl. 3mm bleed + ${isSleeve ? 'glue flap' : 'glue flap & locks'})`);
-        }
-
         if (!isRollSticker && !isSheetLipdukas && itemW > 0 && itemH > 0) {
-            let layout = calculateSheetLayout(itemW, itemH, sheet);
+            const spacing = currentProduct?.item_spacing || 0;
+            let layout = calculateSheetLayout(itemW, itemH, sheet, spacing);
+            if (spacing > 0) appliedRules.push(`Layout: Added ${spacing}mm gap between items.`);
             
             // Override yield for standard formats (A6=8, A5=4, A4=2) if requested
             const castedReq = request as any;
@@ -468,11 +556,29 @@ export const PricingService = {
                 }
             }
             
-            sheetCalc = computeSheets(layout, quantity, pages || 1, setupMultiplier);
-            const pagesInfo = pages > 1 ? `, ${pages} pgs × ${quantity} = ${pages * quantity} prints` : '';
-            appliedRules.push(
-                `Sheet (${sheet.name}): ${sheetCalc.items_per_sheet}/sheet, ${sheetCalc.sheets_needed} sheets${pagesInfo} (${sheetCalc.waste_percent}% waste)`
-            );
+            if (isBooklet && cover_material_id && inner_material_id) {
+                // BOOKLET LOGIC: Separate Cover and Inner Sheets
+                const coverLayout = { ...layout };
+                const innerLayout = { ...layout };
+                
+                const coverCalc = computeSheets(coverLayout, quantity, 4, setupMultiplier);
+                const innerCalc = computeSheets(innerLayout, quantity, inner_pages || 8, setupMultiplier);
+                
+                appliedRules.push(`Booklet Split: Cover (4 psl., ${coverCalc.sheets_needed} sheets) + Vidus (${inner_pages || 8} psl., ${innerCalc.sheets_needed} sheets)`);
+                
+                // Store combined details in sheetCalc for UI
+                sheetCalc = {
+                    ...innerCalc,
+                    sheets_needed: coverCalc.sheets_needed + innerCalc.sheets_needed,
+                    sheet_name: `Cover + Inner (${sheet.name})`
+                };
+            } else {
+                sheetCalc = computeSheets(layout, quantity, pages || 1, setupMultiplier);
+                const pagesInfo = (pages || 0) > 1 ? `, ${pages} pgs × ${quantity} = ${(pages || 0) * quantity} prints` : '';
+                appliedRules.push(
+                    `Sheet (${sheet.name}): ${sheetCalc.items_per_sheet}/sheet, ${sheetCalc.sheets_needed} sheets${pagesInfo} (${sheetCalc.waste_percent}% waste)`
+                );
+            }
         }
 
         // ── STEP 2: Resolve Base Price ─────────────────────────────────────
@@ -480,8 +586,36 @@ export const PricingService = {
         let isPerUnit = false;
 
         const getRuleVal = (type: string, fallback: number) => {
-            const r = rules.find((x: any) => x.rule_type === type && matchesProduct(x));
-            return r?.value ?? fallback;
+            // Get printing price - prioritize rules that match the specific print type (4+0, 4+4, etc)
+            let rule = rules.find((r: any) => 
+                r.rule_type === type && 
+                r.print_type === print_type &&
+                matchesProduct(r) && 
+                matchesQty(r)
+            );
+            
+            if (rule) {
+                appliedRules.push(`Rule Found: ${type} for mode ${print_type} = €${rule.value}`);
+            }
+
+            // Fallback to general rule if no specific type match
+            if (!rule) {
+                rule = rules.find((r: any) => 
+                    r.rule_type === type && 
+                    !r.print_type &&
+                    matchesProduct(r) && 
+                    matchesQty(r)
+                );
+                if (rule) {
+                    appliedRules.push(`Rule Found: ${type} (General/Fallback) = €${rule.value}`);
+                }
+            }
+
+            if (!rule) {
+                appliedRules.push(`Rule Not Found: ${type} (using fallback €${fallback})`);
+            }
+
+            return rule?.value ?? fallback;
         };
 
         if (isRollSticker && itemW > 0 && itemH > 0) {
@@ -639,125 +773,121 @@ export const PricingService = {
             };
         } else if (isSheetLipdukas) {
             appliedRules.push(`⚠️ Please enter Width and Height to calculate sheet yield and price.`);
-        } else if ((isBox || isSleeve) && itemW > 0 && itemH > 0) {
-            // Box/Sleeve pricing: blank fits on chosen sheet (SRA3 or 500×700), cost = material.unit_price × sheets needed
-            const sheetPrintCost = getRuleVal(RULE_TYPES.SHEET_PRINT_PRICE, 0.05);
+        } else if ((isBox || isSleeve || isKarulis || isBooklet) && itemW > 0 && itemH > 0) {
+            // Sheet-based BOM pricing (Boxes, Sleeves, Karuliai, Booklets)
+            const isDoubleSided = print_type === '4+4' || print_type === '1+1';
+            const printMultiplier = isDoubleSided ? 2 : 1;
+
+            const isCutOnly = production_mode === 'cut_only';
+            const basePrintCost = isCutOnly ? 0 : getRuleVal(RULE_TYPES.SHEET_PRINT_PRICE, 0.10);
+            const baseOpCost = isCutOnly ? 0 : getRuleVal(RULE_TYPES.SHEET_PRINT_OPERATION, 0.05);
+            
+            const sheetPrintCost = basePrintCost * printMultiplier;
+            const sheetOperationCost = baseOpCost * printMultiplier;
+            const sheetCuttingCost = getRuleVal(RULE_TYPES.SHEET_CUTTING_PRICE, 0.05);
             const sheetMarginMultiplier = getRuleVal(RULE_TYPES.SHEET_MARGIN, 1.5);
+            
+            appliedRules.push(`BOM Model: ${isBooklet ? 'Bukletas' : (isKarulis ? 'Karuliai' : 'Packaging')} logic (${isCutOnly ? 'Cut Only' : (print_type || '4+0')})`);
+            
+            coverMatPrice = 0;
+            innerMatPrice = 0;
 
-            const hasSeparateLid = isBox && (prodNameLowerEarly.includes('su dangteliu') || prodNameLowerEarly.includes('dangtel'));
-
-            // Body blank layout
-            const bodyLayoutA = Math.floor(sheet.width / itemW) * Math.floor(sheet.height / itemH);
-            const bodyLayoutB = Math.floor(sheet.width / itemH) * Math.floor(sheet.height / itemW);
-            const bodyYield = Math.max(bodyLayoutA, bodyLayoutB);
-            const bodyOrientation = bodyLayoutB > bodyLayoutA ? 'Landscape' : 'Portrait';
-
-            // Lid blank layout (if su dangteliu)
-            let lidYield = 0;
-            let lW = 0, lH = 0;
-            if (hasSeparateLid && width && height && length) {
-                const lid = getLidBlankDimensions(width, height, length);
-                lW = lid.blankW; lH = lid.blankH;
-                const lidLayoutA = Math.floor(sheet.width / lW) * Math.floor(sheet.height / lH);
-                const lidLayoutB = Math.floor(sheet.width / lH) * Math.floor(sheet.height / lW);
-                lidYield = Math.max(lidLayoutA, lidLayoutB);
-            }
-
-            let materialPricePerSheet = 0;
-            if (material_id) {
+            if (isBooklet && cover_material_id && inner_material_id) {
+                const { data: mats } = await (supabase as any)
+                    .from('materials').select('id, unit_price').in('id', [cover_material_id, inner_material_id]);
+                
+                coverMatPrice = mats?.find((m: any) => m.id === cover_material_id)?.unit_price || 0;
+                innerMatPrice = mats?.find((m: any) => m.id === inner_material_id)?.unit_price || 0;
+                appliedRules.push(`Booklet Materials: Cover €${coverMatPrice.toFixed(4)}/sheet, Inner €${innerMatPrice.toFixed(4)}/sheet`);
+            } else if (material_id) {
                 const { data: mat } = await (supabase as any)
                     .from('materials').select('unit_price, name').eq('id', material_id).single();
                 if (mat) {
                     materialPricePerSheet = mat.unit_price || 0;
-                    appliedRules.push(`Material: ${mat.name} @ €${materialPricePerSheet.toFixed(4)}/sheet`);
+                    appliedRules.push(`Material: ${mat.name} (€${materialPricePerSheet.toFixed(4)}/sheet)`);
                 }
             }
 
-            const totalSheetCost = materialPricePerSheet + sheetPrintCost;
+            // Body blank layout (respecting item spacing)
+            const spacing = currentProduct?.item_spacing || 0;
+            const effW = itemW + spacing;
+            const effH = itemH + spacing;
+            
+            const bodyLayoutA = Math.floor(sheet.width / effW) * Math.floor(sheet.height / effH);
+            const bodyLayoutB = Math.floor(sheet.width / effH) * Math.floor(sheet.height / effW);
+            const bodyYield = Math.max(bodyLayoutA, bodyLayoutB);
+            
+            if (spacing > 0) appliedRules.push(`Layout: Added ${spacing}mm gap between blanks.`);
 
-            let totalCostPerBox: number;
-            let bodyGrossSheets: number;
-            let lidGrossSheets = 0;
-            let finalYield = 0;
+            let totalCostPerBox = 0;
+            let bodyGrossSheets = bodyYield > 0 ? Math.ceil(Math.ceil(quantity / bodyYield) * setupMultiplier) : 0;
 
-            if (hasSeparateLid && lW > 0 && lH > 0) {
-                // Try combined: fit body + lid side by side on one sheet
-                const combWP = itemW + lW;
-                const combHP = Math.max(itemH, lH);
-                const combinedYieldP = Math.floor(sheet.width / combWP) * Math.floor(sheet.height / combHP);
+            if (isBooklet && cover_material_id && inner_material_id) {
+                // 1. Cover Cost
+                const coverIsDouble = cover_print_type === '4+4' || cover_print_type === '1+1';
+                const coverPrintMult = coverIsDouble ? 2 : 1;
+                const coverTotalSheetCost = coverMatPrice + (basePrintCost * coverPrintMult) + (baseOpCost * coverPrintMult) + sheetCuttingCost;
+                
+                // 2. Inner Cost
+                const innerIsDouble = inner_print_type === '4+4' || inner_print_type === '1+1';
+                const innerPrintMult = innerIsDouble ? 2 : 1;
+                const innerTotalSheetCost = innerMatPrice + (basePrintCost * innerPrintMult) + (baseOpCost * innerPrintMult) + sheetCuttingCost;
 
-                const combWL = itemH + lH;
-                const combHL = Math.max(itemW, lW);
-                const combinedYieldL = Math.floor(sheet.width / combWL) * Math.floor(sheet.height / combHL);
+                // 3. Combined
+                const coverSheets = bodyYield > 0 ? Math.ceil(Math.ceil((quantity * 4) / bodyYield) * setupMultiplier) : 0;
+                const innerSheets = bodyYield > 0 ? Math.ceil(Math.ceil((quantity * (inner_pages || 8)) / bodyYield) * setupMultiplier) : 0;
+                
+                const totalCost = (coverTotalSheetCost * coverSheets) + (innerTotalSheetCost * innerSheets);
+                totalCostPerBox = quantity > 0 ? totalCost / quantity : 0;
 
-                const combinedYield = Math.max(combinedYieldP, combinedYieldL);
-                const combinedCostPerBox = combinedYield > 0 ? totalSheetCost / combinedYield : Infinity;
-                const separateCostPerBox = (bodyYield > 0 ? totalSheetCost / bodyYield : 0) + (lidYield > 0 ? totalSheetCost / lidYield : 0);
-
-                if (combinedYield > 0 && combinedCostPerBox <= separateCostPerBox) {
-                    // Use combined layout
-                    finalYield = combinedYield;
-                    const grossSheets = Math.ceil(Math.ceil(quantity / finalYield) * setupMultiplier);
-                    totalCostPerBox = combinedCostPerBox;
-                    bodyGrossSheets = grossSheets;
-                    appliedRules.push(`Body+Lid combined on ${sheet.name}: ${finalYield} pairs/sheet -> ${grossSheets} sheets (incl. ${setupPercent}% waste)`);
-                } else {
-                    // Separate sheets
-                    finalYield = Math.min(bodyYield, lidYield);
-                    totalCostPerBox = separateCostPerBox;
-                    bodyGrossSheets = bodyYield > 0 ? Math.ceil(Math.ceil(quantity / bodyYield) * setupMultiplier) : 0;
-                    lidGrossSheets = lidYield > 0 ? Math.ceil(Math.ceil(quantity / lidYield) * setupMultiplier) : 0;
-                    appliedRules.push(`Body (${sheet.name}): ${Math.round(itemW)}×${Math.round(itemH)}mm -> ${bodyYield}/sheet, ${bodyGrossSheets} sheets (incl. ${setupPercent}% waste)`);
-                    appliedRules.push(`Lid (${sheet.name}): ${Math.round(lW)}×${Math.round(lH)}mm -> ${lidYield}/sheet, ${lidGrossSheets} sheets (incl. ${setupPercent}% waste)`);
-                    const bodyPart = bodyYield > 0 ? totalSheetCost/bodyYield : 0;
-                    const lidPart = lidYield > 0 ? totalSheetCost/lidYield : 0;
-                    appliedRules.push(`Cost/box: Body €${bodyPart.toFixed(4)} + Lid €${lidPart.toFixed(4)} = €${totalCostPerBox.toFixed(4)}`);
-                }
+                appliedRules.push(`Booklet Cost Breakdown:`);
+                appliedRules.push(`- Cover: €${coverTotalSheetCost.toFixed(4)}/sheet × ${coverSheets} sheets = €${(coverTotalSheetCost * coverSheets).toFixed(2)}`);
+                appliedRules.push(`- Vidus: €${innerTotalSheetCost.toFixed(4)}/sheet × ${innerSheets} sheets = €${(innerTotalSheetCost * innerSheets).toFixed(2)}`);
+                
+                bodyGrossSheets = coverSheets + innerSheets;
             } else {
-                finalYield = bodyYield;
-                totalCostPerBox = finalYield > 0 ? totalSheetCost / finalYield : 0;
-                bodyGrossSheets = finalYield > 0 ? Math.ceil(Math.ceil(quantity / finalYield) * setupMultiplier) : 0;
-                appliedRules.push(`Body blank (${sheet.name}): ${Math.round(itemW)}×${Math.round(itemH)}mm -> ${finalYield}/sheet (${bodyOrientation}), ${bodyGrossSheets} sheets (incl. ${setupPercent}% waste)`);
+                const totalSheetCost = materialPricePerSheet + sheetPrintCost + sheetOperationCost + sheetCuttingCost;
+                totalCostPerBox = quantity > 0 ? (totalSheetCost * bodyGrossSheets) / quantity : 0;
+                appliedRules.push(`BOM Model Calculation: €${totalSheetCost.toFixed(4)}/sheet × ${bodyGrossSheets} sheets = €${(totalSheetCost * bodyGrossSheets).toFixed(2)} total cost`);
             }
 
-            if (finalYield === 0) {
-                appliedRules.push(`⚠️ DOES NOT FIT ON ${sheet.name} SHEET!`);
-            }
+            const pricePerUnit = totalCostPerBox * sheetMarginMultiplier;
+            const itemLabel = isBooklet ? 'Bukletas' : (isKarulis ? 'Karulis' : 'Pakuotė');
+            appliedRules.push(`Final ${itemLabel} Base: €${totalCostPerBox.toFixed(4)} (cost) × Margin ${sheetMarginMultiplier} = €${pricePerUnit.toFixed(4)}/unit`);
 
-            const pricePerBox = totalCostPerBox * sheetMarginMultiplier;
-            appliedRules.push(`Price/box: €${totalCostPerBox.toFixed(4)} × Margin ${sheetMarginMultiplier} = €${pricePerBox.toFixed(4)}`);
-
-            // Waste calculation for boxes
-            const totalBodyCap = bodyGrossSheets * bodyYield;
-            const totalLidCap = lidGrossSheets * lidYield;
-            const netBodySheets = bodyYield > 0 ? Math.ceil(quantity / bodyYield) : 0;
-            const netLidSheets = lidYield > 0 ? Math.ceil(quantity / lidYield) : 0;
-            
-            const totalCap = totalBodyCap + totalLidCap;
-            const setupWaste = (totalBodyCap - (netBodySheets * bodyYield)) + (totalLidCap - (netLidSheets * lidYield));
-            const layoutWaste = ((netBodySheets * bodyYield) - quantity) + ((netLidSheets * lidYield) - (lidYield > 0 ? quantity : 0));
-            
-            const setupWastePercent = totalCap > 0 ? (setupWaste / totalCap) * 100 : 0;
-            const layoutWastePercent = totalCap > 0 ? (layoutWaste / totalCap) * 100 : 0;
-            const totalWastePercent = totalCap > 0 ? (setupWastePercent + layoutWastePercent) : 0;
-
-            basePrice = pricePerBox;
+            basePrice = pricePerUnit;
             isPerUnit = true;
 
-            sheetCalc = {
-                item_width: itemW,
-                item_height: itemH,
-                sheet_width: sheet.width,
-                sheet_height: sheet.height,
-                sheet_name: `${sheet.name}${hasSeparateLid ? ' (body+lid)' : ''}`,
-                items_per_sheet: finalYield,
-                sheets_needed: bodyGrossSheets + lidGrossSheets,
-                waste_percent: Number(totalWastePercent.toFixed(1)),
-                setup_waste_percent: Number(setupWastePercent.toFixed(1)),
-                layout_waste_percent: Number(layoutWastePercent.toFixed(1))
-            };
-        } else if (isBox || isSleeve) {
-            appliedRules.push(`⚠️ Please enter Width, Height and Length to calculate ${isSleeve ? 'sleeve' : 'box'} price.`);
+            // Update sheetCalc for booklets (combined view)
+            if (isBooklet) {
+                sheetCalc = {
+                    item_width: itemW,
+                    item_height: itemH,
+                    sheet_width: sheet.width,
+                    sheet_height: sheet.height,
+                    sheet_name: `Cover + Inner (${sheet.name})`,
+                    items_per_sheet: bodyYield,
+                    sheets_needed: bodyGrossSheets,
+                    waste_percent: Number(setupPercent.toFixed(1)),
+                    setup_waste_percent: Number(setupPercent.toFixed(1)),
+                    layout_waste_percent: 0
+                };
+            } else {
+                sheetCalc = {
+                    item_width: itemW,
+                    item_height: itemH,
+                    sheet_width: sheet.width,
+                    sheet_height: sheet.height,
+                    sheet_name: sheet.name,
+                    items_per_sheet: bodyYield,
+                    sheets_needed: bodyGrossSheets,
+                    waste_percent: Number(setupPercent.toFixed(1)),
+                    setup_waste_percent: Number(setupPercent.toFixed(1)),
+                    layout_waste_percent: 0
+                };
+            }
+        } else if (isBox) {
+            appliedRules.push(`⚠️ Please enter Width, Height and Length to calculate box price.`);
         }
 
         if (basePrice === 0) {
@@ -803,11 +933,62 @@ export const PricingService = {
                 }
             }
         }
+
+        if (priceListOverrideBasePrice !== null) {
+            basePrice = priceListOverrideBasePrice;
+            isPerUnit = true; // Custom prices are always per unit
+            appliedRules.push(`💎 Client Price List Override: €${basePrice.toFixed(2)}/vnt`);
+        }
+
         let baseTotal = isPerUnit ? (basePrice * quantity) : (basePrice * qty100);
         let skipLamination = false;
 
-        // --- Custom Business Card Interceptor ---
         const prodNameLower = ((request as any)._cachedName || '').toLowerCase();
+
+        // ── Dimensions to Yield Fallback ────────────────────────────────────
+        if (!sheetCalc && !prodNameLower.includes('siuntim') && !prodNameLower.includes('dizain')) {
+            let effectiveW = itemW;
+            let effectiveH = itemH;
+
+            // If dimensions missing, try to extract from name (e.g. "90x50", "140x140", "A4")
+            if (effectiveW <= 0 || effectiveH <= 0) {
+                const dimMatch = prodNameLower.match(/(\d+)\s*[x×*]\s*(\d+)/i);
+                if (dimMatch) {
+                    effectiveW = parseInt(dimMatch[1]);
+                    effectiveH = parseInt(dimMatch[2]);
+                } else if (prodNameLower.includes('a4')) {
+                    effectiveW = 210; effectiveH = 297;
+                } else if (prodNameLower.includes('a5')) {
+                    effectiveW = 148; effectiveH = 210;
+                } else if (prodNameLower.includes('vizit')) {
+                    effectiveW = 90; effectiveH = 50;
+                }
+            }
+
+            if (effectiveW > 0 && effectiveH > 0) {
+                const spacing = currentProduct?.item_spacing || 0;
+                const effW = effectiveW + spacing;
+                const effH = effectiveH + spacing;
+                const yieldA = Math.floor(SRA3.width / effW) * Math.floor(SRA3.height / effH);
+                const yieldB = Math.floor(SRA3.width / effH) * Math.floor(SRA3.height / effW);
+                const bestYield = Math.max(yieldA, yieldB, 1);
+                
+                sheetCalc = {
+                    item_width: effectiveW,
+                    item_height: effectiveH,
+                    sheet_width: SRA3.width,
+                    sheet_height: SRA3.height,
+                    sheet_name: SRA3.name,
+                    items_per_sheet: bestYield,
+                    sheets_needed: Math.ceil(quantity / bestYield),
+                    waste_percent: 0,
+                    layout_waste_percent: 0,
+                    setup_waste_percent: 0
+                };
+            }
+        }
+
+        // --- Custom Business Card Interceptor ---
         if (prodNameLower.includes('vizitin') || prodNameLower.includes('business card')) {
             const isOneSided = print_type === '4+0' || print_type === '1+0';
 
@@ -831,24 +1012,59 @@ export const PricingService = {
             const lamRule = rules.find((r: any) =>
                 (r.rule_type === RULE_TYPES.EXTRA_COST_UNIT ||
                     r.rule_type === RULE_TYPES.LAMINATION_COST ||
-                    r.rule_type === RULE_TYPES.EXTRA_COST_100) &&
+                    r.rule_type === RULE_TYPES.EXTRA_COST_100 ||
+                    r.rule_type === RULE_TYPES.EXTRA_COST_FLAT ||
+                    r.rule_type === RULE_TYPES.EXTRA_COST_SHEET) &&
                 matchesProduct(r) &&
                 (r.extra_name === lamination || r.lamination === lamination)
             );
             if (lamRule) {
-                let pricePerUnit = lamRule.value * extraMultiplier;
-                // If legacy per-100 type, convert
-                if (lamRule.rule_type === RULE_TYPES.EXTRA_COST_100) {
-                    pricePerUnit = (lamRule.value * extraMultiplier) / 100;
+                const lamNameLower = lamination.toLowerCase();
+                const isDoubleSidedLam = lamination_sides === 2 || lamNameLower.includes('dvipus') || lamNameLower.includes('2-pus');
+                const lamMultiplier = isDoubleSidedLam ? extraMultiplier : 1;
+                
+                let pricePerUnit = 0;
+                let total = 0;
+                const multipliedValue = lamRule.value * lamMultiplier;
+
+                if (lamRule.rule_type === RULE_TYPES.EXTRA_COST_FLAT) {
+                    total = multipliedValue;
+                    pricePerUnit = quantity > 0 ? total / quantity : 0;
+                } else if (lamRule.rule_type === RULE_TYPES.EXTRA_COST_SHEET) {
+                    const itemsPerSheet = sheetCalc?.items_per_sheet || 1;
+                    const sheetsNeeded = Math.ceil(quantity / itemsPerSheet);
+                    total = sheetsNeeded * multipliedValue;
+                    pricePerUnit = quantity > 0 ? total / quantity : 0;
+                } else if (lamRule.rule_type === RULE_TYPES.EXTRA_COST_100) {
+                    pricePerUnit = multipliedValue / 100;
+                    total = pricePerUnit * quantity;
+                } else {
+                    pricePerUnit = multipliedValue;
+                    total = pricePerUnit * quantity;
                 }
-                const total = pricePerUnit * quantity;
+
                 extras.push({ name: lamination, price_per_unit: pricePerUnit, total });
-                appliedRules.push(`+ ${lamination}${extraMultiplier > 1 ? ' (x2 sides)' : ''}: €${pricePerUnit.toFixed(4)}/unit × ${quantity} = €${total.toFixed(2)}`);
+                appliedRules.push(`+ ${lamination}${lamMultiplier > 1 ? ' (x2 sides)' : ''}: €${pricePerUnit.toFixed(4)}/unit × ${quantity} = €${total.toFixed(2)}`);
+            } else {
+                appliedRules.push(`⚠️ Lamination rule not found for: "${lamination}"`);
             }
         }
 
         // 3b. Selected extras (foil, embossing, rounded corners, etc.)
         for (const extraName of selected_extras) {
+            // Special Case: Spiral Binding for Booklets
+            const extraNameLower = extraName.toLowerCase();
+            if (isBooklet && (extraNameLower.includes('spiral') || extraNameLower.includes('rišim'))) {
+                const workPrice = 0.50;
+                const matPrice = 0.30;
+                const totalUnit = workPrice + matPrice;
+                const total = totalUnit * quantity;
+                
+                extras.push({ name: `${extraName} (Rišimas €0.5 + Spiralė €0.3)`, price_per_unit: totalUnit, total });
+                appliedRules.push(`+ ${extraName}: Rišimas €0.50 + Spiralė €0.30 = €${totalUnit.toFixed(2)}/unit × ${quantity} = €${total.toFixed(2)}`);
+                continue; // Skip standard rule search for this one as we handled it specially
+            }
+
             const extraRule = rules.find((r: any) =>
                 (r.rule_type === RULE_TYPES.EXTRA_COST_UNIT ||
                     r.rule_type === RULE_TYPES.EXTRA_COST_FLAT ||
@@ -858,26 +1074,26 @@ export const PricingService = {
                 r.extra_name === extraName
             );
             if (extraRule) {
-                const multipliedValue = extraRule.value * extraMultiplier;
+                const value = extraRule.value;
                 if (extraRule.rule_type === RULE_TYPES.EXTRA_COST_FLAT) {
-                    const pricePerUnit = quantity > 0 ? multipliedValue / quantity : 0;
-                    extras.push({ name: extraName, price_per_unit: pricePerUnit, total: multipliedValue });
-                    appliedRules.push(`+ ${extraName} (flat${extraMultiplier > 1 ? ' x2 sides' : ''}): €${multipliedValue} (~€${pricePerUnit.toFixed(4)}/unit)`);
+                    const pricePerUnit = quantity > 0 ? value / quantity : 0;
+                    extras.push({ name: extraName, price_per_unit: pricePerUnit, total: value });
+                    appliedRules.push(`+ ${extraName} (flat): €${value.toFixed(2)} (~€${pricePerUnit.toFixed(4)}/unit)`);
                 } else if (extraRule.rule_type === RULE_TYPES.EXTRA_COST_SHEET) {
                     // Divide extra value by items_per_sheet (defaulting to 1 if no sheet calc available)
                     const itemsPerSheet = sheetCalc?.items_per_sheet || 1;
-                    const pricePerUnit = multipliedValue / itemsPerSheet;
+                    const pricePerUnit = value / itemsPerSheet;
                     const total = pricePerUnit * quantity;
                     extras.push({ name: extraName, price_per_unit: pricePerUnit, total });
-                    appliedRules.push(`+ ${extraName} (per sheet${extraMultiplier > 1 ? ' x2 sides' : ''}): €${multipliedValue}/sheet (${itemsPerSheet} items/sheet) = €${pricePerUnit.toFixed(4)}/unit × ${quantity} = €${total.toFixed(2)}`);
+                    appliedRules.push(`+ ${extraName} (per sheet): €${value.toFixed(2)}/sheet (${itemsPerSheet} items/sheet) = €${pricePerUnit.toFixed(4)}/unit × ${quantity} = €${total.toFixed(2)}`);
                 } else {
-                    let pricePerUnit = multipliedValue;
+                    let pricePerUnit = value;
                     if (extraRule.rule_type === RULE_TYPES.EXTRA_COST_100) {
-                        pricePerUnit = multipliedValue / 100;
+                        pricePerUnit = value / 100;
                     }
                     const total = pricePerUnit * quantity;
                     extras.push({ name: extraName, price_per_unit: pricePerUnit, total });
-                    appliedRules.push(`+ ${extraName}${extraMultiplier > 1 ? ' (x2 sides)' : ''}: €${pricePerUnit.toFixed(4)}/unit × ${quantity} = €${total.toFixed(2)}`);
+                    appliedRules.push(`+ ${extraName}: €${pricePerUnit.toFixed(4)}/unit × ${quantity} = €${total.toFixed(2)}`);
                 }
             }
         }
@@ -902,12 +1118,18 @@ export const PricingService = {
         let qtyAdjPercent = 0;
 
         const qtyRule = rules.find((r: any) =>
-            r.rule_type === RULE_TYPES.QTY_ADJUSTMENT && matchesProduct(r) && matchesQty(r)
+            (r.rule_type === RULE_TYPES.QTY_ADJUSTMENT || r.rule_type === RULE_TYPES.QTY_DISCOUNT) && 
+            matchesProduct(r) && matchesQty(r)
         );
 
         if (qtyRule) {
-            qtyAdjPercent = qtyRule.value; // e.g. +10, -5, -10
-            appliedRules.push(`Qty Adj: ${qtyAdjPercent > 0 ? '+' : ''}${qtyAdjPercent}% (${qtyRule.name}) - Appled to base & per-unit extras`);
+            if (qtyRule.rule_type === RULE_TYPES.QTY_DISCOUNT) {
+                // For Qty Discount, value 10 means -10%
+                qtyAdjPercent = -Math.abs(qtyRule.value);
+            } else {
+                qtyAdjPercent = qtyRule.value; // e.g. +10, -5, -10
+            }
+            appliedRules.push(`Qty ${qtyRule.rule_type === RULE_TYPES.QTY_DISCOUNT ? 'Discount' : 'Adj'}: ${qtyAdjPercent > 0 ? '+' : ''}${qtyAdjPercent}% (${qtyRule.name}) - Appled to base & per-unit extras`);
         } else {
             // Legacy: 'Qty Multiplier' — value like 0.9 = -10%
             const legacyMult = rules.find((r: any) =>

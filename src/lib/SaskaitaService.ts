@@ -1,5 +1,6 @@
 import { Database } from './database.types';
 import { supabase } from './supabase';
+import { CRM_CONFIG } from '../config';
 
 type Order = Database['public']['Tables']['orders']['Row'] & {
     clients: {
@@ -121,7 +122,7 @@ export const SaskaitaService = {
                 code: clientData.company_code || clientData.vat_code || '00000000',
                 code_type: codeType,
                 vat_code: clientData.vat_code || '',
-                email: isValidEmail(clientEmail) ? clientEmail : 'rytis@keturiprint.lt',
+                email: isValidEmail(clientEmail) ? clientEmail : CRM_CONFIG.company.adminEmail,
                 phone: clientData.phone || '',
                 country_code: "lt"
             };
@@ -228,7 +229,7 @@ export const SaskaitaService = {
                 discount: "0",
                 discount_type: "percent",
                 discount_value: "0",
-                issued_by: "Agniete Suknelevičienė",
+                issued_by: CRM_CONFIG.company.representedBy,
                 issued_to: clientName,
                 note_enabled: false,
                 note: "",
@@ -307,7 +308,7 @@ export const SaskaitaService = {
                                 clientName: clientName,
                                 orderNo: order.order_number,
                                 invoiceId: String(invoiceId),
-                                email: order.clients?.email || 'rytis@keturiprint.lt',
+                                email: order.clients?.email || CRM_CONFIG.company.adminEmail,
                                 pdfUrl: `https://app.invoice123.com/invoice/${invoiceId}/pdf/lt`
                             })
                         });

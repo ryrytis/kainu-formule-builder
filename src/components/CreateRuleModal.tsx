@@ -12,15 +12,18 @@ interface Rule {
     is_active: boolean;
     value: number;
     product_id: string | null;
+    product_category: string | null;
     lamination: string | null;
     extra_name: string | null;
     min_quantity: number | null;
     max_quantity: number | null;
+    print_type: string | null;
 }
 
 interface Product {
     id: string;
     name: string;
+    category: string | null;
 }
 
 interface CreateRuleModalProps {
@@ -28,20 +31,29 @@ interface CreateRuleModalProps {
     onClose: () => void;
     onSuccess: () => void;
     ruleToEdit?: Rule | null;
+    initialProductId?: string;
+    initialCategory?: string;
 }
 
-const RULE_TYPE_OPTIONS = [
+export const RULE_TYPE_OPTIONS = [
     { value: RULE_TYPES.BASE_PRICE_100, label: 'Base Price (€ per 100 pcs)', hint: 'E.g. €9 per 100 business cards' },
+    { value: RULE_TYPES.BASE_PRICE_UNIT, label: 'Base Price (€ per unit)', hint: 'Fixed price per piece (services/complex items)' },
+    { value: RULE_TYPES.QTY_DISCOUNT, label: 'Qty Discount (%)', hint: 'E.g. 10 = 10% discount for this quantity range' },
+    { value: RULE_TYPES.QTY_ADJUSTMENT, label: 'Qty Adjustment (± %)', hint: '+10 = surcharge for small qty, -5 = discount for large' },
     { value: RULE_TYPES.EXTRA_COST_UNIT, label: 'Extra Cost (€ per unit)', hint: 'Lamination, foil, embossing — priced per piece' },
     { value: RULE_TYPES.EXTRA_COST_FLAT, label: 'Extra Cost (flat fee €)', hint: 'Setup fees, design — fixed amount' },
     { value: RULE_TYPES.EXTRA_COST_SHEET, label: 'Extra Cost (€ per sheet)', hint: 'Divided by items per sheet (e.g. cliché cost)' },
-    { value: RULE_TYPES.QTY_ADJUSTMENT, label: 'Qty Adjustment (± %)', hint: '+10 = surcharge for small qty, -5 = discount for large' },
     { value: RULE_TYPES.CLIENT_DISCOUNT, label: 'Client Discount (multiplier)', hint: '0.9 = 10% off for this client' },
+    { value: RULE_TYPES.SHEET_PRINT_PRICE, label: 'Sheet Print Cost (Ink) (€ per sheet)', hint: 'Component for BOM: printing cost of 1 SRA3 sheet' },
+    { value: RULE_TYPES.SHEET_PRINT_OPERATION, label: 'Sheet Print Operation (Labor) (€ per sheet)', hint: 'Component for BOM: labor/time cost of printing 1 SRA3 sheet' },
+    { value: RULE_TYPES.SHEET_CUTTING_PRICE, label: 'Sheet Cutting Cost (Labor) (€ per sheet)', hint: 'Component for BOM: cutting cost of 1 SRA3 sheet' },
+    { value: RULE_TYPES.SHEET_MARGIN, label: 'Sheet Margin (multiplier)', hint: 'Multiplier for BOM components (e.g. 1.5 = 50% margin)' },
     { value: RULE_TYPES.SHEET_SETUP_WASTE, label: 'Sheet Setup Waste (%)', hint: 'Default is 20 if not set. Enter 15 for 15% etc.' },
 ];
 
-const CreateRuleModal: React.FC<CreateRuleModalProps> = ({ isOpen, onClose, onSuccess, ruleToEdit }) => {
+const CreateRuleModal: React.FC<CreateRuleModalProps> = ({ isOpen, onClose, onSuccess, ruleToEdit, initialProductId, initialCategory }) => {
     const [products, setProducts] = useState<Product[]>([]);
+    const [categories, setCategories] = useState<string[]>([]);
     const [formData, setFormData] = useState({
         rule_type: RULE_TYPES.BASE_PRICE_100 as string,
         name: '',
@@ -50,10 +62,12 @@ const CreateRuleModal: React.FC<CreateRuleModalProps> = ({ isOpen, onClose, onSu
         is_active: true,
         value: 0,
         product_ids: [] as string[],
+        product_categories: [] as string[],
         lamination: '',
         extra_name: '',
         min_quantity: '' as any,
-        max_quantity: '' as any
+        max_quantity: '' as any,
+        print_type: ''
     });
     const [loading, setLoading] = useState(false);
 
@@ -62,8 +76,12 @@ const CreateRuleModal: React.FC<CreateRuleModalProps> = ({ isOpen, onClose, onSu
     }, []);
 
     const fetchProducts = async () => {
-        const { data } = await supabase.from('products' as any).select('id, name').order('name');
-        if (data) setProducts(data);
+        const { data } = await supabase.from('products' as any).select('id, name, category').order('name');
+        if (data) {
+            setProducts(data);
+            const cats = Array.from(new Set(data.map((p: any) => p.category).filter(Boolean))) as string[];
+            setCategories(cats.sort());
+        }
     };
 
     useEffect(() => {
@@ -76,10 +94,12 @@ const CreateRuleModal: React.FC<CreateRuleModalProps> = ({ isOpen, onClose, onSu
                 is_active: ruleToEdit.is_active ?? true,
                 value: ruleToEdit.value || 0,
                 product_ids: ruleToEdit.product_id ? [ruleToEdit.product_id] : [],
+                product_categories: ruleToEdit.product_category ? [ruleToEdit.product_category] : [],
                 lamination: ruleToEdit.lamination || '',
                 extra_name: ruleToEdit.extra_name || '',
                 min_quantity: ruleToEdit.min_quantity || '',
-                max_quantity: ruleToEdit.max_quantity || ''
+                max_quantity: ruleToEdit.max_quantity || '',
+                print_type: ruleToEdit.print_type || ''
             });
         } else {
             setFormData({
@@ -89,35 +109,47 @@ const CreateRuleModal: React.FC<CreateRuleModalProps> = ({ isOpen, onClose, onSu
                 priority: 10,
                 is_active: true,
                 value: 0,
-                product_ids: [],
+                product_ids: initialProductId ? [initialProductId] : [],
+                product_categories: initialCategory ? [initialCategory] : [],
                 lamination: '',
                 extra_name: '',
                 min_quantity: '',
-                max_quantity: ''
+                max_quantity: '',
+                print_type: ''
             });
         }
-    }, [ruleToEdit, isOpen]);
+    }, [ruleToEdit, isOpen, initialProductId, initialCategory]);
 
     const isExtraType = formData.rule_type === RULE_TYPES.EXTRA_COST_UNIT ||
         formData.rule_type === RULE_TYPES.EXTRA_COST_SHEET ||
         formData.rule_type === RULE_TYPES.EXTRA_COST_FLAT;
-    const isQtyAdj = formData.rule_type === RULE_TYPES.QTY_ADJUSTMENT;
+    const isQtyAdj = formData.rule_type === RULE_TYPES.QTY_ADJUSTMENT || formData.rule_type === RULE_TYPES.QTY_DISCOUNT;
     const isSetupWaste = formData.rule_type === RULE_TYPES.SHEET_SETUP_WASTE;
-    const needsQtyRange = isQtyAdj || isSetupWaste || formData.rule_type === RULE_TYPES.BASE_PRICE_100;
+    const needsQtyRange = isQtyAdj || isSetupWaste || formData.rule_type === RULE_TYPES.BASE_PRICE_100 || formData.rule_type === RULE_TYPES.BASE_PRICE_UNIT;
 
     const getValueLabel = () => {
         switch (formData.rule_type) {
             case RULE_TYPES.QTY_ADJUSTMENT:
                 return 'Adjustment (%) — use + for surcharge, - for discount';
+            case RULE_TYPES.QTY_DISCOUNT:
+                return 'Discount Percentage (%)';
             case RULE_TYPES.CLIENT_DISCOUNT:
                 return 'Multiplier (e.g. 0.9 = 10% off)';
             case RULE_TYPES.EXTRA_COST_FLAT:
                 return 'Flat Fee (€)';
             case RULE_TYPES.SHEET_SETUP_WASTE:
                 return 'Setup Waste (%)';
+            case RULE_TYPES.SHEET_PRINT_PRICE:
+                return 'Print Cost per sheet (€)';
+            case RULE_TYPES.SHEET_CUTTING_PRICE:
+                return 'Cutting Cost per sheet (€)';
+            case RULE_TYPES.SHEET_MARGIN:
+                return 'Margin Multiplier (e.g. 1.5)';
             case RULE_TYPES.EXTRA_COST_SHEET:
                 return 'Price per sheet (€)';
             case RULE_TYPES.EXTRA_COST_UNIT:
+                return 'Price per unit (€)';
+            case RULE_TYPES.BASE_PRICE_UNIT:
                 return 'Price per unit (€)';
             default:
                 return 'Price per 100 pcs (€)';
@@ -128,6 +160,8 @@ const CreateRuleModal: React.FC<CreateRuleModalProps> = ({ isOpen, onClose, onSu
         switch (formData.rule_type) {
             case RULE_TYPES.QTY_ADJUSTMENT:
                 return 'E.g.: +10 for 50 pcs means 10% surcharge. -5 for 200 pcs means 5% discount.';
+            case RULE_TYPES.QTY_DISCOUNT:
+                return 'E.g.: 10 = 10% discount. Will be subtracted from base price.';
             case RULE_TYPES.EXTRA_COST_UNIT:
                 return 'E.g.: 0.03 = €0.03 per piece for lamination';
             case RULE_TYPES.SHEET_SETUP_WASTE:
@@ -145,30 +179,29 @@ const CreateRuleModal: React.FC<CreateRuleModalProps> = ({ isOpen, onClose, onSu
 
         try {
             const basePayload: any = { ...formData };
-            delete basePayload.product_ids;
-
             if (!basePayload.lamination) basePayload.lamination = null;
             if (!basePayload.extra_name) basePayload.extra_name = null;
-            if (basePayload.min_quantity === '') basePayload.min_quantity = null;
-            if (basePayload.max_quantity === '') basePayload.max_quantity = null;
+            if (!basePayload.print_type) basePayload.print_type = null;
+            
+            const payload = {
+                ...basePayload,
+                product_ids: formData.product_ids && formData.product_ids.length > 0 ? formData.product_ids : null,
+                product_categories: formData.product_categories && formData.product_categories.length > 0 ? formData.product_categories : null,
+            };
+
+            if (payload.min_quantity === '') payload.min_quantity = null;
+            if (payload.max_quantity === '') payload.max_quantity = null;
 
             if (ruleToEdit) {
-                const payload = { ...basePayload, product_id: formData.product_ids[0] || null };
                 const { error } = await (supabase as any)
                     .from('calculation_rules')
                     .update(payload)
                     .eq('id', ruleToEdit.id);
                 if (error) throw error;
             } else {
-                const productsToInsert = formData.product_ids.length > 0 ? formData.product_ids : [null];
-                const payloads = productsToInsert.map(pid => ({
-                    ...basePayload,
-                    product_id: pid
-                }));
-
                 const { error } = await (supabase as any)
                     .from('calculation_rules')
-                    .insert(payloads);
+                    .insert([payload]);
                 if (error) throw error;
             }
             onSuccess();
@@ -244,6 +277,25 @@ const CreateRuleModal: React.FC<CreateRuleModalProps> = ({ isOpen, onClose, onSu
                         </div>
                     </div>
 
+                    {(formData.rule_type === RULE_TYPES.SHEET_PRINT_PRICE || formData.rule_type === RULE_TYPES.SHEET_CUTTING_PRICE) && (
+                        <div className="space-y-1">
+                            <label htmlFor="rule-print-type" className="text-xs font-bold text-gray-500 uppercase">Print Mode (Optional)</label>
+                            <select
+                                id="rule-print-type"
+                                value={formData.print_type}
+                                onChange={e => setFormData({ ...formData, print_type: e.target.value })}
+                                className="w-full border-b-2 border-gray-200 p-2 focus:border-accent-teal outline-none transition-colors"
+                            >
+                                <option value="">All Print Modes</option>
+                                <option value="4+0">4+0 (One-sided)</option>
+                                <option value="4+4">4+4 (Double-sided)</option>
+                                <option value="1+0">1+0 (B/W One-sided)</option>
+                                <option value="1+1">1+1 (B/W Double-sided)</option>
+                            </select>
+                            <p className="text-[10px] text-gray-400 italic">Leave empty if price is same for all modes.</p>
+                        </div>
+                    )}
+
                     {/* Extra Name — only for Extra Cost types */}
                     {isExtraType && (
                         <div className="space-y-1">
@@ -270,7 +322,7 @@ const CreateRuleModal: React.FC<CreateRuleModalProps> = ({ isOpen, onClose, onSu
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div className="space-y-1">
-                                <label htmlFor="rule-product" className="text-xs font-bold text-gray-500 uppercase">Product(s)</label>
+                                <label htmlFor="rule-product" className="text-xs font-bold text-gray-500 uppercase">Specific Product(s)</label>
                                 <select
                                     id="rule-product"
                                     multiple
@@ -280,47 +332,72 @@ const CreateRuleModal: React.FC<CreateRuleModalProps> = ({ isOpen, onClose, onSu
                                         const options = Array.from(e.target.selectedOptions, option => option.value);
                                         // If "All Products" is selected, clear other selections
                                         if (options.includes("")) {
-                                            setFormData({ ...formData, product_ids: [] });
+                                            setFormData({ ...formData, product_ids: [], product_categories: [] });
                                         } else {
-                                            setFormData({ ...formData, product_ids: options });
+                                            setFormData({ ...formData, product_ids: options, product_categories: [] });
                                         }
                                     }}
-                                    className="w-full border p-2 bg-white form-multiselect rounded transition-colors"
+                                    className="w-full border p-2 bg-white form-multiselect rounded transition-colors text-sm"
                                 >
-                                    <option value="" className="font-bold border-b mb-1 pb-1">-- Apply to All Products --</option>
+                                    <option value="" className="font-bold border-b mb-1 pb-1">-- None (Apply to All) --</option>
                                     {products.map(p => (
                                         <option key={p.id} value={p.id} className="py-0.5">{p.name}</option>
                                     ))}
                                 </select>
-                                <p className="text-[10px] text-gray-400">Ctrl+Click (Cmd+Click) to select multiple</p>
+                                <p className="text-[10px] text-gray-400">Picks specific items. Overrides category.</p>
                             </div>
-                            {isExtraType && (
-                                <div className="space-y-1">
-                                    <label htmlFor="rule-lamination" className="text-xs font-bold text-gray-500 uppercase">Lamination Match</label>
-                                    <select
-                                        id="rule-lamination"
-                                        value={formData.lamination}
-                                        onChange={e => setFormData({ ...formData, lamination: e.target.value })}
-                                        className="w-full border p-2 bg-white"
-                                    >
-                                        <option value="">-- Any --</option>
-                                        <option value="Matt">Matt</option>
-                                        <option value="Gloss">Gloss</option>
-                                        <option value="SoftTouch">SoftTouch</option>
-                                    </select>
-                                </div>
-                            )}
+
+                            <div className="space-y-1">
+                                <label htmlFor="rule-category" className="text-xs font-bold text-gray-500 uppercase">OR Product Category(s)</label>
+                                <select
+                                    id="rule-category"
+                                    multiple
+                                    size={4}
+                                    value={formData.product_categories}
+                                    onChange={e => {
+                                        const options = Array.from(e.target.selectedOptions, option => option.value);
+                                        if (options.includes("")) {
+                                            setFormData({ ...formData, product_categories: [], product_ids: [] });
+                                        } else {
+                                            setFormData({ ...formData, product_categories: options, product_ids: [] });
+                                        }
+                                    }}
+                                    className="w-full border p-2 bg-white form-multiselect rounded transition-colors text-sm"
+                                >
+                                    <option value="" className="font-bold border-b mb-1 pb-1">-- No Category Filter --</option>
+                                    {categories.map(cat => (
+                                        <option key={cat} value={cat} className="py-0.5">{cat}</option>
+                                    ))}
+                                </select>
+                                <p className="text-[10px] text-gray-400">Apply to all items in selected categories.</p>
+                            </div>
                         </div>
+                            {isExtraType && (
+                            <div className="space-y-1">
+                                <label htmlFor="rule-lamination" className="text-xs font-bold text-gray-500 uppercase">Lamination Match</label>
+                                <select
+                                    id="rule-lamination"
+                                    value={formData.lamination}
+                                    onChange={e => setFormData({ ...formData, lamination: e.target.value })}
+                                    className="w-full border p-2 bg-white rounded"
+                                >
+                                    <option value="">-- Any --</option>
+                                    <option value="Matt">Matt</option>
+                                    <option value="Gloss">Gloss</option>
+                                    <option value="SoftTouch">SoftTouch</option>
+                                </select>
+                            </div>
+                        )}
 
                         {needsQtyRange && (
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-2 gap-4 pt-2 border-t border-gray-100">
                                 <div className="space-y-1">
                                     <label className="text-xs font-bold text-gray-500 uppercase">Min Quantity</label>
                                     <input
                                         type="number"
                                         value={formData.min_quantity}
                                         onChange={e => setFormData({ ...formData, min_quantity: e.target.value as any })}
-                                        className="w-full border p-2 bg-white"
+                                        className="w-full border p-2 bg-white rounded"
                                         placeholder="e.g. 50"
                                     />
                                 </div>
@@ -330,7 +407,7 @@ const CreateRuleModal: React.FC<CreateRuleModalProps> = ({ isOpen, onClose, onSu
                                         type="number"
                                         value={formData.max_quantity}
                                         onChange={e => setFormData({ ...formData, max_quantity: e.target.value as any })}
-                                        className="w-full border p-2 bg-white"
+                                        className="w-full border p-2 bg-white rounded"
                                         placeholder="e.g. 99"
                                     />
                                 </div>

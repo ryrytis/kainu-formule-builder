@@ -10,9 +10,10 @@ interface CreateOrderItemModalProps {
     onItemAdded: () => void;
     orderId: string;
     item?: any; // Optional item for editing
+    clientPriceListId?: string;
 }
 
-const CreateOrderItemModal: React.FC<CreateOrderItemModalProps> = ({ isOpen, onClose, onItemAdded, orderId, item }) => {
+const CreateOrderItemModal: React.FC<CreateOrderItemModalProps> = ({ isOpen, onClose, onItemAdded, orderId, item, clientPriceListId }) => {
     const [loading, setLoading] = useState(false);
     const [products, setProducts] = useState<any[]>([]);
     const [materials, setMaterials] = useState<any[]>([]);
@@ -52,6 +53,7 @@ const CreateOrderItemModal: React.FC<CreateOrderItemModalProps> = ({ isOpen, onC
                 setQuantity(item.quantity);
                 setWidth(item.width || '');
                 setHeight(item.height || '');
+                setLength(item.depth || '');
                 setPrintType(item.print_type || 'Vienpusis');
                 setMaterialId(item.material_id || '');
                 setUnitPrice(item.unit_price || 0);
@@ -96,7 +98,9 @@ const CreateOrderItemModal: React.FC<CreateOrderItemModalProps> = ({ isOpen, onC
                 material_id: materialId,
                 width: width ? parseFloat(width) : undefined,
                 height: height ? parseFloat(height) : undefined,
+                length: length ? parseFloat(length) : undefined,
                 manual_unit_paint_price: manualPaintPrice ? parseFloat(manualPaintPrice) : undefined,
+                client_price_list_id: clientPriceListId,
             });
 
             setUnitPrice(result.unit_price);
@@ -282,6 +286,7 @@ const CreateOrderItemModal: React.FC<CreateOrderItemModalProps> = ({ isOpen, onC
                 item_works: selectedWorks,
                 width: width ? parseFloat(width) : null,
                 height: height ? parseFloat(height) : null,
+                depth: length ? parseFloat(length) : null,
                 print_type: printType,
             };
 

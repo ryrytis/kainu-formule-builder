@@ -26,6 +26,7 @@ type Order = Database['public']['Tables']['orders']['Row'] & {
         vat_code: string | null;
         city: string | null;
         post_code: string | null;
+        price_list_id?: string | null;
     } | null;
     order_items: any[];
     workflow_link?: string | null;
@@ -57,7 +58,7 @@ const OrderDetails: React.FC = () => {
                 .from('orders')
                 .select(`
           *,
-          clients (name, email, phone, company, address, vat_code, city, post_code, company_code, person_type, parcel_locker, delivery_method),
+          clients (name, email, phone, company, address, vat_code, city, post_code, company_code, person_type, parcel_locker, delivery_method, price_list_id),
           order_items (*)
         `)
                 .eq('id', id)
@@ -134,6 +135,7 @@ const OrderDetails: React.FC = () => {
                     quantity: item.quantity,
                     width: item.width,
                     height: item.height,
+                    depth: item.depth,
                     print_type: item.print_type,
                     unit_price: item.unit_price,
                     total_price: item.total_price
@@ -592,7 +594,10 @@ const OrderDetails: React.FC = () => {
                                             <td className="px-3 py-4 text-sm text-gray-500">
                                                 <div className="flex flex-col">
                                                     <span>{item.paper_type || item.material_id}</span>
-                                                    <span className="text-xs text-gray-400">{item.print_type}</span>
+                                                    <span className="text-xs text-gray-400">
+                                                        {item.print_type}
+                                                        {item.width && item.height && ` • ${item.width}x${item.height}${item.depth ? `x${item.depth}` : ''}mm`}
+                                                    </span>
                                                 </div>
                                             </td>
                                             <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500 text-right">
@@ -698,6 +703,7 @@ const OrderDetails: React.FC = () => {
                 onItemAdded={fetchOrderDetails}
                 orderId={order.id}
                 item={selectedItem}
+                clientPriceListId={order.clients?.price_list_id || undefined}
             />
 
             <CreateTaskModal

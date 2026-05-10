@@ -178,7 +178,7 @@ const Orders: React.FC = () => {
     const fetchOrders = async () => {
         setLoading(true);
         try {
-            let query = supabase.from('orders').select('*, clients(*), order_items(*)');
+            let query = supabase.from('orders').select('*, clients(*), order_items(*)').order('created_at', { ascending: false });
 
             if (statusFilter !== 'All') {
                 if (statusFilter === 'Not Invoiced') {
@@ -188,11 +188,7 @@ const Orders: React.FC = () => {
                 }
             }
 
-            // Simple client-side search approximation or standard query
-            if (debouncedSearch) {
-                query = query.or(`order_number.ilike.%${debouncedSearch}%,status.ilike.%${debouncedSearch}%`);
-            }
-
+            // Search is handled client-side so we can search by client name too
             const { data, error } = await query;
 
             if (error) throw error;
@@ -204,10 +200,10 @@ const Orders: React.FC = () => {
         }
     };
 
-    // Re-fetch when search or filter changes
+    // Re-fetch only when filter changes — search is client-side
     useEffect(() => {
         fetchOrders();
-    }, [debouncedSearch, statusFilter]);
+    }, [statusFilter]);
 
     const toggleExpand = (e: React.MouseEvent, orderId: string) => {
         e.stopPropagation();
@@ -253,12 +249,25 @@ const Orders: React.FC = () => {
                     quantity: item.quantity,
                     width: item.width,
                     height: item.height,
+                    depth: item.depth,
                     print_type: item.print_type,
+                    lamination: item.lamination,
+                    pages: item.pages,
+                    format: item.format,
+                    binding: item.binding,
+                    coating: item.coating,
+                    paper_type: item.paper_type,
+                    specifications: item.specifications,
                     unit_price: item.unit_price,
-                    total_price: item.total_price
+                    cost_price: item.cost_price,
+                    margin_percent: item.margin_percent,
+                    total_price: item.total_price,
+                    manual_unit_paint_price: item.manual_unit_paint_price,
+                    item_works: item.item_works,
                 }));
 
-                await (supabase as any).from('order_items').insert(itemsToInsert);
+                const { error: itemsErr } = await (supabase as any).from('order_items').insert(itemsToInsert);
+                if (itemsErr) throw itemsErr;
             }
 
             // 3. SharePoint Workflow Trigger
@@ -514,8 +523,17 @@ const Orders: React.FC = () => {
         }
     };
 
-    // Client-side mapping alias (server-side filtering now handles the logic)
-    const filteredOrders = orders;
+    // Client-side search — includes order number, client name, and status
+    const filteredOrders = debouncedSearch
+        ? orders.filter(o => {
+            const term = debouncedSearch.toLowerCase();
+            return (
+                o.order_number?.toLowerCase().includes(term) ||
+                o.clients?.name?.toLowerCase().includes(term) ||
+                o.status?.toLowerCase().includes(term)
+            );
+        })
+        : orders;
 
     return (
         <div className="space-y-6">

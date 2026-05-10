@@ -88,6 +88,7 @@ export interface Database {
                     city: string | null
                     post_code: string | null
                     parcel_locker: string | null
+                    price_list_id: string | null
                 }
                 Insert: {
                     id?: string
@@ -109,6 +110,7 @@ export interface Database {
                     city?: string | null
                     post_code?: string | null
                     parcel_locker?: string | null
+                    price_list_id?: string | null
                 }
                 Update: {
                     id?: string
@@ -130,6 +132,56 @@ export interface Database {
                     city?: string | null
                     post_code?: string | null
                     parcel_locker?: string | null
+                    price_list_id?: string | null
+                }
+            }
+            price_lists: {
+                Row: {
+                    id: string
+                    name: string
+                    description: string | null
+                    created_at: string
+                    updated_at: string
+                }
+                Insert: {
+                    id?: string
+                    name: string
+                    description?: string | null
+                    created_at?: string
+                    updated_at?: string
+                }
+                Update: {
+                    id?: string
+                    name?: string
+                    description?: string | null
+                    created_at?: string
+                    updated_at?: string
+                }
+            }
+            price_list_items: {
+                Row: {
+                    id: string
+                    price_list_id: string
+                    product_id: string
+                    custom_base_price: number
+                    created_at: string
+                    updated_at: string
+                }
+                Insert: {
+                    id?: string
+                    price_list_id: string
+                    product_id: string
+                    custom_base_price: number
+                    created_at?: string
+                    updated_at?: string
+                }
+                Update: {
+                    id?: string
+                    price_list_id?: string
+                    product_id?: string
+                    custom_base_price?: number
+                    created_at?: string
+                    updated_at?: string
                 }
             }
             orders: {

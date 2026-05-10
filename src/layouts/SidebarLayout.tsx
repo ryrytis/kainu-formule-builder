@@ -1,15 +1,19 @@
 import React from 'react';
 import { Outlet, NavLink } from 'react-router-dom';
-import { LayoutDashboard, Users, ShoppingCart, Box, Settings, LogOut, Ruler, BarChart3, Calculator, ListTodo, Hammer, Lightbulb, Stamp, UserCheck } from 'lucide-react';
+import { LayoutDashboard, Users, ShoppingCart, Box, Settings, LogOut, Ruler, BarChart3, Calculator, ListTodo, Lightbulb, Stamp, UserCheck, List } from 'lucide-react';
 import clsx from 'clsx';
 import { useAuth } from '../contexts/AuthContext';
 import UpdatePasswordModal from '../components/UpdatePasswordModal';
 import { supabase } from '../lib/supabase';
 import ChatWidget from '../components/ChatWidget';
+import { CRM_CONFIG } from '../config';
 
 const SidebarLayout: React.FC = () => {
     const { user, profile, showPasswordReset, setShowPasswordReset } = useAuth();
     const [pendingTaskCount, setPendingTaskCount] = React.useState(0);
+
+    const firstWord = CRM_CONFIG.ui.logoText.split(' ')[0] || 'LOGO';
+    const rest = CRM_CONFIG.ui.logoText.split(' ').slice(1).join(' ') || '';
 
     const fetchTaskCount = async () => {
         if (!user) return;
@@ -76,8 +80,8 @@ const SidebarLayout: React.FC = () => {
         { icon: ShoppingCart, label: 'Orders', to: '/orders' },
         { icon: Users, label: 'Clients', to: '/clients', adminOnly: true },
         { icon: ShoppingCart, label: 'Products', to: '/products', adminOnly: true },
-        { icon: Box, label: 'Materials', to: '/materials', adminOnly: true },
-        { icon: Hammer, label: 'Works', to: '/works', adminOnly: true },
+        { icon: List, label: 'Kainynai', to: '/price-lists', adminOnly: true },
+        {icon: Box, label: 'Materials', to: '/materials', adminOnly: true },
         { icon: Ruler, label: 'Calc Rules', to: '/rules', adminOnly: true },
         { icon: Calculator, label: 'Calculator', to: '/calculator' },
         { icon: BarChart3, label: 'Reporting', to: '/reporting', adminOnly: true },
@@ -96,10 +100,10 @@ const SidebarLayout: React.FC = () => {
             {/* Sidebar */}
             <aside className="w-64 bg-primary text-white flex flex-col shadow-lg">
                 <div className="p-6 border-b border-primary-light">
-                    <h1 className="text-2xl font-bold text-white tracking-wider">
-                        KETURI<span className="text-accent-teal">PRINT</span>
+                    <h1 className="text-2xl font-bold text-white tracking-wider uppercase">
+                        {firstWord}<span className="text-accent-teal">{rest}</span>
                     </h1>
-                    <p className="text-xs text-gray-400 mt-1">CRM System</p>
+                    <p className="text-xs text-gray-400 mt-1">{CRM_CONFIG.ui.title}</p>
                 </div>
 
                 <nav className="flex-1 overflow-y-auto py-4">

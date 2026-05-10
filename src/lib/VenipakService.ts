@@ -1,5 +1,6 @@
 
 import { supabase } from './supabase';
+import { CRM_CONFIG } from '../config';
 
 const VENIPAK_PROXY = '/api/venipak_proxy';
 
@@ -209,15 +210,15 @@ export const VenipakService = {
                 <contact_email>info@keturiprint.lt</contact_email>
             </consignee>
             <sender>
-                <name>Keturi print, MB</name>
-                <company_code>0</company_code>
-                <country>LT</country>
-                <city>Ramučiai</city>
-                <address>Pakalnės 8-2</address>
-                <post_code>54464</post_code>
-                <contact_person>Agnietė Suknelevičienė</contact_person>
-                <contact_tel>+37069663915</contact_tel>
-                <contact_email>agniete@keturiprint.lt</contact_email>
+                <name>${CRM_CONFIG.company.name}</name>
+                <company_code>${CRM_CONFIG.company.code || '0'}</company_code>
+                <country>${CRM_CONFIG.company.country}</country>
+                <city>${CRM_CONFIG.company.city}</city>
+                <address>${CRM_CONFIG.company.address}</address>
+                <post_code>${CRM_CONFIG.company.postCode}</post_code>
+                <contact_person>${CRM_CONFIG.company.representedBy}</contact_person>
+                <contact_tel>${CRM_CONFIG.company.phone}</contact_tel>
+                <contact_email>${CRM_CONFIG.company.email}</contact_email>
             </sender>
             <attribute>
                 <delivery_type>${consigneeCheck.delivery_type}</delivery_type>

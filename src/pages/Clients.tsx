@@ -86,6 +86,12 @@ const Clients: React.FC = () => {
         alert('Onboarding link copied to clipboard!');
     };
 
+    const handleCopyPortalLink = (clientId: string) => {
+        const url = `${window.location.origin}/portal/${clientId}`;
+        navigator.clipboard.writeText(url);
+        alert('Portal link copied to clipboard!');
+    };
+
     const handleSendOnboarding = async (client: any) => {
         if (!client.email) {
             alert('Client must have an email address to send onboarding link.');
@@ -180,8 +186,6 @@ const Clients: React.FC = () => {
                             ) : (
                                 filteredClients.map((client) => {
                                     const isEditing = inlineEditingId === client.id;
-                                    const onboardingUrl = `${window.location.origin}/onboarding/${client.id}`;
-
                                     return (
                                         <tr key={client.id} className="hover:bg-gray-50 transition-colors group">
                                             {/* Name */}
@@ -289,25 +293,53 @@ const Clients: React.FC = () => {
                                                 </span>
                                             </td>
 
-                                            {/* Onboarding */}
+                                            {/* Onboarding & Portal Links */}
                                             <td className="py-4 px-4 align-top">
-                                                <div className="flex items-center gap-2">
-                                                    <button
-                                                        onClick={() => handleCopyLink(client.id)}
-                                                        className="text-accent-teal hover:underline flex items-center gap-1 text-xs font-medium"
-                                                        title="Copy onboarding link"
-                                                    >
-                                                        <Copy size={12} /> Copy Link
-                                                    </button>
-                                                    <a
-                                                        href={onboardingUrl}
-                                                        target="_blank"
-                                                        rel="noopener noreferrer"
-                                                        className="text-gray-300 hover:text-accent-teal"
-                                                        title="Open onboarding page"
-                                                    >
-                                                        <ExternalLink size={12} />
-                                                    </a>
+                                                <div className="flex flex-col gap-2">
+                                                    {/* Onboarding Row */}
+                                                    <div className="flex items-center justify-between gap-4 group/link">
+                                                        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">Onboarding</span>
+                                                        <div className="flex items-center gap-1">
+                                                            <button
+                                                                onClick={() => handleCopyLink(client.id)}
+                                                                className="p-1.5 hover:bg-gray-100 rounded text-gray-400 transition-colors"
+                                                                title="Copy Onboarding Link"
+                                                            >
+                                                                <Copy size={14} />
+                                                            </button>
+                                                            <a
+                                                                href={`/onboarding/${client.id}`}
+                                                                target="_blank"
+                                                                rel="noopener noreferrer"
+                                                                className="p-1.5 hover:bg-gray-100 rounded text-gray-400 hover:text-primary transition-colors"
+                                                                title="Open Onboarding Form"
+                                                            >
+                                                                <ExternalLink size={14} />
+                                                            </a>
+                                                        </div>
+                                                    </div>
+                                                    {/* Portal Row */}
+                                                    <div className="flex items-center justify-between gap-4 group/link">
+                                                        <span className="text-[10px] font-bold text-accent-teal uppercase tracking-tighter">Portal</span>
+                                                        <div className="flex items-center gap-1">
+                                                            <button
+                                                                onClick={() => handleCopyPortalLink(client.id)}
+                                                                className="p-1.5 hover:bg-gray-100 rounded text-gray-400 transition-colors"
+                                                                title="Copy Portal Link"
+                                                            >
+                                                                <Copy size={14} />
+                                                            </button>
+                                                            <a
+                                                                href={`/portal/${client.id}`}
+                                                                target="_blank"
+                                                                rel="noopener noreferrer"
+                                                                className="p-1.5 hover:bg-gray-100 rounded text-accent-teal hover:bg-accent-teal/5 transition-colors"
+                                                                title="Open Client Portal"
+                                                            >
+                                                                <ExternalLink size={14} />
+                                                            </a>
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             </td>
 
