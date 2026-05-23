@@ -787,22 +787,33 @@ const PriceCalculator: React.FC<PriceCalculatorProps> = ({
                         </div>
                         
                         <div className="space-y-4">
-                            {breakdown.sheet_calc && (
-                                <div className="p-4 bg-gray-50 rounded-lg space-y-2 text-sm">
-                                    <div className="flex justify-between text-gray-500">
-                                        <span>Gaminiai lape:</span>
-                                        <span className="font-bold text-primary">{breakdown.sheet_calc.items_per_sheet}</span>
+                            {breakdown.sheet_calc && (() => {
+                                const isRoll = breakdown.sheet_calc.sheet_name.toLowerCase().includes('rulon') || 
+                                               breakdown.sheet_calc.sheet_name.toLowerCase().includes('roll');
+                                return (
+                                    <div className="p-4 bg-gray-50 rounded-lg space-y-2 text-sm">
+                                        <div className="flex justify-between text-gray-500">
+                                            <span>{isRoll ? 'Gaminiai eilėje:' : 'Gaminiai lape:'}</span>
+                                            <span className="font-bold text-primary">{breakdown.sheet_calc.items_per_sheet}</span>
+                                        </div>
+                                        <div className="flex justify-between text-gray-500">
+                                            <span>{isRoll ? 'Reikia metrų:' : 'Reikia lapų:'}</span>
+                                            <span className="font-bold text-primary">
+                                                {breakdown.sheet_calc.sheets_needed}{isRoll ? ' m' : ''}
+                                            </span>
+                                        </div>
+                                        <div className="flex justify-between text-gray-500">
+                                            <span>Atraižos:</span>
+                                            <span className="font-bold text-accent-teal">{breakdown.sheet_calc.waste_percent}%</span>
+                                        </div>
+                                        {isRoll && (
+                                            <div className="text-[10px] text-gray-400 font-mono italic mt-1 pt-1 border-t border-gray-200/50">
+                                                Formatas: {breakdown.sheet_calc.sheet_name}
+                                            </div>
+                                        )}
                                     </div>
-                                    <div className="flex justify-between text-gray-500">
-                                        <span>Reikia lapų:</span>
-                                        <span className="font-bold text-primary">{breakdown.sheet_calc.sheets_needed}</span>
-                                    </div>
-                                    <div className="flex justify-between text-gray-500">
-                                        <span>Atraižos:</span>
-                                        <span className="font-bold text-accent-teal">{breakdown.sheet_calc.waste_percent}%</span>
-                                    </div>
-                                </div>
-                            )}
+                                );
+                            })()}
 
                             <div className="space-y-1">
                                 {appliedRules.map((rule, idx) => (
