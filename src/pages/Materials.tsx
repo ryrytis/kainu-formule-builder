@@ -84,6 +84,7 @@ const Materials: React.FC = () => {
                         <tr>
                             <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Name / Description</th>
                             <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Category</th>
+                            <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Formatas</th>
                             <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Stock</th>
                             <th className="px-6 py-4 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">Unit Price</th>
                             <th className="px-6 py-4 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">⚡ Click Cost/m²</th>
@@ -108,6 +109,19 @@ const Materials: React.FC = () => {
                                     <span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-50 text-blue-800 uppercase tracking-wide">
                                         {material.category || 'General'}
                                     </span>
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                                    {material.width ? (
+                                        material.height ? (
+                                            <span>{material.width} × {material.height} mm</span>
+                                        ) : (
+                                            <span className="font-bold text-cyan-700 bg-cyan-50 px-2 py-0.5 rounded border border-cyan-200 text-xs">
+                                                Rulonas: {material.width} mm
+                                            </span>
+                                        )
+                                    ) : (
+                                        <span className="text-gray-300 text-xs">—</span>
+                                    )}
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap">
                                     <div className="flex items-center text-sm text-gray-900">

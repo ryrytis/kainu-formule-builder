@@ -20,7 +20,9 @@ const CreateMaterialModal: React.FC<CreateMaterialModalProps> = ({ isOpen, onClo
         unit_price: '',
         current_stock: '',
         unit: 'pcs',
-        click_cost_per_m2: '' as string
+        click_cost_per_m2: '' as string,
+        width: '',
+        height: ''
     });
 
     useEffect(() => {
@@ -47,7 +49,9 @@ const CreateMaterialModal: React.FC<CreateMaterialModalProps> = ({ isOpen, onClo
                 unit_price: materialToEdit.unit_price?.toString() || '',
                 current_stock: materialToEdit.current_stock?.toString() || '',
                 unit: materialToEdit.unit || 'pcs',
-                click_cost_per_m2: materialToEdit.click_cost_per_m2?.toString() || ''
+                click_cost_per_m2: materialToEdit.click_cost_per_m2?.toString() || '',
+                width: materialToEdit.width?.toString() || '',
+                height: materialToEdit.height?.toString() || ''
             });
             setIsCustomCategory(false);
         } else {
@@ -58,7 +62,9 @@ const CreateMaterialModal: React.FC<CreateMaterialModalProps> = ({ isOpen, onClo
                 unit_price: '',
                 current_stock: '',
                 unit: 'pcs',
-                click_cost_per_m2: ''
+                click_cost_per_m2: '',
+                width: '',
+                height: ''
             });
             setIsCustomCategory(false);
         }
@@ -69,11 +75,14 @@ const CreateMaterialModal: React.FC<CreateMaterialModalProps> = ({ isOpen, onClo
         setLoading(true);
 
         try {
+            const isRoll = formData.unit === 'm' || formData.category === 'Rulonai';
             const payload = {
                 ...formData,
                 unit_price: parseFloat(formData.unit_price) || 0,
                 current_stock: parseInt(formData.current_stock) || 0,
-                click_cost_per_m2: formData.click_cost_per_m2 ? parseFloat(formData.click_cost_per_m2) : null
+                click_cost_per_m2: formData.click_cost_per_m2 ? parseFloat(formData.click_cost_per_m2) : null,
+                width: formData.width ? parseInt(formData.width) : null,
+                height: isRoll ? null : (formData.height ? parseInt(formData.height) : null)
             };
             let error;
 
@@ -219,6 +228,30 @@ const CreateMaterialModal: React.FC<CreateMaterialModalProps> = ({ isOpen, onClo
                                 onChange={e => setFormData({ ...formData, current_stock: e.target.value })}
                                 className="w-full border p-2 bg-white font-mono"
                                 placeholder="0"
+                            />
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-6 bg-gray-50/50 p-4 border border-gray-100">
+                        <div className="space-y-1">
+                            <label className="text-xs font-bold text-gray-500 uppercase">Width / Plotis (mm)</label>
+                            <input
+                                type="number"
+                                value={formData.width}
+                                onChange={e => setFormData({ ...formData, width: e.target.value })}
+                                className="w-full border p-2 bg-white font-mono"
+                                placeholder="e.g. 320 or 1067"
+                            />
+                        </div>
+                        <div className="space-y-1">
+                            <label className="text-xs font-bold text-gray-500 uppercase">Height / Aukštis (mm)</label>
+                            <input
+                                type="number"
+                                value={formData.height}
+                                onChange={e => setFormData({ ...formData, height: e.target.value })}
+                                className="w-full border p-2 bg-white font-mono"
+                                placeholder={formData.unit === 'm' || formData.category === 'Rulonai' ? 'Continuous Roll' : 'e.g. 450'}
+                                disabled={formData.unit === 'm' || formData.category === 'Rulonai'}
                             />
                         </div>
                     </div>

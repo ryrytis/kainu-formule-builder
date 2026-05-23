@@ -391,21 +391,30 @@ export const PricingService = {
         // Fetch Material Details upfront
         let materialName = '';
         let materialUnitPrice = 0;
+        let materialWidth: number | null = null;
+        let materialHeight: number | null = null;
 
         if (material_id) {
             const { data: mat } = await (supabase as any)
                 .from('materials')
-                .select('name, unit_price')
+                .select('name, unit_price, width, height')
                 .eq('id', material_id)
                 .maybeSingle();
             if (mat) {
                 materialName = mat.name || '';
                 materialUnitPrice = mat.unit_price || 0;
+                materialWidth = mat.width || null;
+                materialHeight = mat.height || null;
             }
         }
 
-        const rollWidth = materialName ? extractRollWidth(materialName) : null;
-        const isRollMaterial = rollWidth !== null;
+        let rollWidth = materialWidth;
+        let isRollMaterial = rollWidth !== null && materialHeight === null;
+
+        if (rollWidth === null && materialName) {
+            rollWidth = extractRollWidth(materialName);
+            isRollMaterial = rollWidth !== null;
+        }
 
         // ── STEP -1: Client Price List Override ──────────────────────────────
         let priceListOverrideBasePrice: number | null = null;
@@ -582,8 +591,10 @@ export const PricingService = {
 
         // Pick sheet based on production mode
         const sheet = isRollMaterial
-            ? { width: rollWidth, height: 1000, name: `Rulonas ${rollWidth}mm` }
-            : (production_mode === 'cut_only' ? CUT_SHEET : SRA3);
+            ? { width: rollWidth || 1000, height: 1000, name: `Rulonas ${rollWidth}mm` }
+            : (materialWidth && materialHeight
+                ? { width: materialWidth, height: materialHeight, name: `${materialWidth}×${materialHeight}mm` }
+                : (production_mode === 'cut_only' ? CUT_SHEET : SRA3));
 
         // ── Box/Sleeve blank override: compute unfolded blank W×H from W×H×L
         if ((isBox || isSleeve) && itemW > 0 && itemH > 0 && itemLength && itemLength > 0) {
@@ -663,9 +674,9 @@ export const PricingService = {
                 sheetCalc = {
                     item_width: itemW,
                     item_height: itemH,
-                    sheet_width: rollWidth,
+                    sheet_width: rollWidth || 1000,
                     sheet_height: 1000, // meters reference
-                    sheet_name: `Rulonas ${rollWidth}mm (${usedOrientation})`,
+                    sheet_name: `Rulonas ${rollWidth || 1000}mm (${usedOrientation})`,
                     items_per_sheet: cols, // items across the roll width
                     sheets_needed: metersNeeded, // stores running meters needed
                     waste_percent: Number(totalWastePercent.toFixed(1)),
