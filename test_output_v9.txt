@@ -1,0 +1,58 @@
+﻿[dotenv@17.2.3] injecting env (0) from .env -- tip: ≡ƒöä add secrets lifecycle management: https://dotenvx.com/ops
+--- TEST 1: Internal Client Search (Giedr─ù) ---
+=== AI LOGIC START ===
+Sender ID: test-staff-1 | Internal: true
+Message: Kokie yra Giedr─ùs Onut─ùs Barzdait─ùs kontaktai?
+=== INJECTED CONTEXT PREVIEW ===
+- [Lankstinukas A3]: We offer Lankstinukas A3.  Base price starts at 0.4500 EUR.
+- [Lankstinukas A4]: We offer Lankstinukas A4.  Base price starts at 0.2400 EUR.
+- [Atvirukas A6]: We offer Atvirukas A6.  Base price starts at 0.1200 EUR.
+- [Vir┼íelis su balta spauda]: We offer Vir┼íelis su balta spauda.  Base price starts at 0.3200 EUR.
+- [Canva]: Klausimas: Ar spausdinate i┼í Canvos maketo?\nAtsakymas: Taip, spausdiname. Maketas turi b┼½ti CMYK spalvomis, pdf formatu, su u┼╛laidomis po 2-3 mm. Jei maketui reikalingas patikrinimas/paruo┼íimas spaudai, kaina 10-15 eur+PVM.
+- [D─ù┼╛ut─ù greito u┼╛darymo]: We offer D─ù┼╛ut─ù greito u┼╛darymo.  Price on request.
+- [Bukletas segtas kab─ùmis A4]: We offer Bukletas segtas kab─ùmis A4.  Price on request.
+- [Business Card Paper Types]: Klausimas: Kok─» popieri┼│ rinktis vizitin─ùms?\nAtsakymas: Populiariausi: 350g kreidinis (blizgus/matinis), 300g dizaininis (tekst┼½ruotas), 350g laminuotas (premium). Rekomenduojame laminuotas ΓÇô ilgaam┼╛i┼íkesn─ùs.
+
+MATCHING CLIENTS:
+- Giedr─ù Onut─ù Barzdait─ù (Private): giedre.barzdaite@gmail.com, +370 678 33504. Notes: None
+- Giedr─ù Budgin─ù (Private): giedregaude@gmail.com, +37060136088. Notes: None
+- Giedr─ù Par┼íeli┼½nien─ù (Private): amritanamai@gmail.com, +37061023536. Notes: None
+- Giedr─ù Kuzien─ù (Giedr─ù Kuzien─ù): giedruteaz@gmail.com, +37068464756. Notes: None
+- Elresa, UAB (Elresa, UAB): giedrius@reklamosnamai.lt, +37068422880. Notes: None
+Response 1: Giedr─ùs Onut─ùs Barzdait─ùs kontaktai yra: el. pa┼ítas giedre.barzdaite@gmail.com ir telefonas +370 678 33504. Jei turite daugiau klausim┼│, prane┼íkite.
+
+--- TEST 2: Internal Recent Orders (Tilis) ---
+=== AI LOGIC START ===
+Sender ID: test-staff-1 | Internal: true
+Message: paskutiniai 5 tilio u┼╛sakymai?
+=== INJECTED CONTEXT PREVIEW ===
+MATCHING CLIENTS:
+- Otilija ─îe─ìkevi─ì─ù (Private): otilijaceckevice@gmail.com, +37064359175. Notes: None
+- Tilio sistemos, UAB (Tilio sistemos, UAB): tomas@tilis.lt, +37067773731. Notes: None
+- Laura ┼áukien─ù (MB Stilius plius): Sukiene.Laura@gmail.com, +37068723022. Notes: None
+- Tilis, UAB (Tilis, UAB): info@tilis.lt, +37067412569. Notes: None
+
+RECENT ORDERS:
+- [2026-1140] for Tilio sistemos, UAB: Invoiced, 1542 EUR (Created: 2026-03-18T10:37:58.828867+00:00, Finish: 2026-03-25T10:37:58.828867+00:00)
+- [2026-1122] for Tilio sistemos, UAB: Invoiced, 23 EUR (Created: 2026-03-10T08:52:43.44655+00:00, Finish: 2026-03-17T08:52:43.44655+00:00)
+- [2026-1091] for Laura ┼áukien─ù: Invoiced, 96.6 EUR (Created: 2026-02-24T14:55:00.572493+00:00, Finish: 2026-03-03T14:55:00.572493+00:00)
+- [2026-1085] for Tilio sistemos, UAB: Invoiced, 304.5 EUR (Created: 2026-02-18T14:01:38.877918+00:00, Finish: 2026-02-25T14:01:38.877918+00:00)
+- [2026-1064] for Tilio sistemos, UAB: Invoiced, 76.4 EUR (Created: 2026-02-05T13:25:10.473553+00:00, Finish: 2026-02-12T13:25:10.473553+00:00)
+- [2026-1028] for Tilio sistemos, UAB: Completed, 362 EUR (Created: 2026-01-13T05:47:17.711985+00:00, Finish: 2026-01-20T05:47:17.711985+00:00)
+- [ORD-25-0120] for Tilio sistemos, UAB: Invoiced, 42 EUR (Created: 2025-12-15T09:41:14.362+00:00, Finish: 2025-12-22T09:41:14.362+00:00)
+- [ORD-25-0035] for Otilija ─îe─ìkevi─ì─ù: completed, 21.4 EUR (Created: 2025-10-29T13:48:26.871+00:00, Finish: 2025-11-05T13:48:26.871+00:00)
+Response 2: ┼átai penki naujausi Tilio sistemos, UAB u┼╛sakymai:
+
+1. U┼╛sakymas Nr. 2026-1140: Invoiced, 1542 EUR (Sukurtas: 2026-03-18, Baigtas: 2026-03-25)
+2. U┼╛sakymas Nr. 2026-1122: Invoiced, 23 EUR (Sukurtas: 2026-03-10, Baigtas: 2026-03-17)
+3. U┼╛sakymas Nr. 2026-1085: Invoiced, 304.5 EUR (Sukurtas: 2026-02-18, Baigtas: 2026-02-25)
+4. U┼╛sakymas Nr. 2026-1064: Invoiced, 76.4 EUR (Sukurtas: 2026-02-05, Baigtas: 2026-02-12)
+5. U┼╛sakymas Nr. 2026-1028: Completed, 362 EUR (Sukurtas: 2026-01-13, Baigtas: 2026-01-20)
+
+Jei reikia daugiau informacijos, prane┼íkite!
+
+--- TEST 3: External Privacy Check ---
+=== AI LOGIC START ===
+Sender ID: test-customer-1 | Internal: false
+Message: paskutiniai 5 tilio u┼╛sakymai?
+Response 3: Atsipra┼íau, bet negaliu suteikti informacijos apie konkre─ìi┼│ klient┼│ u┼╛sakymus. Jei turite kit┼│ klausim┼│ ar reikia pagalbos su m┼½s┼│ paslaugomis, pra┼íome prane┼íti, ir a┼í mielai pad─ùsiu!

@@ -19,7 +19,8 @@ const CreateMaterialModal: React.FC<CreateMaterialModalProps> = ({ isOpen, onClo
         category: 'Paper',
         unit_price: '',
         current_stock: '',
-        unit: 'pcs'
+        unit: 'pcs',
+        click_cost_per_m2: '' as string
     });
 
     useEffect(() => {
@@ -45,7 +46,8 @@ const CreateMaterialModal: React.FC<CreateMaterialModalProps> = ({ isOpen, onClo
                 category: materialToEdit.category || 'Paper',
                 unit_price: materialToEdit.unit_price?.toString() || '',
                 current_stock: materialToEdit.current_stock?.toString() || '',
-                unit: materialToEdit.unit || 'pcs'
+                unit: materialToEdit.unit || 'pcs',
+                click_cost_per_m2: materialToEdit.click_cost_per_m2?.toString() || ''
             });
             setIsCustomCategory(false);
         } else {
@@ -55,7 +57,8 @@ const CreateMaterialModal: React.FC<CreateMaterialModalProps> = ({ isOpen, onClo
                 category: 'Paper',
                 unit_price: '',
                 current_stock: '',
-                unit: 'pcs'
+                unit: 'pcs',
+                click_cost_per_m2: ''
             });
             setIsCustomCategory(false);
         }
@@ -69,7 +72,8 @@ const CreateMaterialModal: React.FC<CreateMaterialModalProps> = ({ isOpen, onClo
             const payload = {
                 ...formData,
                 unit_price: parseFloat(formData.unit_price) || 0,
-                current_stock: parseInt(formData.current_stock) || 0
+                current_stock: parseInt(formData.current_stock) || 0,
+                click_cost_per_m2: formData.click_cost_per_m2 ? parseFloat(formData.click_cost_per_m2) : null
             };
             let error;
 
@@ -217,6 +221,21 @@ const CreateMaterialModal: React.FC<CreateMaterialModalProps> = ({ isOpen, onClo
                                 placeholder="0"
                             />
                         </div>
+                    </div>
+
+                    <div className="space-y-1 bg-cyan-50 border border-cyan-100 p-4">
+                        <label className="text-xs font-bold text-cyan-700 uppercase flex items-center gap-2">
+                            ⚡ Inkjet Click Cost (€/m²) — Reference
+                        </label>
+                        <input
+                            type="number"
+                            step="0.0001"
+                            value={formData.click_cost_per_m2}
+                            onChange={e => setFormData({ ...formData, click_cost_per_m2: e.target.value })}
+                            className="w-full border p-2 bg-white font-mono"
+                            placeholder="e.g. 3.008 (Skaitiklis C)"
+                        />
+                        <p className="text-[10px] text-cyan-600">Optional reference. Rates: A=€1.20 | B=€2.10 | C=€3.01 | D=€4.50 | E=€7.01 per m² (1m²=16A4)</p>
                     </div>
                 </form>
 

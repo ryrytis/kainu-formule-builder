@@ -51,6 +51,7 @@ const Calculator: React.FC = () => {
                 initialItem={selectedItem ? {
                     product_id: selectedItem.product_id,
                     product_type: selectedItem.product_name,
+                    product_category: selectedItem.product_category,
                     material_id: selectedItem.material_id,
                     width: parseFloat(selectedItem.width) || 0,
                     height: parseFloat(selectedItem.height) || 0,
@@ -58,7 +59,9 @@ const Calculator: React.FC = () => {
                     quantity: selectedItem.quantity,
                     unit_price: selectedItem.unit_price,
                     total_price: selectedItem.total_price,
-                    print_type: selectedItem.print_type
+                    print_type: selectedItem.print_type,
+                    paper_type: selectedItem.paper_type,
+                    pages: selectedItem.pages
                 } : undefined}
             />
         </div>

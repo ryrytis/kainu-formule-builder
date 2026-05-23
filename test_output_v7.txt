@@ -1,0 +1,18 @@
+﻿[dotenv@17.2.3] injecting env (0) from .env -- tip: Γ£à audit secrets and track compliance: https://dotenvx.com/ops
+--- TEST 1: Internal Client Search (Giedr─ù) ---
+=== AI LOGIC START ===
+Sender ID: test-staff-1 | Internal: true
+Message: Kokie yra Giedr─ùs Onut─ùs Barzdait─ùs kontaktai?
+Response 1: Giedr─ùs Onut─ùs Barzdait─ùs kontaktai yra: el. pa┼ítas giedre.barzdaite@gmail.com ir telefonas +370 678 33504. Jei turite kit┼│ klausim┼│, prane┼íkite.
+
+--- TEST 2: Internal Order Search ---
+=== AI LOGIC START ===
+Sender ID: test-staff-1 | Internal: true
+Message: Kokia yra u┼╛sakymo 2026-1186 b┼½sena?
+Response 2: U┼╛sakymo 2026-1186 b┼½sena yra "Invoiced", ir jis numatytas baigti iki 2026-04-08. Jei turite papildom┼│ klausim┼│, pra┼íome prane┼íti.
+
+--- TEST 3: External Privacy Check ---
+=== AI LOGIC START ===
+Sender ID: test-customer-1 | Internal: false
+Message: Kokie yra Giedr─ùs kontaktai?
+Response 3: Atsipra┼íau, bet negaliu pateikti informacijos apie konkre─ìius asmenis. Jei turite klausim┼│ ar poreiki┼│ d─ùl "Keturi print" paslaug┼│, maloniai kvie─ìiu klausti!

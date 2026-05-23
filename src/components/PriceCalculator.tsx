@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { PricingService, PricingBreakdown } from '../lib/PricingService';
+import { PricingService, PricingBreakdown, RULE_TYPES } from '../lib/PricingService';
 import { supabase } from '../lib/supabase';
 import { 
-    Loader2, RefreshCw, Info
+    Loader2, RefreshCw, Info, Zap
 } from 'lucide-react';
 import { clsx } from 'clsx';
 
@@ -42,6 +42,8 @@ const PriceCalculator: React.FC<PriceCalculatorProps> = ({
     const [pages, setPages] = useState<number>(0);
     const [manualPaintPrice, setManualPaintPrice] = useState<string>('');
     const [isService, setIsService] = useState(false);
+    const [inkjetCounter, setInkjetCounter] = useState<'A'|'B'|'C'|'D'|'E'|''>('');
+    const [hasInkjetRules, setHasInkjetRules] = useState(false);
 
     // Booklet Specific
     const [coverMaterialId, setCoverMaterialId] = useState('');
@@ -96,6 +98,20 @@ const PriceCalculator: React.FC<PriceCalculatorProps> = ({
             const extras = await PricingService.getAvailableExtras(productId || undefined);
             setAvailableExtras(extras);
             setSelectedExtras(prev => prev.filter(e => extras.some(x => x.name === e)));
+
+            // Check for inkjet click cost rules for this product
+            if (productId) {
+                const { data: inkjetRules } = await (supabase as any)
+                    .from('calculation_rules')
+                    .select('id')
+                    .eq('is_active', true)
+                    .eq('rule_type', RULE_TYPES.INKJET_CLICK_COST)
+                    .or(`product_ids.cs.{${productId}},product_id.eq.${productId}`);
+                setHasInkjetRules(!!(inkjetRules && inkjetRules.length > 0));
+            } else {
+                setHasInkjetRules(false);
+                setInkjetCounter('');
+            }
         };
         loadExtras();
     }, [productId]);
@@ -154,7 +170,8 @@ const PriceCalculator: React.FC<PriceCalculatorProps> = ({
                             length: length ? parseFloat(length) : undefined,
                             print_type: printType,
                             manual_unit_paint_price: manualPaintPrice ? parseFloat(manualPaintPrice) : undefined,
-                            client_price_list_id: clientPriceListId || undefined
+                            client_price_list_id: clientPriceListId || undefined,
+                            inkjet_counter: inkjetCounter || undefined
                         })
                     });
                     result = await res.json();
@@ -177,7 +194,8 @@ const PriceCalculator: React.FC<PriceCalculatorProps> = ({
                         height: height ? parseFloat(height) : undefined,
                         print_type: printType,
                         manual_unit_paint_price: manualPaintPrice ? parseFloat(manualPaintPrice) : undefined,
-                        client_price_list_id: clientPriceListId || undefined
+                        client_price_list_id: clientPriceListId || undefined,
+                        inkjet_counter: inkjetCounter || undefined
                     });
                 }
 
@@ -194,7 +212,7 @@ const PriceCalculator: React.FC<PriceCalculatorProps> = ({
 
         const debounce = setTimeout(calculate, 400);
         return () => clearTimeout(debounce);
-    }, [productId, quantity, materialId, width, height, printType, lamination, laminationSides, selectedExtras, productionMode, pages, manualPaintPrice, clientPriceListId, mode, coverMaterialId, innerMaterialId, innerPages, coverPrintType, innerPrintType]);
+    }, [productId, quantity, materialId, width, height, printType, lamination, laminationSides, selectedExtras, productionMode, pages, manualPaintPrice, clientPriceListId, mode, coverMaterialId, innerMaterialId, innerPages, coverPrintType, innerPrintType, inkjetCounter]);
 
     const fetchProducts = async () => {
         const { data } = await (supabase as any).from('products').select('*').order('name');
@@ -253,6 +271,7 @@ const PriceCalculator: React.FC<PriceCalculatorProps> = ({
         setProductionMode('printed');
         setPages(0);
         setManualPaintPrice('');
+        setInkjetCounter('');
         setBreakdown(null);
         setUnitPrice(0);
         setTotalPrice(0);
@@ -263,10 +282,16 @@ const PriceCalculator: React.FC<PriceCalculatorProps> = ({
         const selectedProduct = products.find(p => p.id === productId);
         if (!selectedProduct) return materials;
 
-        // NEW: Check for specific allowed categories set in Product Editor
+        // FIRST: Check for specific allowed material IDs (most precise filter)
+        const allowedIds = selectedProduct.allowed_material_ids;
+        if (allowedIds && allowedIds.length > 0) {
+            return materials.filter((m: any) => allowedIds.includes(m.id));
+        }
+
+        // SECOND: Check for specific allowed categories set in Product Editor
         const allowedCats = selectedProduct.allowed_material_categories;
         if (allowedCats && allowedCats.length > 0) {
-            return materials.filter(m => allowedCats.includes(m.category));
+            return materials.filter((m: any) => allowedCats.includes(m.category));
         }
 
         // LEGACY/FALLBACK: Keep existing sticker-specific logic for now
@@ -489,10 +514,69 @@ const PriceCalculator: React.FC<PriceCalculatorProps> = ({
                                     className="w-full border-2 border-gray-100 p-3 rounded-lg focus:border-accent-teal outline-none transition-all font-medium"
                                 >
                                     <option value="">Pasirinkite medžiagą...</option>
-                                    {filteredMaterials.map(m => (
+                                    {filteredMaterials.map((m: any) => (
                                         <option key={m.id} value={m.id}>{m.name}</option>
                                     ))}
                                 </select>
+                            </div>
+                        )}
+
+                        {/* Inkjet Skaitiklis selector — appears when product has inkjet click cost rules */}
+                        {hasInkjetRules && !isService && (
+                            <div className="bg-cyan-50 border border-cyan-200 rounded-xl p-4 space-y-3">
+                                <div className="flex items-center gap-2">
+                                    <Zap size={16} className="text-cyan-600" />
+                                    <label className="text-xs font-black text-cyan-800 uppercase tracking-widest">Dažų tankis (Skaitiklis)</label>
+                                </div>
+                                <div className="grid grid-cols-5 gap-2">
+                                    {(['A','B','C','D','E'] as const).map((level, i) => {
+                                        const rates = [0.0750, 0.1310, 0.1880, 0.2810, 0.4380];
+                                        const isSelected = inkjetCounter === level;
+                                        // Live click cost preview from current dimensions
+                                        const w = parseFloat(width) || 0;
+                                        const h = parseFloat(height) || 0;
+                                        const areaA4 = w > 0 && h > 0 ? (w * h / 1_000_000) * 16 : null;
+                                        const clickPreview = areaA4 ? areaA4 * rates[i] : null;
+                                        return (
+                                            <button
+                                                key={level}
+                                                type="button"
+                                                onClick={() => setInkjetCounter(prev => prev === level ? '' : level)}
+                                                className={clsx(
+                                                    'p-2.5 rounded-lg border text-center transition-all flex flex-col items-center gap-0.5',
+                                                    isSelected
+                                                        ? 'bg-cyan-600 text-white border-cyan-600 shadow-md ring-2 ring-cyan-300'
+                                                        : 'bg-white text-gray-700 border-gray-200 hover:border-cyan-400'
+                                                )}
+                                            >
+                                                <span className="font-black text-base">{level}</span>
+                                                <span className={clsx('text-[10px] font-bold', isSelected ? 'text-cyan-100' : 'text-gray-500')}>
+                                                    €{rates[i]}/A4
+                                                </span>
+                                                {clickPreview !== null && (
+                                                    <span className={clsx('text-[9px]', isSelected ? 'text-cyan-200' : 'text-cyan-600')}>
+                                                        €{clickPreview.toFixed(3)}/vnt
+                                                    </span>
+                                                )}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                                {inkjetCounter && width && height && (() => {
+                                    const rateMap: Record<string, number> = { A: 0.0750, B: 0.1310, C: 0.1880, D: 0.2810, E: 0.4380 };
+                                    const w = parseFloat(width), h = parseFloat(height);
+                                    const areaM2 = (w * h) / 1_000_000;
+                                    const areaA4 = areaM2 * 16;
+                                    const clickPerUnit = areaA4 * rateMap[inkjetCounter];
+                                    return (
+                                        <div className="text-[11px] text-cyan-700 bg-cyan-100/60 rounded p-2 font-mono">
+                                            {w}×{h}mm = {areaM2.toFixed(4)}m² = {areaA4.toFixed(3)} A4 × €{rateMap[inkjetCounter]}/A4 = <strong>€{clickPerUnit.toFixed(4)}/vnt</strong>
+                                        </div>
+                                    );
+                                })()}
+                                {!inkjetCounter && (
+                                    <p className="text-[11px] text-cyan-600 italic">Pasirinkite dažų tankio lygį (A = lengviausias, E = intensyviausias)</p>
+                                )}
                             </div>
                         )}
 
@@ -662,21 +746,32 @@ const PriceCalculator: React.FC<PriceCalculatorProps> = ({
                     <button
                         onClick={() => {
                             const product = products.find(p => p.id === productId);
+                            const coverMat = materials.find(m => m.id === coverMaterialId);
+                            const innerMat = materials.find(m => m.id === innerMaterialId);
+                            const paperTypeStr = isBooklet
+                                ? `Viršelis: ${coverMat?.name || 'Nepasirinkta'}, Vidus: ${innerPages} psl. ${innerMat?.name || 'Nepasirinkta'}`
+                                : undefined;
+                            const printTypeStr = isBooklet
+                                ? `Viršelis: ${coverPrintType}, Vidus: ${innerPrintType}`
+                                : printType;
                             onAction?.({
                                 product_id: productId,
-                                material_id: materialId,
+                                material_id: materialId || null,
                                 quantity,
                                 width,
                                 height,
-                                print_type: printType,
+                                print_type: printTypeStr,
                                 lamination,
                                 product_name: product?.name || 'Gaminys',
+                                product_category: product?.category || '',
                                 unit_price: unitPrice,
                                 total_price: totalPrice,
-                                selected_extras: selectedExtras
+                                selected_extras: selectedExtras,
+                                paper_type: paperTypeStr,
+                                pages: isBooklet ? innerPages : undefined,
                             });
                         }}
-                        disabled={isCalculating || totalPrice <= 0 || (!materialId && !isService)}
+                        disabled={isCalculating || totalPrice <= 0 || (isBooklet ? (!coverMaterialId || !innerMaterialId) : (!materialId && !isService))}
                         className="w-full mt-8 py-4 bg-accent-teal text-white font-black uppercase tracking-widest rounded-xl shadow-2xl hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50 disabled:scale-100"
                     >
                         {isAdmin ? 'Sukurti užsakymą' : 'Į krepšelį'}

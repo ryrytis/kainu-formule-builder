@@ -266,7 +266,8 @@ const CreateOrderItemModal: React.FC<CreateOrderItemModalProps> = ({ isOpen, onC
                 const selectedProduct = products.find(p => p.id === productId);
                 const pNameVal = selectedProduct?.name?.toLowerCase() || '';
                 const pCategory = selectedProduct?.category?.toLowerCase() || '';
-                const isNoMaterial = pNameVal.includes('siuntimas') || pCategory === 'siuntimas' || pCategory === 'paslaugos';
+                const isBooklet = pNameVal.includes('buklet') || pNameVal.includes('katalog') || pNameVal.includes('knyg') || pNameVal.includes('leidin');
+                const isNoMaterial = pNameVal.includes('siuntimas') || pNameVal.includes('dizainas') || pNameVal.includes('maketavimas') || pCategory === 'siuntimas' || pCategory === 'paslaugos' || isBooklet;
                 
                 if (!materialId && !isNoMaterial) {
                     setError('Prašome pasirinkti medžiagą');
@@ -425,7 +426,8 @@ const CreateOrderItemModal: React.FC<CreateOrderItemModalProps> = ({ isOpen, onC
                         const selectedProduct = products.find(p => p.id === productId);
                         const pCategory = selectedProduct?.category?.toLowerCase() || '';
                         const pName = selectedProduct?.name?.toLowerCase() || '';
-                        const isNoMaterial = pCategory === 'paslaugos' || pCategory === 'siuntimas' || pName.includes('siuntimas');
+                        const isBooklet = pName.includes('buklet') || pName.includes('katalog') || pName.includes('knyg') || pName.includes('leidin');
+                        const isNoMaterial = pCategory === 'paslaugos' || pCategory === 'siuntimas' || pName.includes('siuntimas') || pName.includes('dizainas') || pName.includes('maketavimas') || isBooklet;
                         
                         if (isNoMaterial) return null;
 
@@ -458,7 +460,7 @@ const CreateOrderItemModal: React.FC<CreateOrderItemModalProps> = ({ isOpen, onC
                         const isPredefined = (pName.includes('lankstinukas') || pName.includes('plakatas')) &&
                             (pName.includes('a3') || pName.includes('a4'));
                         const isDezute = pName.includes('dėžut') || pName.includes('dezut') || pName.includes('box');
-                        const isNoDimensions = pCategory === 'paslaugos' || pCategory === 'siuntimas' || pName.includes('siuntimas');
+                        const isNoDimensions = pCategory === 'paslaugos' || pCategory === 'siuntimas' || pName.includes('siuntimas') || pName.includes('dizainas') || pName.includes('maketavimas');
 
                         if (isPredefined || isNoDimensions) return null;
 

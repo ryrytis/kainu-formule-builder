@@ -86,6 +86,7 @@ const Materials: React.FC = () => {
                             <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Category</th>
                             <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Stock</th>
                             <th className="px-6 py-4 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">Unit Price</th>
+                            <th className="px-6 py-4 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">⚡ Click Cost/m²</th>
                             <th className="px-6 py-4 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">Actions</th>
                         </tr>
                     </thead>
@@ -121,6 +122,15 @@ const Materials: React.FC = () => {
                                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-bold text-primary">
                                     €{material.unit_price?.toFixed(4)}
                                 </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-right">
+                                    {material.click_cost_per_m2 ? (
+                                        <span className="text-xs font-bold text-cyan-700 bg-cyan-50 px-2 py-1 rounded border border-cyan-200">
+                                            ⚡ €{material.click_cost_per_m2.toFixed(4)}/m²
+                                        </span>
+                                    ) : (
+                                        <span className="text-gray-300 text-xs">—</span>
+                                    )}
+                                </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                     <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                         <button onClick={() => handleEdit(material)} className="text-accent-teal hover:text-teal-700 p-1" aria-label="Edit Material">
@@ -135,7 +145,7 @@ const Materials: React.FC = () => {
                         ))}
                         {!loading && filteredMaterials.length === 0 && (
                             <tr>
-                                <td colSpan={5} className="px-6 py-12 text-center text-gray-500">
+                                <td colSpan={6} className="px-6 py-12 text-center text-gray-500">
                                     No materials found.
                                 </td>
                             </tr>

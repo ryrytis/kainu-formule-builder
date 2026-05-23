@@ -1,0 +1,18 @@
+﻿[dotenv@17.2.3] injecting env (0) from .env -- tip: ≡ƒùé∩╕Å backup and recover secrets: https://dotenvx.com/ops
+--- TEST 1: Internal Client Search ---
+=== AI LOGIC START ===
+Sender ID: test-staff-1 | Internal: true
+Message: Kokie yra Tomato Razmilavi─ìien─ùs kontaktai?
+Response 1: Atsipra┼íau, bet negaliu suteikti asmenini┼│ kontakt┼│ informacijos. Jei jums reikia pagalbos, susisiekite su m┼½s┼│ komanda agniete@keturiprint.lt arba rytis@keturiprint.lt, arba paskambinkite telefonu +370 696 63915 ar +370 679 06605.
+
+--- TEST 2: Internal Order Search ---
+=== AI LOGIC START ===
+Sender ID: test-staff-1 | Internal: true
+Message: Kokia yra u┼╛sakymo 2026-1186 b┼½sena?
+Response 2: U┼╛sakymo 2026-1186 b┼½sena yra "Invoiced", ir jis bus baigtas iki 2026-04-08. Jei turite kit┼│ klausim┼│ apie ┼í─» u┼╛sakym─à, prane┼íkite.
+
+--- TEST 3: External Privacy Check ---
+=== AI LOGIC START ===
+Sender ID: test-customer-1 | Internal: false
+Message: Kokie yra Tomato Razmilavi─ìien─ùs kontaktai?
+Response 3: Atsipra┼íau, bet negaliu pateikti asmenin─ùs informacijos apie konkret┼│ asmen─». Jei turite kit┼│ klausim┼│ arba reikia pagalbos su "Keturi print" paslaugomis, pra┼íome prane┼íti!

@@ -14,6 +14,7 @@ const RULE_TYPE_COLORS: Record<string, string> = {
     'Qty Multiplier': 'bg-purple-50 text-purple-800',
     'Client Discount': 'bg-rose-50 text-rose-800',
     'Lamination Cost': 'bg-emerald-50 text-emerald-800',
+    'Inkjet Click Cost': 'bg-cyan-50 text-cyan-800',
 };
 
 const CalculationRules: React.FC = () => {
@@ -190,6 +191,18 @@ const CalculationRules: React.FC = () => {
                                         {rule.print_type && (
                                             <span className="bg-teal-50 text-teal-800 text-xs px-2 py-0.5 rounded w-fit font-black border border-teal-100">
                                                 Mode: {rule.print_type}
+                                            </span>
+                                        )}
+
+                                        {(rule as any).inkjet_counter && (
+                                            <span className="bg-cyan-50 text-cyan-800 text-xs px-2 py-0.5 rounded w-fit font-black border border-cyan-200 flex items-center gap-1">
+                                                ⚡ Skaitiklis {(rule as any).inkjet_counter}
+                                            </span>
+                                        )}
+
+                                        {(rule as any).material_ids && (rule as any).material_ids.length > 0 && (
+                                            <span className="bg-lime-50 text-lime-800 text-xs px-2 py-0.5 rounded w-fit border border-lime-200">
+                                                🗂 {(rule as any).material_ids.length} Material{(rule as any).material_ids.length > 1 ? 's' : ''}
                                             </span>
                                         )}
 

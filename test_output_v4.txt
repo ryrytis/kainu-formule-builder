@@ -1,0 +1,15 @@
+﻿[dotenv@17.2.3] injecting env (0) from .env -- tip: ≡ƒöä add secrets lifecycle management: https://dotenvx.com/ops
+--- TEST 1: Internal Client Search ---
+=== AI LOGIC START ===
+Sender ID: test-staff-1 | Internal: true
+Message: Kokie yra Tomato Razmilavi─ìien─ùs kontaktai?
+
+--- TEST 2: Internal Order Search ---
+=== AI LOGIC START ===
+Sender ID: test-staff-1 | Internal: true
+Message: Kokia yra u┼╛sakymo 2026-1186 b┼½sena?
+
+--- TEST 3: External Privacy Check ---
+=== AI LOGIC START ===
+Sender ID: test-customer-1 | Internal: false
+Message: Kokie yra Tomato Razmilavi─ìien─ùs kontaktai?

@@ -10,6 +10,7 @@ interface Product {
     base_price: number;
     image_url?: string;
     allowed_material_categories?: string[];
+    allowed_material_ids?: string[];
     item_spacing?: number;
 }
 
@@ -28,9 +29,12 @@ const CreateProductModal: React.FC<CreateProductModalProps> = ({ isOpen, onClose
         base_price: 0,
         image_url: '',
         allowed_material_categories: [] as string[],
+        allowed_material_ids: [] as string[],
         item_spacing: 0
     });
     const [availableCategories, setAvailableCategories] = useState<string[]>([]);
+    const [availableMaterials, setAvailableMaterials] = useState<{ id: string; name: string; category: string }[]>([]);
+    const [materialSearch, setMaterialSearch] = useState('');
     const [uploading, setUploading] = useState(false);
     const [loading, setLoading] = useState(false);
 
@@ -43,6 +47,7 @@ const CreateProductModal: React.FC<CreateProductModalProps> = ({ isOpen, onClose
                 base_price: productToEdit.base_price || 0,
                 image_url: productToEdit.image_url || '',
                 allowed_material_categories: productToEdit.allowed_material_categories || [],
+                allowed_material_ids: (productToEdit as any).allowed_material_ids || [],
                 item_spacing: productToEdit.item_spacing || 0
             });
         } else {
@@ -53,6 +58,7 @@ const CreateProductModal: React.FC<CreateProductModalProps> = ({ isOpen, onClose
                 base_price: 0,
                 image_url: '',
                 allowed_material_categories: [],
+                allowed_material_ids: [],
                 item_spacing: 0
             });
         }
@@ -62,10 +68,12 @@ const CreateProductModal: React.FC<CreateProductModalProps> = ({ isOpen, onClose
     const fetchCategories = async () => {
         const { data } = await supabase
             .from('materials')
-            .select('category');
+            .select('id, name, category')
+            .order('name');
         if (data) {
             const cats = Array.from(new Set((data as any[]).map(m => m.category).filter(Boolean)));
             setAvailableCategories(cats as string[]);
+            setAvailableMaterials(data as any);
         }
     };
 
@@ -235,6 +243,56 @@ const CreateProductModal: React.FC<CreateProductModalProps> = ({ isOpen, onClose
                             )}
                         </div>
                         <p className="text-[10px] text-gray-400 italic">If none selected, all materials will be shown.</p>
+                    </div>
+
+                    {/* Specific Materials — takes priority over categories */}
+                    <div className="space-y-2">
+                        <label className="text-xs font-bold text-gray-500 uppercase flex items-center justify-between">
+                            <span>Specific Materials (Overrides Categories)</span>
+                            {formData.allowed_material_ids.length > 0 && (
+                                <span className="bg-cyan-100 text-cyan-800 text-[10px] px-2 py-0.5 rounded-full font-black">
+                                    {formData.allowed_material_ids.length} selected
+                                </span>
+                            )}
+                        </label>
+                        <input
+                            type="text"
+                            placeholder="Search materials..."
+                            value={materialSearch}
+                            onChange={e => setMaterialSearch(e.target.value)}
+                            className="w-full border border-gray-200 px-3 py-1.5 text-sm rounded focus:border-accent-teal outline-none"
+                        />
+                        <div className="border-2 border-gray-100 rounded overflow-y-auto max-h-40 bg-gray-50">
+                            {availableMaterials
+                                .filter(m => m.name.toLowerCase().includes(materialSearch.toLowerCase()))
+                                .map(m => (
+                                    <label
+                                        key={m.id}
+                                        className={`flex items-center gap-2 px-3 py-2 cursor-pointer hover:bg-white transition-colors border-b border-gray-100 last:border-0 ${
+                                            formData.allowed_material_ids.includes(m.id) ? 'bg-cyan-50' : ''
+                                        }`}
+                                    >
+                                        <input
+                                            type="checkbox"
+                                            checked={formData.allowed_material_ids.includes(m.id)}
+                                            onChange={e => {
+                                                const newIds = e.target.checked
+                                                    ? [...formData.allowed_material_ids, m.id]
+                                                    : formData.allowed_material_ids.filter(id => id !== m.id);
+                                                setFormData({ ...formData, allowed_material_ids: newIds });
+                                            }}
+                                            className="w-3 h-3 accent-accent-teal flex-shrink-0"
+                                        />
+                                        <span className="text-xs font-medium text-gray-700 leading-tight">{m.name}</span>
+                                        <span className="ml-auto text-[10px] text-gray-400 flex-shrink-0">{m.category}</span>
+                                    </label>
+                                ))
+                            }
+                            {availableMaterials.filter(m => m.name.toLowerCase().includes(materialSearch.toLowerCase())).length === 0 && (
+                                <p className="text-xs text-gray-400 p-3">No materials match.</p>
+                            )}
+                        </div>
+                        <p className="text-[10px] text-gray-400 italic">If specific materials are selected, only those will appear in the calculator (e.g. Canon Premium Coated for Plakatas A1).</p>
                     </div>
 
 

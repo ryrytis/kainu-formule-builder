@@ -26,6 +26,8 @@ export interface PricingRequest {
     
     manual_unit_paint_price?: number;
     client_price_list_id?: string;
+    // Inkjet click cost (Canon GP-4600s Skaitiklis A–E)
+    inkjet_counter?: 'A' | 'B' | 'C' | 'D' | 'E';
 }
 
 export interface ExtraLine {
@@ -112,6 +114,8 @@ export const RULE_TYPES = {
     SHEET_CUTTING_PRICE: 'Sheet Cutting Cost',
     SHEET_MARGIN: 'Sheet Default Margin',
     SHEET_SETUP_WASTE: 'Sheet Setup Waste',
+    // Inkjet large-format (Canon GP-4600s)
+    INKJET_CLICK_COST: 'Inkjet Click Cost', // €/A4 × item_area_A4 × qty (1 m² = 16 A4)
 } as const;
 
 // ─── Sheet Calculator ────────────────────────────────────────────────────────
@@ -490,6 +494,10 @@ export const PricingService = {
         const rules = allRules || [];
 
         const matchesProduct = (rule: any) => {
+            // Material match (if rule has material filter, it must match)
+            if (rule.material_id && rule.material_id !== material_id) return false;
+            if (rule.material_ids && rule.material_ids.length > 0 && material_id && !rule.material_ids.includes(material_id)) return false;
+
             // Product match
             if (rule.product_id && rule.product_id === product_id) return true;
             if (rule.product_ids && product_id && rule.product_ids.includes(product_id)) return true;
@@ -1047,6 +1055,34 @@ export const PricingService = {
                 appliedRules.push(`+ ${lamination}${lamMultiplier > 1 ? ' (x2 sides)' : ''}: €${pricePerUnit.toFixed(4)}/unit × ${quantity} = €${total.toFixed(2)}`);
             } else {
                 appliedRules.push(`⚠️ Lamination rule not found for: "${lamination}"`);
+            }
+        }
+
+        // 3b-inkjet. Inkjet Click Cost (Canon GP-4600s Skaitiklis A–E)
+        // Formula: area_m2 = (W × H) / 1,000,000 → area_A4 = area_m2 × 16 → cost = area_A4 × rate × qty
+        const inkjetCounter = (request as any).inkjet_counter;
+        if (inkjetCounter) {
+            const clickRules = rules.filter((r: any) =>
+                r.rule_type === RULE_TYPES.INKJET_CLICK_COST &&
+                matchesProduct(r)
+            );
+            // Find rule matching selected counter, or fallback to any inkjet click cost rule
+            const clickRule = clickRules.find((r: any) => r.inkjet_counter === inkjetCounter)
+                || clickRules.find((r: any) => !r.inkjet_counter);
+
+            if (clickRule && itemW > 0 && itemH > 0) {
+                const areaM2 = (itemW * itemH) / 1_000_000;
+                const areaA4 = areaM2 * 16; // 1 m² = 16 A4
+                const clickCostPerUnit = areaA4 * clickRule.value;
+                const clickTotal = clickCostPerUnit * quantity;
+                extras.push({ name: `Skaitiklis ${inkjetCounter} (inkjet)`, price_per_unit: clickCostPerUnit, total: clickTotal });
+                appliedRules.push(
+                    `+ Inkjet Skaitiklis ${inkjetCounter}: ${itemW}×${itemH}mm = ${areaM2.toFixed(4)}m² = ${areaA4.toFixed(4)}A4 × €${clickRule.value}/A4 = €${clickCostPerUnit.toFixed(4)}/unit × ${quantity} = €${clickTotal.toFixed(2)}`
+                );
+            } else if (!clickRule) {
+                appliedRules.push(`⚠️ No Inkjet Click Cost rule found for Skaitiklis ${inkjetCounter}.`);
+            } else {
+                appliedRules.push(`⚠️ Enter Width and Height to calculate inkjet click cost.`);
             }
         }
 

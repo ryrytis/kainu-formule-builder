@@ -17,6 +17,7 @@ interface CreateOrderModalProps {
     initialItem?: {
         product_id?: string;
         product_type: string;
+        product_category?: string;
         material_id: string; // Name or ID
         width: number;
         height: number;
@@ -26,6 +27,8 @@ interface CreateOrderModalProps {
         unit_price: number;
         total_price: number;
         manual_unit_paint_price?: number;
+        paper_type?: string;
+        pages?: number;
     };
 }
 
@@ -115,8 +118,15 @@ const CreateOrderModal: React.FC<CreateOrderModalProps> = ({ isOpen, onClose, on
         }
 
         if (initialItem && !initialItem.material_id) {
-            const isSiuntimas = initialItem.product_type?.toLowerCase().includes('siuntimas');
-            if (!isSiuntimas) {
+            const productType = initialItem.product_type?.toLowerCase() || '';
+            const productCategory = initialItem.product_category?.toLowerCase() || '';
+            const isBooklet = productType.includes('buklet') || productType.includes('katalog') || productType.includes('knyg') || productType.includes('leidin');
+            const isNoMaterial = productCategory === 'paslaugos' || productCategory === 'siuntimas' || 
+                               productType.includes('siuntimas') || 
+                               productType.includes('dizainas') || 
+                               productType.includes('maketavimas') ||
+                               isBooklet;
+            if (!isNoMaterial) {
                 setError('Prieš sukuriant užsakymą, skaičiuoklėje privaloma pasirinkti medžiagą');
                 return;
             }
@@ -222,7 +232,9 @@ const CreateOrderModal: React.FC<CreateOrderModalProps> = ({ isOpen, onClose, on
                         print_type: initialItem.print_type,
                         unit_price: initialItem.unit_price,
                         total_price: initialItem.total_price,
-                        manual_unit_paint_price: initialItem.manual_unit_paint_price || null
+                        manual_unit_paint_price: initialItem.manual_unit_paint_price || null,
+                        paper_type: initialItem.paper_type || null,
+                        pages: initialItem.pages || null
                     }]);
 
                 if (itemError) {

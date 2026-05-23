@@ -512,6 +512,10 @@ const Orders: React.FC = () => {
         if (!confirm('Are you sure you want to delete this order? This action cannot be undone.')) return;
 
         try {
+            // First delete associated order_items to avoid foreign key constraint issues
+            const { error: itemsError } = await (supabase as any).from('order_items').delete().eq('order_id', orderId);
+            if (itemsError) throw itemsError;
+
             const { error } = await (supabase as any).from('orders').delete().eq('id', orderId);
             if (error) throw error;
 
@@ -747,7 +751,7 @@ const Orders: React.FC = () => {
                                                         >
                                                             <ChevronRight size={18} />
                                                         </button>
-                                                        {isAdmin && (
+                                                        {profile?.role !== 'client' && (
                                                             <button
                                                                 onClick={(e) => handleDeleteOrder(e, order.id)}
                                                                 className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors ml-1"

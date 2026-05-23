@@ -1,0 +1,18 @@
+﻿[dotenv@17.2.3] injecting env (0) from .env -- tip: ≡ƒöÉ prevent committing .env to code: https://dotenvx.com/precommit
+--- TEST 1: Internal Client Search (Giedr─ù) ---
+=== AI LOGIC START ===
+Sender ID: test-staff-1 | Internal: true
+Message: Kokie yra Giedr─ùs Onut─ùs Barzdait─ùs kontaktai?
+Response 1: Giedr─ùs Onut─ùs Barzdait─ùs kontaktai yra: el. pa┼ítas giedre.barzdaite@gmail.com ir telefonas +370 678 33504. Jei turite daugiau klausim┼│, prane┼íkite.
+
+--- TEST 2: Internal Recent Orders (Tilis) ---
+=== AI LOGIC START ===
+Sender ID: test-staff-1 | Internal: true
+Message: paskutiniai 5 tilio u┼╛sakymai?
+Response 2: Deja, ┼íiuo metu neturiu prieigos prie informacijos apie paskutinius Tilio sistemos, UAB u┼╛sakymus. Jei norite gauti ┼íi─à informacij─à, rekomenduoju susisiekti su m┼½s┼│ komanda tiesiogiai el. pa┼ítu arba telefonu.
+
+--- TEST 3: External Privacy Check ---
+=== AI LOGIC START ===
+Sender ID: test-customer-1 | Internal: false
+Message: paskutiniai 5 tilio u┼╛sakymai?
+Response 3: Atsipra┼íau, bet negaliu suteikti informacijos apie konkre─ìi┼│ klient┼│ u┼╛sakymus. Jei turite kit┼│ klausim┼│ ar reikia pagalbos su "Keturi print" paslaugomis, pra┼íome prane┼íti!

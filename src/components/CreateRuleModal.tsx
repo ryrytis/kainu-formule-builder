@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import { X, Loader2, Info } from 'lucide-react';
+import { X, Loader2, Info, Zap } from 'lucide-react';
 import { RULE_TYPES } from '../lib/PricingService';
 
 interface Rule {
@@ -49,11 +49,21 @@ export const RULE_TYPE_OPTIONS = [
     { value: RULE_TYPES.SHEET_CUTTING_PRICE, label: 'Sheet Cutting Cost (Labor) (€ per sheet)', hint: 'Component for BOM: cutting cost of 1 SRA3 sheet' },
     { value: RULE_TYPES.SHEET_MARGIN, label: 'Sheet Margin (multiplier)', hint: 'Multiplier for BOM components (e.g. 1.5 = 50% margin)' },
     { value: RULE_TYPES.SHEET_SETUP_WASTE, label: 'Sheet Setup Waste (%)', hint: 'Default is 20 if not set. Enter 15 for 15% etc.' },
+    { value: RULE_TYPES.INKJET_CLICK_COST, label: 'Inkjet Click Cost (€/A4 — Canon GP-4600s)', hint: 'Cost per A4 of printed area. 1 m² = 16 A4. Select Skaitiklis A–E below.' },
+];
+
+const INKJET_COUNTERS = [
+    { value: 'A', label: 'Skaitiklis A', rate: 0.0750, rateVat: 0.0908 },
+    { value: 'B', label: 'Skaitiklis B', rate: 0.1310, rateVat: 0.1585 },
+    { value: 'C', label: 'Skaitiklis C', rate: 0.1880, rateVat: 0.2275 },
+    { value: 'D', label: 'Skaitiklis D', rate: 0.2810, rateVat: 0.3400 },
+    { value: 'E', label: 'Skaitiklis E', rate: 0.4380, rateVat: 0.5300 },
 ];
 
 const CreateRuleModal: React.FC<CreateRuleModalProps> = ({ isOpen, onClose, onSuccess, ruleToEdit, initialProductId, initialCategory }) => {
     const [products, setProducts] = useState<Product[]>([]);
     const [categories, setCategories] = useState<string[]>([]);
+    const [materials, setMaterials] = useState<{ id: string; name: string }[]>([]);
     const [formData, setFormData] = useState({
         rule_type: RULE_TYPES.BASE_PRICE_100 as string,
         name: '',
@@ -63,6 +73,8 @@ const CreateRuleModal: React.FC<CreateRuleModalProps> = ({ isOpen, onClose, onSu
         value: 0,
         product_ids: [] as string[],
         product_categories: [] as string[],
+        material_ids: [] as string[],
+        inkjet_counter: '' as string,
         lamination: '',
         extra_name: '',
         min_quantity: '' as any,
@@ -73,6 +85,7 @@ const CreateRuleModal: React.FC<CreateRuleModalProps> = ({ isOpen, onClose, onSu
 
     useEffect(() => {
         fetchProducts();
+        fetchMaterials();
     }, []);
 
     const fetchProducts = async () => {
@@ -82,6 +95,11 @@ const CreateRuleModal: React.FC<CreateRuleModalProps> = ({ isOpen, onClose, onSu
             const cats = Array.from(new Set(data.map((p: any) => p.category).filter(Boolean))) as string[];
             setCategories(cats.sort());
         }
+    };
+
+    const fetchMaterials = async () => {
+        const { data } = await supabase.from('materials' as any).select('id, name').order('name');
+        if (data) setMaterials(data as any);
     };
 
     useEffect(() => {
@@ -95,6 +113,8 @@ const CreateRuleModal: React.FC<CreateRuleModalProps> = ({ isOpen, onClose, onSu
                 value: ruleToEdit.value || 0,
                 product_ids: ruleToEdit.product_id ? [ruleToEdit.product_id] : [],
                 product_categories: ruleToEdit.product_category ? [ruleToEdit.product_category] : [],
+                material_ids: (ruleToEdit as any).material_ids || [],
+                inkjet_counter: (ruleToEdit as any).inkjet_counter || '',
                 lamination: ruleToEdit.lamination || '',
                 extra_name: ruleToEdit.extra_name || '',
                 min_quantity: ruleToEdit.min_quantity || '',
@@ -111,6 +131,8 @@ const CreateRuleModal: React.FC<CreateRuleModalProps> = ({ isOpen, onClose, onSu
                 value: 0,
                 product_ids: initialProductId ? [initialProductId] : [],
                 product_categories: initialCategory ? [initialCategory] : [],
+                material_ids: [],
+                inkjet_counter: '',
                 lamination: '',
                 extra_name: '',
                 min_quantity: '',
@@ -125,6 +147,7 @@ const CreateRuleModal: React.FC<CreateRuleModalProps> = ({ isOpen, onClose, onSu
         formData.rule_type === RULE_TYPES.EXTRA_COST_FLAT;
     const isQtyAdj = formData.rule_type === RULE_TYPES.QTY_ADJUSTMENT || formData.rule_type === RULE_TYPES.QTY_DISCOUNT;
     const isSetupWaste = formData.rule_type === RULE_TYPES.SHEET_SETUP_WASTE;
+    const isInkjetClick = formData.rule_type === RULE_TYPES.INKJET_CLICK_COST;
     const needsQtyRange = isQtyAdj || isSetupWaste || formData.rule_type === RULE_TYPES.BASE_PRICE_100 || formData.rule_type === RULE_TYPES.BASE_PRICE_UNIT;
 
     const getValueLabel = () => {
@@ -151,6 +174,8 @@ const CreateRuleModal: React.FC<CreateRuleModalProps> = ({ isOpen, onClose, onSu
                 return 'Price per unit (€)';
             case RULE_TYPES.BASE_PRICE_UNIT:
                 return 'Price per unit (€)';
+            case RULE_TYPES.INKJET_CLICK_COST:
+                return 'Click Cost per A4 (€) — ex VAT';
             default:
                 return 'Price per 100 pcs (€)';
         }
@@ -168,6 +193,8 @@ const CreateRuleModal: React.FC<CreateRuleModalProps> = ({ isOpen, onClose, onSu
                 return 'E.g.: 15 = 15% setup waste added for sheets';
             case RULE_TYPES.EXTRA_COST_SHEET:
                 return 'E.g.: 5.00 = €5 per sheet (divided by items on sheet)';
+            case RULE_TYPES.INKJET_CLICK_COST:
+                return 'Canon GP-4600s rates: A=0.0750 | B=0.1310 | C=0.1880 | D=0.2810 | E=0.4380 (€/A4 ex VAT). Select Skaitiklis below.';
             default:
                 return '';
         }
@@ -182,11 +209,13 @@ const CreateRuleModal: React.FC<CreateRuleModalProps> = ({ isOpen, onClose, onSu
             if (!basePayload.lamination) basePayload.lamination = null;
             if (!basePayload.extra_name) basePayload.extra_name = null;
             if (!basePayload.print_type) basePayload.print_type = null;
+            if (!basePayload.inkjet_counter) basePayload.inkjet_counter = null;
             
             const payload = {
                 ...basePayload,
                 product_ids: formData.product_ids && formData.product_ids.length > 0 ? formData.product_ids : null,
                 product_categories: formData.product_categories && formData.product_categories.length > 0 ? formData.product_categories : null,
+                material_ids: formData.material_ids && formData.material_ids.length > 0 ? formData.material_ids : null,
             };
 
             if (payload.min_quantity === '') payload.min_quantity = null;
@@ -296,6 +325,35 @@ const CreateRuleModal: React.FC<CreateRuleModalProps> = ({ isOpen, onClose, onSu
                         </div>
                     )}
 
+                    {/* Inkjet Counter — only for Inkjet Click Cost */}
+                    {isInkjetClick && (
+                        <div className="bg-cyan-50 border border-cyan-200 rounded-sm p-4 space-y-3">
+                            <div className="flex items-center gap-2">
+                                <Zap size={16} className="text-cyan-600" />
+                                <h3 className="font-bold text-sm text-cyan-800 uppercase tracking-wide">Canon GP-4600s Skaitiklis (Ink Density)</h3>
+                            </div>
+                            <div className="grid grid-cols-5 gap-2">
+                                {INKJET_COUNTERS.map(c => (
+                                    <button
+                                        key={c.value}
+                                        type="button"
+                                        onClick={() => setFormData({ ...formData, inkjet_counter: c.value, value: c.rate })}
+                                        className={`p-2 rounded border text-center transition-all ${
+                                            formData.inkjet_counter === c.value
+                                                ? 'bg-cyan-600 text-white border-cyan-600 shadow'
+                                                : 'bg-white text-gray-700 border-gray-200 hover:border-cyan-400'
+                                        }`}
+                                    >
+                                        <div className="font-black text-sm">{c.label.replace('Skaitiklis ', '')}</div>
+                                        <div className="text-[10px] opacity-80">€{c.rate}</div>
+                                        <div className="text-[9px] opacity-60">€{c.rateVat} pvm</div>
+                                    </button>
+                                ))}
+                            </div>
+                            <p className="text-[11px] text-cyan-700">Clicking a counter auto-fills the value. 1 m² = 16 A4 equivalents.</p>
+                        </div>
+                    )}
+
                     {/* Extra Name — only for Extra Cost types */}
                     {isExtraType && (
                         <div className="space-y-1">
@@ -330,7 +388,6 @@ const CreateRuleModal: React.FC<CreateRuleModalProps> = ({ isOpen, onClose, onSu
                                     value={formData.product_ids}
                                     onChange={e => {
                                         const options = Array.from(e.target.selectedOptions, option => option.value);
-                                        // If "All Products" is selected, clear other selections
                                         if (options.includes("")) {
                                             setFormData({ ...formData, product_ids: [], product_categories: [] });
                                         } else {
@@ -371,6 +428,32 @@ const CreateRuleModal: React.FC<CreateRuleModalProps> = ({ isOpen, onClose, onSu
                                 </select>
                                 <p className="text-[10px] text-gray-400">Apply to all items in selected categories.</p>
                             </div>
+                        </div>
+
+                        {/* Material Filter */}
+                        <div className="space-y-1">
+                            <label htmlFor="rule-material" className="text-xs font-bold text-gray-500 uppercase">Material Filter (Optional)</label>
+                            <select
+                                id="rule-material"
+                                multiple
+                                size={4}
+                                value={formData.material_ids}
+                                onChange={e => {
+                                    const options = Array.from(e.target.selectedOptions, option => option.value);
+                                    if (options.includes("")) {
+                                        setFormData({ ...formData, material_ids: [] });
+                                    } else {
+                                        setFormData({ ...formData, material_ids: options });
+                                    }
+                                }}
+                                className="w-full border p-2 bg-white form-multiselect rounded transition-colors text-sm"
+                            >
+                                <option value="" className="font-bold">-- Any Material --</option>
+                                {materials.map(m => (
+                                    <option key={m.id} value={m.id} className="py-0.5">{m.name}</option>
+                                ))}
+                            </select>
+                            <p className="text-[10px] text-gray-400">Rule only applies when a specific material is selected (e.g. Canon Premium Coated).</p>
                         </div>
                             {isExtraType && (
                             <div className="space-y-1">
