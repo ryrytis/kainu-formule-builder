@@ -59,38 +59,38 @@ const PriceCalculator: React.FC<PriceCalculatorProps> = ({
     }, [productId, products]);
 
     const isInkjet = useMemo(() => {
-        // 1. Check if selected material is inkjet
-        const selectedMaterial = materials.find(m => m.id === materialId);
-        if (selectedMaterial) {
-            const isDbRoll = selectedMaterial.width && !selectedMaterial.height;
-            const mName = (selectedMaterial.name || '').toLowerCase();
-            const mCat = (selectedMaterial.category || '').toLowerCase();
-            if (isDbRoll || mCat === 'rulonai' || mCat === 'photo' || mName.includes('canon') || mName.includes('inkjet') || mName.includes('plotis')) {
-                return true;
-            }
-        }
-
-        // 2. Check if selected product is inkjet
         const selectedProduct = products.find(p => p.id === productId);
         if (selectedProduct) {
             const pName = (selectedProduct.name || '').toLowerCase();
             const pCat = (selectedProduct.category || '').toLowerCase();
+            
+            // Explicitly exclude roll label/stickers
+            if (pName.includes('ruloninis') && pName.includes('lipdukas')) {
+                return false;
+            }
+
             if (hasInkjetRules || pName.includes('plakatas') || pName.includes('poster') || pCat.includes('inkjet') || pCat.includes('large format') || pCat.includes('plačiaformat')) {
                 return true;
             }
 
-            // 3. If all allowed materials for this product are inkjet
+            // If all allowed materials for this product are inkjet
             const allowedIds = selectedProduct.allowed_material_ids;
             if (allowedIds && allowedIds.length > 0) {
                 const allowedMats = materials.filter((m: any) => allowedIds.includes(m.id));
                 if (allowedMats.length > 0 && allowedMats.every((m: any) => {
                     const mName = (m.name || '').toLowerCase();
-                    const mCat = (m.category || '').toLowerCase();
-                    const isDbRoll = m.width && !m.height;
-                    return isDbRoll || mCat === 'rulonai' || mCat === 'photo' || mName.includes('canon') || mName.includes('inkjet') || mName.includes('plotis');
+                    return mName.includes('canon') || mName.includes('plotis 1,067m') || mName.includes('plotis 1.067m');
                 })) {
                     return true;
                 }
+            }
+        }
+
+        const selectedMaterial = materials.find(m => m.id === materialId);
+        if (selectedMaterial) {
+            const mName = (selectedMaterial.name || '').toLowerCase();
+            if (mName.includes('canon')) {
+                return true;
             }
         }
 
