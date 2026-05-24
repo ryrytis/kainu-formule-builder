@@ -1214,17 +1214,26 @@ export const PricingService = {
             const clickRule = clickRules.find((r: any) => r.inkjet_counter === inkjetCounter)
                 || clickRules.find((r: any) => !r.inkjet_counter);
 
-            if (clickRule && itemW > 0 && itemH > 0) {
+            const defaultRates: Record<string, number> = {
+                A: 0.0750,
+                B: 0.1310,
+                C: 0.1880,
+                D: 0.2810,
+                E: 0.4380
+            };
+            const clickRate = clickRule ? clickRule.value : (defaultRates[inkjetCounter] || 0);
+
+            if (clickRate > 0 && itemW > 0 && itemH > 0) {
                 const areaM2 = (itemW * itemH) / 1_000_000;
                 const areaA4 = areaM2 * 16; // 1 m² = 16 A4
-                const clickCostPerUnit = areaA4 * clickRule.value;
+                const clickCostPerUnit = areaA4 * clickRate;
                 const clickTotal = clickCostPerUnit * quantity;
                 extras.push({ name: `Skaitiklis ${inkjetCounter} (inkjet)`, price_per_unit: clickCostPerUnit, total: clickTotal });
                 appliedRules.push(
-                    `+ Inkjet Skaitiklis ${inkjetCounter}: ${itemW}×${itemH}mm = ${areaM2.toFixed(4)}m² = ${areaA4.toFixed(4)}A4 × €${clickRule.value}/A4 = €${clickCostPerUnit.toFixed(4)}/unit × ${quantity} = €${clickTotal.toFixed(2)}`
+                    `+ Inkjet Skaitiklis ${inkjetCounter}: ${itemW}×${itemH}mm = ${areaM2.toFixed(4)}m² = ${areaA4.toFixed(4)}A4 × €${clickRate.toFixed(4)}/A4 = €${clickCostPerUnit.toFixed(4)}/unit × ${quantity} = €${clickTotal.toFixed(2)}${!clickRule ? ' (Standard Fallback Rate)' : ''}`
                 );
-            } else if (!clickRule) {
-                appliedRules.push(`⚠️ No Inkjet Click Cost rule found for Skaitiklis ${inkjetCounter}.`);
+            } else if (clickRate <= 0) {
+                appliedRules.push(`⚠️ No Inkjet Click Cost rule or fallback rate found for Skaitiklis ${inkjetCounter}.`);
             } else {
                 appliedRules.push(`⚠️ Enter Width and Height to calculate inkjet click cost.`);
             }

@@ -58,6 +58,15 @@ const PriceCalculator: React.FC<PriceCalculatorProps> = ({
         return name.includes('buklet') || name.includes('katalog') || name.includes('knyg') || name.includes('leidin');
     }, [productId, products]);
 
+    const isInkjetMaterial = useMemo(() => {
+        const selectedMaterial = materials.find(m => m.id === materialId);
+        if (!selectedMaterial) return false;
+        const isDbRoll = selectedMaterial.width && !selectedMaterial.height;
+        const nameLower = (selectedMaterial.name || '').toLowerCase();
+        const catLower = (selectedMaterial.category || '').toLowerCase();
+        return isDbRoll || catLower === 'rulonai' || catLower === 'photo' || nameLower.includes('canon') || nameLower.includes('inkjet') || nameLower.includes('plotis');
+    }, [materials, materialId]);
+
     // Pricing State
     const [breakdown, setBreakdown] = useState<PricingBreakdown | null>(null);
     const [totalPrice, setTotalPrice] = useState(0);
@@ -74,6 +83,17 @@ const PriceCalculator: React.FC<PriceCalculatorProps> = ({
     useEffect(() => {
         setClientId(initialClientId || null);
     }, [initialClientId]);
+
+    // Inkjet / roll materials only support one-sided printing
+    useEffect(() => {
+        if (isInkjetMaterial) {
+            if (printType === '4+4') {
+                setPrintType('4+0');
+            } else if (printType === '1+1') {
+                setPrintType('1+0');
+            }
+        }
+    }, [isInkjetMaterial, printType]);
 
     // Fetch client price list
     useEffect(() => {
@@ -434,9 +454,9 @@ const PriceCalculator: React.FC<PriceCalculatorProps> = ({
                                         productionMode === 'cut_only'
                                     }
                                 >
-                                    <option value="4+4">4+4 (Dvipusė)</option>
+                                    {!isInkjetMaterial && <option value="4+4">4+4 (Dvipusė)</option>}
                                     <option value="4+0">4+0 (Vienpusė)</option>
-                                    <option value="1+1">1+1 (J/B Dvipusė)</option>
+                                    {!isInkjetMaterial && <option value="1+1">1+1 (J/B Dvipusė)</option>}
                                     <option value="1+0">1+0 (J/B Vienpusė)</option>
                                 </select>
                             </div>
@@ -521,8 +541,8 @@ const PriceCalculator: React.FC<PriceCalculatorProps> = ({
                             </div>
                         )}
 
-                        {/* Inkjet Skaitiklis selector — appears when product has inkjet click cost rules */}
-                        {hasInkjetRules && !isService && (
+                        {/* Inkjet Skaitiklis selector — appears when product or material uses inkjet click cost */}
+                        {(hasInkjetRules || isInkjetMaterial) && !isService && (
                             <div className="bg-cyan-50 border border-cyan-200 rounded-xl p-4 space-y-3">
                                 <div className="flex items-center gap-2">
                                     <Zap size={16} className="text-cyan-600" />
