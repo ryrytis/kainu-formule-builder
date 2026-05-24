@@ -862,7 +862,7 @@ export const PricingService = {
             const sheetW = 295;
             const sheetH = 400;
             const spacing = getRuleVal(RULE_TYPES.SHEET_STICKER_SPACING, 2);
-            const bleed = getRuleVal(RULE_TYPES.SHEET_STICKER_BLEED, 1);
+            const bleed = getRuleVal(RULE_TYPES.SHEET_STICKER_BLEED, 0);
             const sheetPrintCost = getRuleVal(RULE_TYPES.SHEET_PRINT_PRICE, 0.05);
             const sheetMarginMultiplier = getRuleVal(RULE_TYPES.SHEET_MARGIN, 3.6);
 
