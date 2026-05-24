@@ -859,27 +859,49 @@ export const PricingService = {
                 appliedRules.push(`⚠️ Please enter Width and Height to calculate roll yield and price.`);
             }
         } else if (isSheetLipdukas && itemW > 0 && itemH > 0) {
-            const sheetW = 295;
-            const sheetH = 400;
             const spacing = getRuleVal(RULE_TYPES.SHEET_STICKER_SPACING, 2);
             const bleed = getRuleVal(RULE_TYPES.SHEET_STICKER_BLEED, 0);
             const sheetPrintCost = getRuleVal(RULE_TYPES.SHEET_PRINT_PRICE, 0.05);
             const sheetMarginMultiplier = getRuleVal(RULE_TYPES.SHEET_MARGIN, 3.6);
 
-            // Total addition is 3mm by default (2mm spacing + 1mm bleed total)
+            // Total addition is spacing + bleed total
             const wStep = itemW + bleed + spacing;
             const hStep = itemH + bleed + spacing;
 
-            const colsP = Math.floor(sheetW / wStep);
-            const rowsP = Math.floor(sheetH / hStep);
-            const yieldP = Math.max(0, colsP * rowsP);
+            // Option A: 295x400 usable area
+            const yieldP_A = Math.floor(295 / wStep) * Math.floor(400 / hStep);
+            const yieldL_A = Math.floor(295 / hStep) * Math.floor(400 / wStep);
 
-            const colsL = Math.floor(sheetW / hStep);
-            const rowsL = Math.floor(sheetH / wStep);
-            const yieldL = Math.max(0, colsL * rowsL);
+            // Option B: 275x420 usable area
+            const yieldP_B = Math.floor(275 / wStep) * Math.floor(420 / hStep);
+            const yieldL_B = Math.floor(275 / hStep) * Math.floor(420 / wStep);
 
-            const bestYield = Math.max(yieldP, yieldL, 1);
-            const usedOrientation = yieldL > yieldP ? 'Landscape' : 'Portrait';
+            let bestYield = 1;
+            let chosenSheetW = 295;
+            let chosenSheetH = 400;
+            let chosenSheetName = '295×400mm';
+            let usedOrientation = 'Portrait';
+
+            // Find the best option (highest yield)
+            const options = [
+                { w: 295, h: 400, name: '295×400mm', orientation: 'Portrait', yield: Math.max(0, yieldP_A) },
+                { w: 295, h: 400, name: '295×400mm', orientation: 'Landscape', yield: Math.max(0, yieldL_A) },
+                { w: 275, h: 420, name: '275×420mm', orientation: 'Portrait', yield: Math.max(0, yieldP_B) },
+                { w: 275, h: 420, name: '275×420mm', orientation: 'Landscape', yield: Math.max(0, yieldL_B) }
+            ];
+
+            let bestOption = options[0];
+            for (const opt of options) {
+                if (opt.yield > bestOption.yield) {
+                    bestOption = opt;
+                }
+            }
+
+            bestYield = Math.max(bestOption.yield, 1);
+            chosenSheetW = bestOption.w;
+            chosenSheetH = bestOption.h;
+            chosenSheetName = bestOption.name;
+            usedOrientation = bestOption.orientation;
 
             const materialPricePerSheet = materialUnitPrice;
 
@@ -898,7 +920,7 @@ export const PricingService = {
             const layoutWastePercent = totalCapacityArr > 0 ? (layoutWasteItemsArr / totalCapacityArr) * 100 : 0;
             const totalWastePercent = totalCapacityArr > 0 ? ((setupWasteItemsArr + layoutWasteItemsArr) / totalCapacityArr) * 100 : 0;
 
-            appliedRules.push(`Sheet Setup: ${sheetW}×${sheetH}mm usable area, Spacing ${spacing}mm, Bleed ${bleed}mm`);
+            appliedRules.push(`Sheet Setup: Chosen ${chosenSheetName} usable area, Spacing ${spacing}mm, Bleed ${bleed}mm`);
             appliedRules.push(`Sheet Yield: ${bestYield} qty/sheet (${usedOrientation}) -> Need ~${grossSheets} sheets (incl ${setupPercent}% waste)`);
             appliedRules.push(`Sheet Cost: Mat €${materialPricePerSheet.toFixed(4)} + Print €${sheetPrintCost.toFixed(4)} = €${totalSheetCost.toFixed(4)}`);
             appliedRules.push(`Sheet Unit Price: (Cost/Sheet ÷ Yield) × Margin = €${costPerSticker.toFixed(4)} × ${sheetMarginMultiplier} = €${pricePerSticker.toFixed(4)}`);
@@ -909,9 +931,9 @@ export const PricingService = {
             sheetCalc = {
                 item_width: itemW,
                 item_height: itemH,
-                sheet_width: sheetW,
-                sheet_height: sheetH,
-                sheet_name: `Sheet (${usedOrientation})`,
+                sheet_width: chosenSheetW,
+                sheet_height: chosenSheetH,
+                sheet_name: `Sheet ${chosenSheetName} (${usedOrientation})`,
                 items_per_sheet: bestYield,
                 sheets_needed: grossSheets,
                 waste_percent: Number(totalWastePercent.toFixed(1)),
