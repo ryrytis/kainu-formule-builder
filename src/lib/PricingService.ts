@@ -395,12 +395,24 @@ export const PricingService = {
         let materialHeight: number | null = null;
 
         if (material_id) {
-            const { data: mat } = await (supabase as any)
+            const { data: mat, error } = await (supabase as any)
                 .from('materials')
                 .select('name, unit_price, width, height')
                 .eq('id', material_id)
                 .maybeSingle();
-            if (mat) {
+
+            if (error || !mat) {
+                // Graceful fallback if columns width/height don't exist in DB yet
+                const { data: fallbackMat } = await (supabase as any)
+                    .from('materials')
+                    .select('name, unit_price')
+                    .eq('id', material_id)
+                    .maybeSingle();
+                if (fallbackMat) {
+                    materialName = fallbackMat.name || '';
+                    materialUnitPrice = fallbackMat.unit_price || 0;
+                }
+            } else {
                 materialName = mat.name || '';
                 materialUnitPrice = mat.unit_price || 0;
                 materialWidth = mat.width || null;
@@ -1205,7 +1217,8 @@ export const PricingService = {
         // 3b-inkjet. Inkjet Click Cost (Canon GP-4600s Skaitiklis A–E)
         // Formula: area_m2 = (W × H) / 1,000,000 → area_A4 = area_m2 × 16 → cost = area_A4 × rate × qty
         const inkjetCounter = (request as any).inkjet_counter;
-        if (inkjetCounter) {
+        const isCanonMaterial = materialName.toLowerCase().includes('canon');
+        if (inkjetCounter && isCanonMaterial) {
             const clickRules = rules.filter((r: any) =>
                 r.rule_type === RULE_TYPES.INKJET_CLICK_COST &&
                 matchesProduct(r)

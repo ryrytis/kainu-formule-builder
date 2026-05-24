@@ -97,6 +97,13 @@ const PriceCalculator: React.FC<PriceCalculatorProps> = ({
         return false;
     }, [productId, products, materials, materialId, hasInkjetRules]);
 
+    const isCanonMaterialSelected = useMemo(() => {
+        const selectedMaterial = materials.find(m => m.id === materialId);
+        if (!selectedMaterial) return false;
+        const mName = (selectedMaterial.name || '').toLowerCase();
+        return mName.includes('canon');
+    }, [materialId, materials]);
+
     // Pricing State
     const [breakdown, setBreakdown] = useState<PricingBreakdown | null>(null);
     const [totalPrice, setTotalPrice] = useState(0);
@@ -572,7 +579,7 @@ const PriceCalculator: React.FC<PriceCalculatorProps> = ({
                         )}
 
                         {/* Inkjet Skaitiklis selector — appears when product or material uses inkjet click cost */}
-                        {isInkjet && !isService && (
+                        {isInkjet && isCanonMaterialSelected && !isService && (
                             <div className="bg-cyan-50 border border-cyan-200 rounded-xl p-4 space-y-3">
                                 <div className="flex items-center gap-2">
                                     <Zap size={16} className="text-cyan-600" />
