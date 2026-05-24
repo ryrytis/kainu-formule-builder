@@ -783,7 +783,7 @@ export const PricingService = {
                 ? getRuleVal(RULE_TYPES.ROLL_SPACING_PAPER, 7)
                 : getRuleVal(RULE_TYPES.ROLL_SPACING_PLEVELE, 4);
             const paintPricePerM2 = getRuleVal(RULE_TYPES.ROLL_PAINT_PRICE_M2, 8.00);
-            const rollMarginMultiplier = getRuleVal(RULE_TYPES.ROLL_MARGIN, 1.5);
+            const rollMarginMultiplier = getRuleVal(RULE_TYPES.ROLL_MARGIN, 3.6);
 
             // Calculate yield per meter
             const effectiveWidth = rollWidth - (2 * rollSideMargin);
@@ -848,7 +848,7 @@ export const PricingService = {
             };
         } else if (isRollSticker) {
             if (manual_unit_paint_price !== undefined && manual_unit_paint_price !== null) {
-                const rollMarginMultiplier = getRuleVal(RULE_TYPES.ROLL_MARGIN, 1.5);
+                const rollMarginMultiplier = getRuleVal(RULE_TYPES.ROLL_MARGIN, 3.6);
                 basePrice = manual_unit_paint_price * rollMarginMultiplier;
                 isPerUnit = true;
                 appliedRules.push(`Roll Paint Price (Manual): €${manual_unit_paint_price.toFixed(4)}/unit × Margin ${rollMarginMultiplier} = €${basePrice.toFixed(4)}`);
@@ -864,7 +864,7 @@ export const PricingService = {
             const spacing = getRuleVal(RULE_TYPES.SHEET_STICKER_SPACING, 2);
             const bleed = getRuleVal(RULE_TYPES.SHEET_STICKER_BLEED, 1);
             const sheetPrintCost = getRuleVal(RULE_TYPES.SHEET_PRINT_PRICE, 0.05);
-            const sheetMarginMultiplier = getRuleVal(RULE_TYPES.SHEET_MARGIN, 1.5);
+            const sheetMarginMultiplier = getRuleVal(RULE_TYPES.SHEET_MARGIN, 3.6);
 
             // Total addition is 3mm by default (2mm spacing + 1mm bleed total)
             const wStep = itemW + bleed + spacing;
@@ -932,7 +932,7 @@ export const PricingService = {
             const sheetPrintCost = basePrintCost * printMultiplier;
             const sheetOperationCost = baseOpCost * printMultiplier;
             const sheetCuttingCost = getRuleVal(RULE_TYPES.SHEET_CUTTING_PRICE, 0.05);
-            const sheetMarginMultiplier = getRuleVal(RULE_TYPES.SHEET_MARGIN, 1.5);
+            const sheetMarginMultiplier = getRuleVal(RULE_TYPES.SHEET_MARGIN, 3.6);
             
             appliedRules.push(`BOM Model: ${isBooklet ? 'Bukletas' : (isKarulis ? 'Karuliai' : 'Packaging')} logic (${isCutOnly ? 'Cut Only' : (print_type || '4+0')})`);
             
@@ -1150,8 +1150,8 @@ export const PricingService = {
         const isBOMProduct = isRollSticker || isSheetLipdukas || isBox || isSleeve || isKarulis || isBooklet;
         if (!isBOMProduct && material_id && materialUnitPrice > 0 && sheetCalc) {
             const marginMultiplier = isRollMaterial
-                ? getRuleVal(RULE_TYPES.ROLL_MARGIN, 1.5)
-                : getRuleVal(RULE_TYPES.SHEET_MARGIN, 1.5);
+                ? getRuleVal(RULE_TYPES.ROLL_MARGIN, 3.6)
+                : getRuleVal(RULE_TYPES.SHEET_MARGIN, 3.6);
             
             const paperCost = sheetCalc.sheets_needed * materialUnitPrice;
             const paperPrice = paperCost * marginMultiplier;
