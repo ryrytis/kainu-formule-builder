@@ -104,6 +104,13 @@ const PriceCalculator: React.FC<PriceCalculatorProps> = ({
         return mName.includes('canon');
     }, [materialId, materials]);
 
+    const isRollSticker = useMemo(() => {
+        const selectedProduct = products.find(p => p.id === productId);
+        if (!selectedProduct) return false;
+        const pName = selectedProduct.name?.toLowerCase() || '';
+        return pName.includes('rulon') && pName.includes('lipdukas');
+    }, [productId, products]);
+
     // Pricing State
     const [breakdown, setBreakdown] = useState<PricingBreakdown | null>(null);
     const [totalPrice, setTotalPrice] = useState(0);
@@ -563,18 +570,41 @@ const PriceCalculator: React.FC<PriceCalculatorProps> = ({
                         </div>
 
                         {!isService && !isBooklet && (
-                            <div>
-                                <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Medžiaga / Popierius</label>
-                                <select 
-                                    value={materialId} 
-                                    onChange={(e) => setMaterialId(e.target.value)} 
-                                    className="w-full border-2 border-gray-100 p-3 rounded-lg focus:border-accent-teal outline-none transition-all font-medium"
-                                >
-                                    <option value="">Pasirinkite medžiagą...</option>
-                                    {filteredMaterials.map((m: any) => (
-                                        <option key={m.id} value={m.id}>{m.name}</option>
-                                    ))}
-                                </select>
+                            <div className="space-y-4">
+                                <div>
+                                    <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Medžiaga / Popierius</label>
+                                    <select 
+                                        value={materialId} 
+                                        onChange={(e) => setMaterialId(e.target.value)} 
+                                        className="w-full border-2 border-gray-100 p-3 rounded-lg focus:border-accent-teal outline-none transition-all font-medium"
+                                    >
+                                        <option value="">Pasirinkite medžiagą...</option>
+                                        {filteredMaterials.map((m: any) => (
+                                            <option key={m.id} value={m.id}>{m.name}</option>
+                                        ))}
+                                    </select>
+                                </div>
+
+                                {isRollSticker && (
+                                    <div className="animate-in fade-in slide-in-from-top-2">
+                                        <label className="block text-xs font-bold text-gray-400 uppercase mb-2">
+                                            Dažų kaina vnt. (Rankinis įvedimas)
+                                        </label>
+                                        <input
+                                            type="number"
+                                            step="0.001"
+                                            min="0"
+                                            value={manualPaintPrice}
+                                            onChange={(e) => setManualPaintPrice(e.target.value)}
+                                            className="w-full border-2 border-accent-teal/30 focus:border-accent-teal bg-accent-teal/5 p-3 rounded-lg outline-none transition-all font-medium text-primary"
+                                            placeholder="Pvz: 0.05"
+                                            title="Dažų kainos vienam lipdukui rankinis perrašymas"
+                                        />
+                                        <p className="text-[10px] text-gray-400 mt-1 italic">
+                                            Tik ruloniniams lipdukams. Perrašo plotu pagrįstą dažų kainą fiksuota kaina už vienetą.
+                                        </p>
+                                    </div>
+                                )}
                             </div>
                         )}
 
