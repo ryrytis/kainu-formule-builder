@@ -28,7 +28,7 @@ export const ClientSearchTool: AgentTool = {
                 return { result: "No clients found matching the query." };
             }
 
-            const results = await Promise.all(clientData.map(async (client) => {
+            const results = await Promise.all(clientData.map(async (client: any) => {
                 const { data: recentOrders } = await supabase
                     .from('orders')
                     .select('order_number, status, total_price, created_at, finish_date')

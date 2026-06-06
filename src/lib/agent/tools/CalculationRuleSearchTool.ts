@@ -23,7 +23,7 @@ export const CalculationRuleSearchTool: AgentTool = {
                 return { result: "No active calculation rules found." };
             }
 
-            return { rules: rulesData.map(r => ({ name: r.name || r.rule_type, value: r.value, priority: r.priority })) };
+            return { rules: rulesData.map((r: any) => ({ name: r.name || r.rule_type, value: r.value, priority: r.priority })) };
         } catch (error: any) {
             return { error: "Rule search failed", details: error.message };
         }
