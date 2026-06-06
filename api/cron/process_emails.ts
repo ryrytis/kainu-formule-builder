@@ -143,10 +143,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 if (
                     !senderAddress || 
                     senderAddress.endsWith('@keturiprint.lt') || 
-                    senderAddress.endsWith('@microsoft.com') ||
-                    senderAddress.includes('rytissu@outlook.com') ||
-                    senderAddress.includes('rytis.suknelevicius') ||
-                    senderAddress.includes('agniety')
+                    senderAddress.endsWith('@microsoft.com')
                 ) continue;
 
                 const subject = (msg.subject || '').toLowerCase();
