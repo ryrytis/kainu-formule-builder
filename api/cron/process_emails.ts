@@ -177,7 +177,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                     const htmlToText = (html: string) => html.replace(/<[^>]*>?/gm, '');
                     const currentMessageText = htmlToText(msg.body?.content || msg.bodyPreview || '');
 
-                    const userMessage = `HISTORY:\n${formattedHistory}\n\nCURRENT MESSAGE:\n${currentMessageText}`;
+                    // Extract a friendly name from the email address if possible (e.g. agniete@... -> Agnietė)
+                    const ownerName = monitor.email_address.split('@')[0].replace('.', ' ');
+                    const capitalizedOwner = ownerName.charAt(0).toUpperCase() + ownerName.slice(1);
+
+                    const userMessage = `This email was received by your team member: ${capitalizedOwner} (${monitor.email_address}). Please sign the draft response as ${capitalizedOwner} from the Keturiprint team.
+
+HISTORY:
+${formattedHistory}
+
+CURRENT MESSAGE:
+${currentMessageText}`;
 
                     const aiResultData = await agent.processRequest(userMessage);
                     
