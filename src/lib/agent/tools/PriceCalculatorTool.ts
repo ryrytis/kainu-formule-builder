@@ -27,7 +27,8 @@ export const PriceCalculatorTool: AgentTool = {
             height: args.height,
             lamination: args.lamination,
             pages: args.pages,
-            // Defaults or logic to map missing fields could go here
+            client_price_list_id: args.client_price_list_id,
+            client_discount_koef: args.client_discount_koef
         };
 
         try {

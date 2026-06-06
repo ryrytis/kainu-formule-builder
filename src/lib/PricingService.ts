@@ -558,6 +558,26 @@ export const PricingService = {
             }
         }
 
+        let productId = request.product_id;
+
+        // If productId is not a valid UUID, try to resolve it by name
+        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+        if (productId && !uuidRegex.test(productId)) {
+            const searchTerm = productId.replace(/-/g, ' ');
+            const { data: productData } = await (supabase as any)
+                .from('products')
+                .select('id')
+                .ilike('name', `%${searchTerm}%`)
+                .limit(1)
+                .maybeSingle();
+                
+            if (productData) {
+                productId = productData.id;
+            } else {
+                throw new Error(`Invalid Product ID: Could not find product matching '${productId}'`);
+            }
+        }
+
         const { data: allRules } = await (supabase as any)
             .from('calculation_rules')
             .select('*')

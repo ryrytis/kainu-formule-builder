@@ -94,11 +94,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const tokenData = await tokenResp.json();
         const accessToken = tokenData.access_token;
 
-        // Initialize CoreAgent
-        const agent = new CoreAgent(
-            [PriceCalculatorTool, KnowledgeBaseTool],
-            SYSTEM_PROMPT
-        );
+
 
         // 3. Fetch Monitored Mailboxes
         const { data: monitors, error: monitorErr } = await supabase
@@ -189,7 +185,27 @@ ${formattedHistory}
 CURRENT MESSAGE:
 ${currentMessageText}`;
 
-                    const aiResultData = await agent.processRequest(userMessage);
+                    const { data: clientData } = await supabase
+                        .from('clients')
+                        .select('price_list_id, discount_koef')
+                        .eq('email', senderAddress)
+                        .maybeSingle();
+
+                    const customPriceTool = {
+                        ...PriceCalculatorTool,
+                        execute: async (args: any) => {
+                            if (clientData?.price_list_id) args.client_price_list_id = clientData.price_list_id;
+                            if (clientData?.discount_koef !== undefined && clientData?.discount_koef !== null) args.client_discount_koef = clientData.discount_koef;
+                            return await PriceCalculatorTool.execute(args);
+                        }
+                    };
+
+                    const emailAgent = new CoreAgent(
+                        [customPriceTool, KnowledgeBaseTool],
+                        SYSTEM_PROMPT
+                    );
+
+                    const aiResultData = await emailAgent.processRequest(userMessage);
                     
                     let aiResult: any = null;
                     try {
