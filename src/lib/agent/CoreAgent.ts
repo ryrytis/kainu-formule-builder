@@ -15,7 +15,7 @@ export class CoreAgent {
         });
     }
 
-    public async processRequest(userMessage: string): Promise<AgentResponse> {
+    public async processRequest(userMessage: string, chatHistory: {role: 'user'|'assistant', content: string}[] = []): Promise<AgentResponse> {
         const toolsSchema = this.tools.map(tool => ({
             type: 'function' as const,
             function: {
@@ -27,6 +27,7 @@ export class CoreAgent {
 
         const messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
             { role: 'system', content: this.systemPrompt },
+            ...chatHistory,
             { role: 'user', content: userMessage }
         ];
 
