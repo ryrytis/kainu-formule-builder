@@ -1,7 +1,7 @@
 
-import { AgentTool } from '../types';
-import { PricingService } from '../../PricingService';
-import { PricingRequest } from '../../PricingService';
+import { AgentTool } from '../types.js';
+import { PricingService } from '../../PricingService.js';
+import { PricingRequest } from '../../PricingService.js';
 
 export const PriceCalculatorTool: AgentTool = {
     name: "calculate_price",

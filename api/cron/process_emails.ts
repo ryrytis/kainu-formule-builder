@@ -2,9 +2,9 @@ export const maxDuration = 60; // Allowed up to 60s on Vercel Hobby
 
 import { createClient } from '@supabase/supabase-js';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { CoreAgent } from '../../src/lib/agent/CoreAgent';
-import { PriceCalculatorTool } from '../../src/lib/agent/tools/PriceCalculatorTool';
-import { KnowledgeBaseTool } from '../../src/lib/agent/tools/KnowledgeBaseTool';
+import { CoreAgent } from '../../src/lib/agent/CoreAgent.js';
+import { PriceCalculatorTool } from '../../src/lib/agent/tools/PriceCalculatorTool.js';
+import { KnowledgeBaseTool } from '../../src/lib/agent/tools/KnowledgeBaseTool.js';
 
 const SYSTEM_PROMPT = `You are a professional project manager for Keturiprint, a professional print shop. Your task is to analyze an incoming email conversation thread and select exactly ONE route from the available routes.
 

@@ -1,6 +1,6 @@
 
 import OpenAI from 'openai';
-import { AgentTool, AgentResponse } from './types';
+import { AgentTool, AgentResponse } from './types.js';
 
 export class CoreAgent {
     private tools: AgentTool[];

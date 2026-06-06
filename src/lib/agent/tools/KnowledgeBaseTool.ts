@@ -1,6 +1,6 @@
 
-import { AgentTool } from '../types';
-import { supabase } from '../../supabase';
+import { AgentTool } from '../types.js';
+import { supabase } from '../../supabase.js';
 
 export const KnowledgeBaseTool: AgentTool = {
     name: "search_knowledge_base",

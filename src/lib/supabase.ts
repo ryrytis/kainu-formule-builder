@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
-import { Database } from './database.types'
+import { Database } from './database.types.js'
 
 // Helper to safely get env vars in both Vite (browser) and Node (scripts/serverless)
 const getEnv = (key: string) => {
