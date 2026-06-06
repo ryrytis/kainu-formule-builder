@@ -124,7 +124,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             const graphResp = await fetch(requestUrl, {
                 headers: {
                     'Authorization': `Bearer ${accessToken}`,
-                    'Prefer': 'odata.maxpagesize=5'
+                    'Prefer': 'odata.maxpagesize=50'
                 }
             });
 
