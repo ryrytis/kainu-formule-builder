@@ -26,7 +26,6 @@ if (!supabaseUrl || !supabaseAnonKey) {
     console.warn('Missing Supabase credentials. Checked VITE_SUPABASE_URL/ANON_KEY and fallbacks.');
 }
 
-export const supabase = createClient<Database>(
-    supabaseUrl || '',
-    supabaseAnonKey || ''
-)
+export const supabase = (supabaseUrl && supabaseAnonKey) 
+    ? createClient<Database>(supabaseUrl.trim(), supabaseAnonKey.trim())
+    : (null as unknown as ReturnType<typeof createClient<Database>>);
