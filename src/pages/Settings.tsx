@@ -31,6 +31,13 @@ const Settings: React.FC = () => {
         label_webhook: ''
     });
 
+    const [graphSettings, setGraphSettings] = useState({
+        tenant_id: '',
+        client_id: '',
+        client_secret: ''
+    });
+    const [showClientSecret, setShowClientSecret] = useState(false);
+
     useEffect(() => {
         const storedKey = localStorage.getItem('saskaita_api_key');
         const storedWebhook = localStorage.getItem('sharepoint_webhook_url');
@@ -80,6 +87,21 @@ const Settings: React.FC = () => {
                         username: venipakData.username || '',
                         password: venipakData.password || '',
                         label_webhook: venipakData.label_webhook || ''
+                    });
+                }
+
+                // Graph Settings
+                const { data: graphData } = await (supabase
+                    .from('graph_settings')
+                    .select('*')
+                    .limit(1)
+                    .maybeSingle() as any);
+
+                if (graphData) {
+                    setGraphSettings({
+                        tenant_id: graphData.tenant_id || '',
+                        client_id: graphData.client_id || '',
+                        client_secret: graphData.client_secret || ''
                     });
                 }
 
@@ -148,6 +170,21 @@ const Settings: React.FC = () => {
                 await (supabase.from('venipak_settings') as any).update(venipakPayload).eq('id', existingVenipak.id);
             } else {
                 await (supabase.from('venipak_settings') as any).insert([venipakPayload]);
+            }
+
+            // --- Save Graph Settings ---
+            const { data: existingGraph } = await (supabase.from('graph_settings').select('id').limit(1).maybeSingle() as any);
+            const graphPayload = {
+                tenant_id: graphSettings.tenant_id,
+                client_id: graphSettings.client_id,
+                client_secret: graphSettings.client_secret,
+                updated_at: new Date()
+            };
+
+            if (existingGraph) {
+                await (supabase.from('graph_settings') as any).update(graphPayload).eq('id', existingGraph.id);
+            } else {
+                await (supabase.from('graph_settings') as any).insert([graphPayload]);
             }
 
             setSaved(true);
@@ -385,6 +422,70 @@ const Settings: React.FC = () => {
                         {saved ? <ShieldCheck size={18} /> : <Save size={18} />}
                         {saved ? <ShieldCheck size={18} /> : "Save Configuration"}
                     </button>
+                </div>
+            </div>
+
+            {/* Microsoft Graph Integration Section */}
+            <div className="card max-w-2xl mt-6">
+                <div className="flex items-center gap-3 mb-6 border-b border-gray-100 pb-4">
+                    <div className="p-2 bg-blue-50 rounded-lg text-blue-600">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+                    </div>
+                    <div>
+                        <h3 className="text-lg font-semibold text-gray-900">Microsoft Graph Integration</h3>
+                        <p className="text-sm text-gray-500">Configure credentials for the AI Email automation.</p>
+                    </div>
+                </div>
+
+                <div className="space-y-4 mb-6">
+                    <div>
+                        <label className="label">Tenant ID</label>
+                        <input
+                            type="text"
+                            value={graphSettings.tenant_id}
+                            onChange={(e) => setGraphSettings({ ...graphSettings, tenant_id: e.target.value })}
+                            className="input w-full"
+                            placeholder="Enter Azure AD Tenant ID"
+                        />
+                    </div>
+                    <div>
+                        <label className="label">Client ID</label>
+                        <input
+                            type="text"
+                            value={graphSettings.client_id}
+                            onChange={(e) => setGraphSettings({ ...graphSettings, client_id: e.target.value })}
+                            className="input w-full"
+                            placeholder="Enter Application Client ID"
+                        />
+                    </div>
+                    <div>
+                        <label className="label">Client Secret</label>
+                        <div className="flex gap-2">
+                            <input
+                                type={showClientSecret ? "text" : "password"}
+                                value={graphSettings.client_secret}
+                                onChange={(e) => setGraphSettings({ ...graphSettings, client_secret: e.target.value })}
+                                className="input flex-1"
+                                placeholder="Enter Application Client Secret"
+                            />
+                            <button
+                                onClick={() => setShowClientSecret(!showClientSecret)}
+                                className="px-3 py-2 text-gray-500 hover:text-gray-700 bg-gray-50 rounded-md border border-gray-200"
+                            >
+                                {showClientSecret ? "Hide" : "Show"}
+                            </button>
+                        </div>
+                    </div>
+
+                    <div className="flex justify-end pt-4">
+                        <button
+                            onClick={handleSave}
+                            className="btn-primary flex items-center gap-2"
+                        >
+                            {saved ? <ShieldCheck size={18} /> : <Save size={18} />}
+                            {saved ? "Saved!" : "Save Configuration"}
+                        </button>
+                    </div>
                 </div>
             </div>
 
