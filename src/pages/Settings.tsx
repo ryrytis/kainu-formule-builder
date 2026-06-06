@@ -441,7 +441,7 @@ const Settings: React.FC = () => {
                     <div>
                         <label className="label">Tenant ID</label>
                         <input
-                            type="text"
+                            type={showClientSecret ? "text" : "password"}
                             value={graphSettings.tenant_id}
                             onChange={(e) => setGraphSettings({ ...graphSettings, tenant_id: e.target.value })}
                             className="input w-full"
@@ -451,7 +451,7 @@ const Settings: React.FC = () => {
                     <div>
                         <label className="label">Client ID</label>
                         <input
-                            type="text"
+                            type={showClientSecret ? "text" : "password"}
                             value={graphSettings.client_id}
                             onChange={(e) => setGraphSettings({ ...graphSettings, client_id: e.target.value })}
                             className="input w-full"
