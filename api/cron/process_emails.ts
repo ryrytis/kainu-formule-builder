@@ -153,6 +153,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 const categories = msg.categories || [];
                 if (categories.includes('Green category') || categories.includes('AI_Processed')) continue;
 
+                const { data: alreadyProcessed } = await supabase
+                    .from('chat_messages')
+                    .select('id')
+                    .eq('session_id', 'PROCESSED_EMAIL')
+                    .eq('content', msg.id)
+                    .maybeSingle();
+
+                if (alreadyProcessed) continue;
+
                 const receivedDate = new Date(msg.receivedDateTime);
                 const oneDayAgo = new Date();
                 oneDayAgo.setDate(oneDayAgo.getDate() - 1);
@@ -236,16 +245,13 @@ ${currentMessageText}`;
                         if (draftResp.ok) {
                             console.log(`Successfully created draft for: ${msg.subject}`);
                             
-                            const updatedCategories = [...categories, 'Green category'];
-                            await fetch(`https://graph.microsoft.com/v1.0/users/${monitor.email_address}/messages/${msg.id}`, {
-                                method: 'PATCH',
-                                headers: {
-                                    'Authorization': `Bearer ${accessToken}`,
-                                    'Content-Type': 'application/json'
-                                },
-                                body: JSON.stringify({ categories: updatedCategories })
+                            // Mark as processed invisibly in Supabase
+                            await supabase.from('chat_messages').insert({
+                                session_id: 'PROCESSED_EMAIL',
+                                role: 'assistant',
+                                content: msg.id
                             });
-                            console.log('Tagged email as Green category');
+                            console.log('Marked email as processed in database silently');
                             processedCount++;
                         } else {
                             console.error(`Failed to create draft:`, await draftResp.text());
