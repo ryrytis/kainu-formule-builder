@@ -204,7 +204,7 @@ const Orders: React.FC = () => {
                     .select('id')
                     .ilike('name', `%${search}%`);
                 
-                const clientIds = matchedClients?.map(c => c.id) || [];
+                const clientIds = (matchedClients as any[])?.map(c => c.id) || [];
                 if (clientIds.length > 0) {
                     query = query.or(`order_number.ilike.%${search}%,status.ilike.%${search}%,client_id.in.(${clientIds.join(',')})`);
                 } else {
@@ -1016,7 +1016,7 @@ const Orders: React.FC = () => {
             <CreateOrderModal
                 isOpen={isCreateModalOpen}
                 onClose={() => setIsCreateModalOpen(false)}
-                onOrderCreated={fetchOrders}
+                onOrderCreated={refreshOrders}
             />
 
             {
@@ -1028,7 +1028,7 @@ const Orders: React.FC = () => {
                             setSelectedOrderId(null);
                             setSelectedItem(null);
                         }}
-                        onItemAdded={fetchOrders}
+                        onItemAdded={refreshOrders}
                         orderId={selectedOrderId}
                         item={selectedItem}
                     />
