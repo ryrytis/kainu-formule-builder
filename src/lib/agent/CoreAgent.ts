@@ -135,7 +135,7 @@ export class CoreAgent {
         const totalCost = promptCost + completionCost;
 
         try {
-            await supabase.from('ai_usage_logs' as any).insert({
+            await (supabase as any).from('ai_usage_logs').insert({
                 agent_type: this.agentType,
                 model_name: modelName,
                 prompt_tokens: promptTokens,
