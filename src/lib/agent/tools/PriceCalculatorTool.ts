@@ -5,18 +5,18 @@ import { PricingRequest } from '../../PricingService.js';
 
 export const PriceCalculatorTool: AgentTool = {
     name: "calculate_price",
-    description: "Calculates the price for a printing product (business cards, stickers, etc.) based on quantity and specifications. ONLY call this if you have the Product ID or clear specifications.",
+    description: "Calculates the price for a printing product (business cards, stickers, etc.). IMPORTANT: If the user asks for a price but doesn't provide exact quantity or details, you MUST still call this tool proactively with standard example quantities (e.g., 100 and 500) and standard options to provide baseline pricing. DO NOT ask clarifying questions without giving an example price first.",
     parameters: {
         type: "object",
         properties: {
-            product_id: { type: "string", description: "The ID of the product (e.g., 'vizitines-korteles', 'lipdukai'). If unknown, try to infer from product name." },
-            quantity: { type: "number", description: "Number of units." },
+            product_id: { type: "string", description: "The ID of the product (e.g., 'vizitines-korteles', 'lipdukai', 'dovanu-kuponai'). You MUST infer this from the user's request even if they don't specify it exactly." },
+            quantity: { type: "number", description: "Number of units. If unknown, guess a standard amount like 100." },
             width: { type: "number", description: "Width in mm (for custom sizes)." },
             height: { type: "number", description: "Height in mm (for custom sizes)." },
             lamination: { type: "string", enum: ["None", "Matt", "Gloss", "SoftTouch"] },
             pages: { type: "number", description: "Number of pages (for calendars/booklets)." }
         },
-        required: ["quantity"]
+        required: ["product_id", "quantity"]
     },
     execute: async (args: any) => {
         // Map args to PricingRequest
