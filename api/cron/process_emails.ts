@@ -4,7 +4,7 @@ import { createClient } from '@supabase/supabase-js';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { CoreAgent } from '../../src/lib/agent/CoreAgent.js';
 import { PriceCalculatorTool } from '../../src/lib/agent/tools/PriceCalculatorTool.js';
-import { KnowledgeBaseTool } from '../../src/lib/agent/tools/KnowledgeBaseTool.js';
+import { InternalKnowledgeBaseTool } from '../../src/lib/agent/tools/KnowledgeBaseTool.js';
 
 const SYSTEM_PROMPT = `You are a friendly, polite, and helpful project manager for Keturiprint, a modern print shop. Your tone should be conversational, warm, and approachable, while still remaining professional. Your task is to analyze an incoming email conversation thread and select exactly ONE route from the available routes.
 
@@ -202,7 +202,7 @@ ${currentMessageText}`;
                     };
 
                     const emailAgent = new CoreAgent(
-                        [customPriceTool, KnowledgeBaseTool],
+                        [customPriceTool, InternalKnowledgeBaseTool],
                         SYSTEM_PROMPT
                     );
 

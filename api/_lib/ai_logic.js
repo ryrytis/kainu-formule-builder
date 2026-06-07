@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { CoreAgent } from '../../src/lib/agent/CoreAgent.js';
 import { PriceCalculatorTool } from '../../src/lib/agent/tools/PriceCalculatorTool.js';
-import { KnowledgeBaseTool } from '../../src/lib/agent/tools/KnowledgeBaseTool.js';
+import { PublicKnowledgeBaseTool, InternalKnowledgeBaseTool } from '../../src/lib/agent/tools/KnowledgeBaseTool.js';
 import { ClientSearchTool } from '../../src/lib/agent/tools/ClientSearchTool.js';
 import { OrderLookupTool } from '../../src/lib/agent/tools/OrderLookupTool.js';
 import { CalculationRuleSearchTool } from '../../src/lib/agent/tools/CalculationRuleSearchTool.js';
@@ -33,7 +33,7 @@ export async function processAiMessage(sender_id, message_text, isInternal = fal
             .limit(20);
 
         // 3. Define Tools and System Prompt
-        let tools = [PriceCalculatorTool, KnowledgeBaseTool];
+        let tools = [PriceCalculatorTool, InternalKnowledgeBaseTool];
         let baseSystemPrompt = "You are an AI Support Agent for 'Keturi print'. Always be polite and helpful. Do not mention that you are an AI unless asked.\n" +
                                "IMPORTANT RULE 1: If the user asks for a product but doesn't provide enough details (like quantity or lamination), do NOT just ask them clarifying questions. Instead, PROACTIVELY use the 'calculate_price' tool multiple times to fetch 'baseline example prices' (e.g., calculate for 100 pcs and 500 pcs). Then present these example prices to the client, and warmly ask them to confirm their exact desired quantity and specs. DO NOT guess the price, always use the tool.\n" +
                                "IMPORTANT RULE 2 (LIPDUKAI): If the user asks about stickers (lipdukai), you must first explain that we produce stickers in rolls (rulonais) or sheets (lapais), and mention the available materials (e.g., paper/popieriniai, film/plėvelė). Then ask for the quantity and material they need. IF they provided a size, you MUST use the calculate_price tool to give them an estimated price.";
