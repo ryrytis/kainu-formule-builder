@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { Plus, Search, Edit, Trash2, Phone, Mail, MapPin, Building2, User, UserPlus, Loader2, Copy, Check, X, ExternalLink } from 'lucide-react';
 import CreateClientModal from '../components/CreateClientModal';
@@ -7,7 +7,11 @@ import { EmailService } from '../lib/EmailService';
 const Clients: React.FC = () => {
     const [clients, setClients] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+    const [loadingMore, setLoadingMore] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
+    const [debouncedSearch, setDebouncedSearch] = useState('');
+    const [page, setPage] = useState(0);
+    const [hasMore, setHasMore] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedClient, setSelectedClient] = useState<any | null>(null);
     const [sendingId, setSendingId] = useState<string | null>(null);
@@ -15,25 +19,86 @@ const Clients: React.FC = () => {
     const [editableData, setEditableData] = useState<any>(null);
     const [savingId, setSavingId] = useState<string | null>(null);
 
+    const PAGE_SIZE = 50;
+    const observer = useRef<IntersectionObserver | null>(null);
+
     useEffect(() => {
-        fetchClients();
-    }, []);
+        const handler = setTimeout(() => {
+            setDebouncedSearch(searchTerm);
+        }, 500);
+        return () => clearTimeout(handler);
+    }, [searchTerm]);
 
-    const fetchClients = async () => {
-        setLoading(true);
-        const { data } = await supabase
+    useEffect(() => {
+        setPage(0);
+        setClients([]);
+        setHasMore(true);
+        fetchClients(0, debouncedSearch, true);
+    }, [debouncedSearch]);
+
+    useEffect(() => {
+        if (page > 0) {
+            fetchClients(page, debouncedSearch, false);
+        }
+    }, [page]);
+
+    const fetchClients = async (pageNum: number, search: string, isNewSearch: boolean) => {
+        if (isNewSearch) setLoading(true);
+        else setLoadingMore(true);
+
+        const from = pageNum * PAGE_SIZE;
+        const to = from + PAGE_SIZE - 1;
+
+        let query = supabase
             .from('clients')
-            .select('*')
-            .order('created_at', { ascending: false });
+            .select('*', { count: 'exact' })
+            .order('created_at', { ascending: false })
+            .range(from, to);
 
-        if (data) setClients(data);
+        if (search) {
+            query = query.or(`name.ilike.%${search}%,email.ilike.%${search}%,company.ilike.%${search}%`);
+        }
+
+        const { data, count } = await query;
+
+        if (data) {
+            if (isNewSearch) {
+                setClients(data);
+            } else {
+                setClients(prev => [...prev, ...data]);
+            }
+            if (count !== null) {
+                setHasMore(from + data.length < count);
+            } else {
+                setHasMore(data.length === PAGE_SIZE);
+            }
+        }
         setLoading(false);
+        setLoadingMore(false);
     };
+
+    const refreshClients = () => {
+        setPage(0);
+        setClients([]);
+        setHasMore(true);
+        fetchClients(0, debouncedSearch, true);
+    };
+
+    const lastClientElementRef = useCallback((node: HTMLTableRowElement | null) => {
+        if (loading || loadingMore) return;
+        if (observer.current) observer.current.disconnect();
+        observer.current = new IntersectionObserver(entries => {
+            if (entries[0].isIntersecting && hasMore) {
+                setPage(prevPage => prevPage + 1);
+            }
+        });
+        if (node) observer.current.observe(node);
+    }, [loading, loadingMore, hasMore]);
 
     const handleDelete = async (id: string) => {
         if (!window.confirm('Are you sure you want to delete this client?')) return;
         const { error } = await supabase.from('clients').delete().eq('id', id);
-        if (!error) fetchClients();
+        if (!error) refreshClients();
     };
 
     const handleEdit = (client: any) => {
@@ -117,14 +182,8 @@ const Clients: React.FC = () => {
     const closeAndRefresh = () => {
         setIsModalOpen(false);
         setSelectedClient(null);
-        fetchClients();
+        refreshClients();
     };
-
-    const filteredClients = clients.filter(client =>
-        client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        client.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        client.company?.toLowerCase().includes(searchTerm.toLowerCase())
-    );
 
     return (
         <div className="space-y-6 animate-in fade-in duration-300">
@@ -172,11 +231,11 @@ const Clients: React.FC = () => {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-50">
-                            {loading ? (
+                            {loading && clients.length === 0 ? (
                                 <tr>
                                     <td colSpan={7} className="py-8 text-center text-gray-500">Loading clients...</td>
                                 </tr>
-                            ) : filteredClients.length === 0 ? (
+                            ) : clients.length === 0 ? (
                                 <tr>
                                     <td colSpan={7} className="py-12 text-center text-gray-400">
                                         <User size={48} className="mx-auto mb-3 opacity-20" />
@@ -184,10 +243,10 @@ const Clients: React.FC = () => {
                                     </td>
                                 </tr>
                             ) : (
-                                filteredClients.map((client) => {
+                                clients.map((client, index) => {
                                     const isEditing = inlineEditingId === client.id;
                                     return (
-                                        <tr key={client.id} className="hover:bg-gray-50 transition-colors group">
+                                        <tr key={client.id} ref={index === clients.length - 1 ? lastClientElementRef : null} className="hover:bg-gray-50 transition-colors group">
                                             {/* Name */}
                                             <td className="py-4 px-4 align-top">
                                                 {isEditing ? (
@@ -396,6 +455,13 @@ const Clients: React.FC = () => {
                                         </tr>
                                     );
                                 })
+                            )}
+                            {loadingMore && (
+                                <tr>
+                                    <td colSpan={7} className="py-6 text-center text-accent-teal">
+                                        <Loader2 size={24} className="animate-spin mx-auto" />
+                                    </td>
+                                </tr>
                             )}
                         </tbody>
                     </table>
