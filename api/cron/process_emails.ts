@@ -151,7 +151,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 }
 
                 const categories = msg.categories || [];
-                if (categories.includes('AI_Processed')) continue;
+                if (categories.includes('Green category') || categories.includes('AI_Processed')) continue;
 
                 const receivedDate = new Date(msg.receivedDateTime);
                 const oneDayAgo = new Date();
@@ -236,7 +236,7 @@ ${currentMessageText}`;
                         if (draftResp.ok) {
                             console.log(`Successfully created draft for: ${msg.subject}`);
                             
-                            const updatedCategories = [...categories, 'AI_Processed'];
+                            const updatedCategories = [...categories, 'Green category'];
                             await fetch(`https://graph.microsoft.com/v1.0/users/${monitor.email_address}/messages/${msg.id}`, {
                                 method: 'PATCH',
                                 headers: {
@@ -245,7 +245,7 @@ ${currentMessageText}`;
                                 },
                                 body: JSON.stringify({ categories: updatedCategories })
                             });
-                            console.log('Tagged email as AI_Processed');
+                            console.log('Tagged email as Green category');
                             processedCount++;
                         } else {
                             console.error(`Failed to create draft:`, await draftResp.text());
