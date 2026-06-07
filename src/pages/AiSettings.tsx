@@ -11,6 +11,7 @@ const AiSettings: React.FC = () => {
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
 
     // Form State
     const [editingId, setEditingId] = useState<string | null>(null);
@@ -143,6 +144,19 @@ const AiSettings: React.FC = () => {
         r.content.toLowerCase().includes(searchTerm.toLowerCase()) ||
         r.category.toLowerCase().includes(searchTerm.toLowerCase())
     );
+    const rulesByCategory = filteredRules.reduce((acc, rule) => {
+        const cat = rule.category || 'Uncategorized';
+        if (!acc[cat]) acc[cat] = [];
+        acc[cat].push(rule);
+        return acc;
+    }, {} as Record<string, KnowledgeC[]>);
+
+    const toggleCategory = (cat: string) => {
+        setExpandedCategories(prev => ({
+            ...prev,
+            [cat]: !prev[cat]
+        }));
+    };
 
     return (
         <div className="space-y-6">
@@ -221,7 +235,6 @@ const AiSettings: React.FC = () => {
                             <tr className="border-b border-gray-100 text-gray-500 text-sm">
                                 <th className="py-4 px-4 font-medium">Topic</th>
                                 <th className="py-4 px-4 font-medium">Content (Rule)</th>
-                                <th className="py-4 px-4 font-medium">Category</th>
                                 <th className="py-4 px-4 font-medium text-center italic">Scope</th>
                                 <th className="py-4 px-4 font-medium text-center">Priority</th>
                                 <th className="py-4 px-4 font-medium text-center">Status</th>
@@ -230,58 +243,73 @@ const AiSettings: React.FC = () => {
                         </thead>
                         <tbody className="divide-y divide-gray-50">
                             {loading ? (
-                                <tr><td colSpan={7} className="py-8 text-center text-gray-500">Loading knowledge...</td></tr>
-                            ) : filteredRules.length === 0 ? (
-                                <tr><td colSpan={7} className="py-8 text-center text-gray-500">No rules found.</td></tr>
+                                <tr><td colSpan={6} className="py-8 text-center text-gray-500">Loading knowledge...</td></tr>
+                            ) : Object.keys(rulesByCategory).length === 0 ? (
+                                <tr><td colSpan={6} className="py-8 text-center text-gray-500">No rules found.</td></tr>
                             ) : (
-                                filteredRules.map((rule) => (
-                                    <tr key={rule.id} className="hover:bg-gray-50 transition-colors">
-                                        <td className="py-4 px-4 font-medium text-gray-900 align-top max-w-[150px]">{rule.topic}</td>
-                                        <td className="py-4 px-4 text-gray-600 align-top max-w-[400px] text-sm whitespace-pre-wrap">{rule.content}</td>
-                                        <td className="py-4 px-4 align-top">
-                                            <span className="px-2 py-1 bg-gray-100 text-gray-600 rounded text-xs font-medium">
-                                                {rule.category}
-                                            </span>
-                                        </td>
-                                        <td className="py-4 px-4 text-center align-top">
-                                            <span className={clsx(
-                                                "px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider",
-                                                rule.is_internal 
-                                                    ? "bg-amber-100 text-amber-700 border border-amber-200" 
-                                                    : "bg-blue-100 text-blue-700 border border-blue-200"
-                                            )}>
-                                                {rule.is_internal ? 'Internal' : 'External'}
-                                            </span>
-                                        </td>
-                                        <td className="py-4 px-4 text-center align-top">{rule.priority}</td>
-                                        <td className="py-4 px-4 text-center align-top">
-                                            <button 
-                                                onClick={() => handleToggleActive(rule)} 
-                                                className="text-gray-400 hover:text-primary transition-colors"
-                                                title={rule.is_active ? "Deactivate" : "Activate"}
-                                            >
-                                                {rule.is_active ? <ToggleRight size={24} className="text-green-500" /> : <ToggleLeft size={24} />}
-                                            </button>
-                                        </td>
-                                        <td className="py-4 px-4 text-right align-top">
-                                            <div className="flex justify-end gap-2">
-                                                <button
-                                                    onClick={() => handleEdit(rule)}
-                                                    className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded"
-                                                    title="Edit"
-                                                >
-                                                    <Edit size={16} />
-                                                </button>
-                                                <button
-                                                    onClick={() => handleDelete(rule.id)}
-                                                    className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded"
-                                                    title="Delete"
-                                                >
-                                                    <Trash2 size={16} />
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
+                                Object.entries(rulesByCategory).map(([category, catRules]) => (
+                                    <React.Fragment key={category}>
+                                        <tr 
+                                            className="bg-gray-100 cursor-pointer hover:bg-gray-200 transition-colors" 
+                                            onClick={() => toggleCategory(category)}
+                                        >
+                                            <td colSpan={6} className="py-3 px-4 font-bold text-gray-800">
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-gray-500">
+                                                        {expandedCategories[category] !== false ? '▼' : '▶'}
+                                                    </span>
+                                                    {category}
+                                                    <span className="bg-white text-gray-500 text-xs py-0.5 px-2 rounded-full font-medium ml-2 shadow-sm border border-gray-200">
+                                                        {catRules.length}
+                                                    </span>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        {expandedCategories[category] !== false && catRules.map((rule) => (
+                                            <tr key={rule.id} className="hover:bg-gray-50 transition-colors">
+                                                <td className="py-4 px-4 font-medium text-gray-900 align-top max-w-[150px]">{rule.topic}</td>
+                                                <td className="py-4 px-4 text-gray-600 align-top max-w-[400px] text-sm whitespace-pre-wrap">{rule.content}</td>
+                                                <td className="py-4 px-4 text-center align-top">
+                                                    <span className={clsx(
+                                                        "px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider",
+                                                        rule.is_internal 
+                                                            ? "bg-amber-100 text-amber-700 border border-amber-200" 
+                                                            : "bg-blue-100 text-blue-700 border border-blue-200"
+                                                    )}>
+                                                        {rule.is_internal ? 'Internal' : 'External'}
+                                                    </span>
+                                                </td>
+                                                <td className="py-4 px-4 text-center align-top">{rule.priority}</td>
+                                                <td className="py-4 px-4 text-center align-top">
+                                                    <button 
+                                                        onClick={() => handleToggleActive(rule)} 
+                                                        className="text-gray-400 hover:text-primary transition-colors"
+                                                        title={rule.is_active ? "Deactivate" : "Activate"}
+                                                    >
+                                                        {rule.is_active ? <ToggleRight size={24} className="text-green-500" /> : <ToggleLeft size={24} />}
+                                                    </button>
+                                                </td>
+                                                <td className="py-4 px-4 text-right align-top">
+                                                    <div className="flex justify-end gap-2">
+                                                        <button
+                                                            onClick={() => handleEdit(rule)}
+                                                            className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded"
+                                                            title="Edit"
+                                                        >
+                                                            <Edit size={16} />
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleDelete(rule.id)}
+                                                            className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded"
+                                                            title="Delete"
+                                                        >
+                                                            <Trash2 size={16} />
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </React.Fragment>
                                 ))
                             )}
                         </tbody>
