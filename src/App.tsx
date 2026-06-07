@@ -21,6 +21,7 @@ import Calculator from './pages/Calculator';
 import ClientOnboarding from './pages/ClientOnboarding';
 import Works from './pages/Works';
 import AiSettings from './pages/AiSettings';
+import AiUsage from './pages/AiUsage';
 import MetalografijaOrder from './pages/MetalografijaOrder';
 import PriceLists from './pages/PriceLists';
 import ClientPortal from './pages/ClientPortal';
@@ -56,6 +57,7 @@ function App() {
                                 <Route path="settings" element={<Settings />} />
                                 <Route path="users" element={<UserManagement />} />
                                 <Route path="ai-settings" element={<AiSettings />} />
+                                <Route path="ai-usage" element={<AiUsage />} />
                                 <Route path="metalografija" element={<MetalografijaOrder />} />
                             </Route>
                         </Route>

@@ -70,7 +70,7 @@ export async function processAiMessage(sender_id, message_text, isInternal = fal
             }
         }
 
-        const agent = new CoreAgent(tools, finalSystemPrompt);
+        const agent = new CoreAgent(tools, finalSystemPrompt, 'web_chat');
 
         // Map history to the format CoreAgent expects (oldest first)
         let chatHistory = [];

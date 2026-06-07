@@ -212,7 +212,8 @@ ${currentMessageText}`;
 
                     const emailAgent = new CoreAgent(
                         [customPriceTool, InternalKnowledgeBaseTool],
-                        SYSTEM_PROMPT
+                        SYSTEM_PROMPT,
+                        'email_draft'
                     );
 
                     const aiResultData = await emailAgent.processRequest(userMessage);

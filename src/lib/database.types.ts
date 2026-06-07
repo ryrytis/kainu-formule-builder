@@ -44,6 +44,38 @@ export interface Database {
                     updated_at?: string
                 }
             }
+            ai_usage_logs: {
+                Row: {
+                    id: string
+                    created_at: string
+                    agent_type: string
+                    model_name: string
+                    prompt_tokens: number
+                    completion_tokens: number
+                    total_tokens: number
+                    estimated_cost_usd: number
+                }
+                Insert: {
+                    id?: string
+                    created_at?: string
+                    agent_type: string
+                    model_name: string
+                    prompt_tokens: number
+                    completion_tokens: number
+                    total_tokens: number
+                    estimated_cost_usd: number
+                }
+                Update: {
+                    id?: string
+                    created_at?: string
+                    agent_type?: string
+                    model_name?: string
+                    prompt_tokens?: number
+                    completion_tokens?: number
+                    total_tokens?: number
+                    estimated_cost_usd?: number
+                }
+            }
             chat_messages: {
                 Row: {
                     id: string
