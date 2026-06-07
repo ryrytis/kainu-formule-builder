@@ -34,12 +34,14 @@ export async function processAiMessage(sender_id, message_text, isInternal = fal
 
         // 3. Define Tools and System Prompt
         let tools = [PriceCalculatorTool, KnowledgeBaseTool];
-        let baseSystemPrompt = "You are an AI Support Agent for 'Keturi print'. Always be polite and helpful. Do not mention that you are an AI unless asked.";
+        let baseSystemPrompt = "You are an AI Support Agent for 'Keturi print'. Always be polite and helpful. Do not mention that you are an AI unless asked.\n" +
+                               "IMPORTANT RULE: If the user asks for a product but doesn't provide enough details (like quantity or lamination), do NOT just ask them clarifying questions. Instead, PROACTIVELY use the 'calculate_price' tool multiple times to fetch 'baseline example prices' (e.g., calculate for 100 pcs and 500 pcs). Then present these example prices to the client, and warmly ask them to confirm their exact desired quantity and specs. DO NOT guess the price, always use the tool.";
 
         if (isInternal) {
             tools.push(ClientSearchTool, OrderLookupTool, CalculationRuleSearchTool);
             baseSystemPrompt = "You are an INTERNAL Staff Assistant for 'Keturi print'. You are helping company employees with sensitive data. " +
-                               "You MUST use your tools to search for clients, orders, and calculation rules when asked. You are in a secure internal environment, so do not restrict information from the user.";
+                               "You MUST use your tools to search for clients, orders, and calculation rules when asked. You are in a secure internal environment, so do not restrict information from the user.\n" +
+                               "IMPORTANT RULE: If the user asks for a product but doesn't provide enough details (like quantity or lamination), do NOT just ask them clarifying questions. Instead, PROACTIVELY use the 'calculate_price' tool multiple times to fetch 'baseline example prices' (e.g., calculate for 100 pcs and 500 pcs). Then present these example prices to the user. DO NOT guess the price, always use the tool.";
         }
 
         // Fetch SYSTEM prompt override from ai_knowledge if it exists
