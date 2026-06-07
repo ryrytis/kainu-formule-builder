@@ -1,7 +1,6 @@
-
 import { CoreAgent } from '../src/lib/agent/CoreAgent';
 import { PriceCalculatorTool } from '../src/lib/agent/tools/PriceCalculatorTool';
-import { KnowledgeBaseTool } from '../src/lib/agent/tools/KnowledgeBaseTool';
+import { InternalKnowledgeBaseTool } from '../src/lib/agent/tools/KnowledgeBaseTool.js';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
 // System Prompt for the Agent
@@ -48,10 +47,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     try {
         // Instantiate Agent with Tools
-        const agent = new CoreAgent(
-            [PriceCalculatorTool, KnowledgeBaseTool],
-            SYSTEM_PROMPT
-        );
+        const agent = new CoreAgent([PriceCalculatorTool, InternalKnowledgeBaseTool], SYSTEM_PROMPT);
 
         // Combine instruction with email body if provided
         const userMessage = instruction

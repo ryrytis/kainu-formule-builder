@@ -23,7 +23,7 @@ export const PublicKnowledgeBaseTool: AgentTool = {
             .limit(3);
 
         if (error) return { error: "Search failed", details: error.message };
-        if (data && data.length > 0) return data.map(d => `[${d.topic}]: ${d.content}`).join("\n\n");
+        if (data && data.length > 0) return data.map((d: any) => `[${d.topic}]: ${d.content}`).join("\n\n");
         return "No relevant information found in the knowledge base.";
     }
 };
@@ -48,7 +48,7 @@ export const InternalKnowledgeBaseTool: AgentTool = {
             .limit(3);
 
         if (error) return { error: "Search failed", details: error.message };
-        if (data && data.length > 0) return data.map(d => `[${d.topic}]: ${d.content}`).join("\n\n");
+        if (data && data.length > 0) return data.map((d: any) => `[${d.topic}]: ${d.content}`).join("\n\n");
         return "No relevant information found in the knowledge base.";
     }
 };
