@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { Plus, Search, Filter, ChevronDown, ChevronRight, Receipt, Copy, Truck, Loader2, Pencil, Trash2, Printer } from 'lucide-react';
 import { Database } from '../lib/database.types';
@@ -48,13 +48,18 @@ type Order = Database['public']['Tables']['orders']['Row'] & {
 const Orders: React.FC = () => {
     const [orders, setOrders] = useState<Order[]>([]);
     const [loading, setLoading] = useState(true);
+    const [loadingMore, setLoadingMore] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [expandedOrderIds, setExpandedOrderIds] = useState<Set<string>>(new Set());
     const [processingIds, setProcessingIds] = useState<Set<string>>(new Set());
 
-    // Server-side search state
+    // Server-side search and pagination state
     const [debouncedSearch, setDebouncedSearch] = useState('');
+    const [page, setPage] = useState(0);
+    const [hasMore, setHasMore] = useState(true);
+    const PAGE_SIZE = 50;
+    const observer = useRef<IntersectionObserver | null>(null);
 
     const location = useLocation();
     const [isFilterOpen, setIsFilterOpen] = useState(false);
@@ -147,7 +152,7 @@ const Orders: React.FC = () => {
         } catch (err) {
             console.error('Failed to update item:', err);
             alert('Failed to update item');
-            fetchOrders(); // Revert on error
+            refreshOrders(); // Revert on error
         }
     };
 
@@ -175,35 +180,92 @@ const Orders: React.FC = () => {
     // fetchOrders definition starts below
 
 
-    const fetchOrders = async () => {
-        setLoading(true);
-        try {
-            let query = supabase.from('orders').select('*, clients(*), order_items(*)').order('created_at', { ascending: false });
+    const fetchOrders = async (pageNum: number, search: string, filter: string, isNewSearch: boolean) => {
+        if (isNewSearch) setLoading(true);
+        else setLoadingMore(true);
 
-            if (statusFilter !== 'All') {
-                if (statusFilter === 'Not Invoiced') {
+        const from = pageNum * PAGE_SIZE;
+        const to = from + PAGE_SIZE - 1;
+
+        try {
+            let query = supabase.from('orders').select('*, clients(*), order_items(*)', { count: 'exact' }).order('created_at', { ascending: false }).range(from, to);
+
+            if (filter !== 'All') {
+                if (filter === 'Not Invoiced') {
                     query = query.eq('invoiced', false).neq('status', 'Cancelled');
                 } else {
-                    query = query.eq('status', statusFilter);
+                    query = query.eq('status', filter);
                 }
             }
 
-            // Search is handled client-side so we can search by client name too
-            const { data, error } = await query;
+            if (search) {
+                const { data: matchedClients } = await supabase
+                    .from('clients')
+                    .select('id')
+                    .ilike('name', `%${search}%`);
+                
+                const clientIds = matchedClients?.map(c => c.id) || [];
+                if (clientIds.length > 0) {
+                    query = query.or(`order_number.ilike.%${search}%,status.ilike.%${search}%,client_id.in.(${clientIds.join(',')})`);
+                } else {
+                    query = query.or(`order_number.ilike.%${search}%,status.ilike.%${search}%`);
+                }
+            }
+
+            const { data, count, error } = await query;
 
             if (error) throw error;
-            setOrders(data as any);
+            
+            if (data) {
+                if (isNewSearch) {
+                    setOrders(data as any);
+                } else {
+                    setOrders(prev => [...prev, ...data as any]);
+                }
+                if (count !== null) {
+                    setHasMore(from + data.length < count);
+                } else {
+                    setHasMore(data.length === PAGE_SIZE);
+                }
+            }
         } catch (error) {
             console.error('Error fetching orders:', error);
         } finally {
             setLoading(false);
+            setLoadingMore(false);
         }
     };
 
-    // Re-fetch only when filter changes — search is client-side
+    const refreshOrders = () => {
+        setPage(0);
+        setOrders([]);
+        setHasMore(true);
+        fetchOrders(0, debouncedSearch, statusFilter, true);
+    };
+
     useEffect(() => {
-        fetchOrders();
-    }, [statusFilter]);
+        setPage(0);
+        setOrders([]);
+        setHasMore(true);
+        fetchOrders(0, debouncedSearch, statusFilter, true);
+    }, [debouncedSearch, statusFilter]);
+
+    useEffect(() => {
+        if (page > 0) {
+            fetchOrders(page, debouncedSearch, statusFilter, false);
+        }
+    }, [page]);
+
+    const lastOrderElementRef = useCallback((node: HTMLTableRowElement | null) => {
+        if (loading || loadingMore) return;
+        if (observer.current) observer.current.disconnect();
+        observer.current = new IntersectionObserver(entries => {
+            if (entries[0].isIntersecting && hasMore) {
+                setPage(prevPage => prevPage + 1);
+            }
+        });
+        if (node) observer.current.observe(node);
+    }, [loading, loadingMore, hasMore]);
 
     const toggleExpand = (e: React.MouseEvent, orderId: string) => {
         e.stopPropagation();
@@ -292,7 +354,7 @@ const Orders: React.FC = () => {
                     .catch(e => console.error("SharePoint trigger failed for duplicated order", e));
             }
 
-            fetchOrders();
+            refreshOrders();
             alert(`Order duplicated: ${newOrderNumber}`);
         } catch (err) {
             console.error('Failed to duplicate:', err);
@@ -325,7 +387,7 @@ const Orders: React.FC = () => {
                     alert(`Invoice sent (ID: ${response.invoiceId}), but failed to update status locally.`);
                 } else {
                     alert(`Invoice Sent! ID: ${response.invoiceId}`);
-                    fetchOrders(); // Refresh UI
+                    refreshOrders(); // Refresh UI
                 }
             } else {
                 alert(`Failed: ${response.message}`);
@@ -492,7 +554,7 @@ const Orders: React.FC = () => {
             const newTotal = allItems?.reduce((sum: number, i: any) => sum + (i.total_price || 0), 0) || 0;
             await (supabase as any).from('orders').update({ total_price: newTotal }).eq('id', orderId);
 
-            fetchOrders();
+            refreshOrders();
         } catch (err) {
             console.error('Failed to delete item:', err);
             alert('Failed to delete item');
@@ -527,17 +589,7 @@ const Orders: React.FC = () => {
         }
     };
 
-    // Client-side search — includes order number, client name, and status
-    const filteredOrders = debouncedSearch
-        ? orders.filter(o => {
-            const term = debouncedSearch.toLowerCase();
-            return (
-                o.order_number?.toLowerCase().includes(term) ||
-                o.clients?.name?.toLowerCase().includes(term) ||
-                o.status?.toLowerCase().includes(term)
-            );
-        })
-        : orders;
+    // Remove client-side filtering
 
     return (
         <div className="space-y-6">
@@ -599,19 +651,20 @@ const Orders: React.FC = () => {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-50">
-                            {loading ? (
+                            {loading && orders.length === 0 ? (
                                 <tr>
                                     <td colSpan={7} className="py-8 text-center text-gray-500">Loading orders...</td>
                                 </tr>
-                            ) : filteredOrders.length === 0 ? (
+                            ) : orders.length === 0 ? (
                                 <tr>
                                     <td colSpan={7} className="py-8 text-center text-gray-500">No orders found.</td>
                                 </tr>
                             ) : (
-                                filteredOrders.map((order) => {
+                                orders.map((order, index) => {
                                     return (
                                         <React.Fragment key={order.id}>
                                             <tr
+                                                ref={index === orders.length - 1 ? lastOrderElementRef : null}
                                                 className="cursor-pointer hover:bg-gray-50 transition-colors group"
                                                 onClick={(e) => toggleExpand(e, order.id)}
                                             >
@@ -947,6 +1000,13 @@ const Orders: React.FC = () => {
                                         </React.Fragment>
                                     );
                                 })
+                            )}
+                            {loadingMore && (
+                                <tr>
+                                    <td colSpan={7} className="py-6 text-center text-accent-teal">
+                                        <Loader2 size={24} className="animate-spin mx-auto" />
+                                    </td>
+                                </tr>
                             )}
                         </tbody>
                     </table>
