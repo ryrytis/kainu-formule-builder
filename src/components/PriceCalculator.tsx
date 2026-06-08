@@ -374,16 +374,15 @@ const PriceCalculator: React.FC<PriceCalculatorProps> = ({
         const selectedProduct = products.find(p => p.id === productId);
         if (!selectedProduct) return materials;
 
-        // FIRST: Check for specific allowed material IDs (most precise filter)
-        const allowedIds = selectedProduct.allowed_material_ids;
-        if (allowedIds && allowedIds.length > 0) {
-            return materials.filter((m: any) => allowedIds.includes(m.id));
-        }
+        const allowedIds = selectedProduct.allowed_material_ids || [];
+        const allowedCats = (selectedProduct.allowed_material_categories || []).map((c: string) => c.toLowerCase());
 
-        // SECOND: Check for specific allowed categories set in Product Editor
-        const allowedCats = selectedProduct.allowed_material_categories;
-        if (allowedCats && allowedCats.length > 0) {
-            return materials.filter((m: any) => allowedCats.includes(m.category));
+        if (allowedIds.length > 0 || allowedCats.length > 0) {
+            return materials.filter((m: any) => {
+                const isIdAllowed = allowedIds.includes(m.id);
+                const isCatAllowed = m.category && allowedCats.includes(m.category.toLowerCase());
+                return isIdAllowed || isCatAllowed;
+            });
         }
 
         // LEGACY/FALLBACK: Keep existing sticker-specific logic for now

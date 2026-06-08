@@ -338,6 +338,18 @@ const CreateOrderItemModal: React.FC<CreateOrderItemModalProps> = ({ isOpen, onC
 
     const filteredMaterials = materials.filter(m => {
         const selectedProduct = products.find(p => p.id === productId);
+        if (!selectedProduct) return true;
+
+        const allowedIds = selectedProduct.allowed_material_ids || [];
+        const allowedCats = (selectedProduct.allowed_material_categories || []).map((c: string) => c.toLowerCase());
+
+        if (allowedIds.length > 0 || allowedCats.length > 0) {
+            const isIdAllowed = allowedIds.includes(m.id);
+            const isCatAllowed = m.category && allowedCats.includes(m.category.toLowerCase());
+            if (isIdAllowed || isCatAllowed) return true;
+            return false;
+        }
+
         const pName = selectedProduct?.name?.toLowerCase() || '';
         
         const isRuloninisLipdukasAntPop = pName.includes('ruloninis lipdukas ant popieriaus');
