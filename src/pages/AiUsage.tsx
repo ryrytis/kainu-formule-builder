@@ -33,8 +33,8 @@ const AiUsage: React.FC = () => {
     // Derived statistics
     const totalCost = logs.reduce((acc, log) => acc + Number(log.estimated_cost_usd), 0);
     const totalTokens = logs.reduce((acc, log) => acc + log.total_tokens, 0);
-    const webChatTokens = logs.filter(l => l.agent_type === 'web_chat').reduce((acc, log) => acc + log.total_tokens, 0);
-    const emailTokens = logs.filter(l => l.agent_type === 'email_draft').reduce((acc, log) => acc + log.total_tokens, 0);
+    const webChatTokens = logs.filter(l => l.agent_type?.startsWith('web_chat')).reduce((acc, log) => acc + log.total_tokens, 0);
+    const emailTokens = logs.filter(l => l.agent_type?.startsWith('email_draft')).reduce((acc, log) => acc + log.total_tokens, 0);
 
     return (
         <div className="space-y-6">
@@ -98,6 +98,7 @@ const AiUsage: React.FC = () => {
                             <tr className="border-b border-gray-100 text-gray-500 text-sm">
                                 <th className="py-3 px-4 font-medium">Date / Time</th>
                                 <th className="py-3 px-4 font-medium">Agent Type</th>
+                                <th className="py-3 px-4 font-medium">Subject / Ref</th>
                                 <th className="py-3 px-4 font-medium">Model</th>
                                 <th className="py-3 px-4 font-medium text-right">Prompt Tokens</th>
                                 <th className="py-3 px-4 font-medium text-right">Completion Tokens</th>
@@ -115,9 +116,12 @@ const AiUsage: React.FC = () => {
                                     <tr key={log.id} className="hover:bg-gray-50 transition-colors">
                                         <td className="py-3 px-4 text-sm text-gray-600">{new Date(log.created_at).toLocaleString()}</td>
                                         <td className="py-3 px-4">
-                                            <span className={`px-2 py-1 rounded text-xs font-medium ${log.agent_type === 'web_chat' ? 'bg-purple-100 text-purple-700' : 'bg-orange-100 text-orange-700'}`}>
-                                                {log.agent_type === 'web_chat' ? 'Web Chat' : 'Email Draft'}
+                                            <span className={`px-2 py-1 rounded text-xs font-medium ${log.agent_type?.startsWith('web_chat') ? 'bg-purple-100 text-purple-700' : 'bg-orange-100 text-orange-700'}`}>
+                                                {log.agent_type?.startsWith('web_chat') ? 'Web Chat' : 'Email Draft'}
                                             </span>
+                                        </td>
+                                        <td className="py-3 px-4 text-sm text-gray-800 truncate max-w-[200px]" title={log.agent_type?.includes(':') ? log.agent_type.substring(log.agent_type.indexOf(':') + 1) : '-'}>
+                                            {log.agent_type?.includes(':') ? log.agent_type.substring(log.agent_type.indexOf(':') + 1) : '-'}
                                         </td>
                                         <td className="py-3 px-4 text-sm text-gray-600 font-mono">{log.model_name}</td>
                                         <td className="py-3 px-4 text-sm text-right text-gray-500">{log.prompt_tokens.toLocaleString()}</td>

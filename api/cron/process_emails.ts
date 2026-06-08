@@ -218,7 +218,7 @@ ${currentMessageText}`;
                     const emailAgent = new CoreAgent(
                         [customPriceTool, InternalKnowledgeBaseTool],
                         SYSTEM_PROMPT,
-                        'email_draft',
+                        `email_draft:${msg.subject || 'No Subject'}`,
                         supabase
                     );
 
