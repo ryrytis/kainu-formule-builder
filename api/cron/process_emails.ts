@@ -120,7 +120,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
             let requestUrl = monitor.delta_link;
             if (!requestUrl) {
-                requestUrl = `https://graph.microsoft.com/v1.0/users/${monitor.email_address}/mailFolders/inbox/messages/delta?$select=subject,bodyPreview,body,from,toRecipients,receivedDateTime,conversationId,hasAttachments,categories`;
+                requestUrl = `https://graph.microsoft.com/v1.0/users/${monitor.email_address}/mailFolders/inbox/messages/delta?$select=subject,bodyPreview,body,from,toRecipients,receivedDateTime,conversationId,hasAttachments,categories,internetMessageId`;
             }
 
             const graphResp = await fetch(requestUrl, {
@@ -159,14 +159,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 const categories = msg.categories || [];
                 if (categories.includes('Green category') || categories.includes('AI_Processed')) continue;
 
+                const uniqueId = msg.internetMessageId || msg.id;
+                const checkIds = [msg.internetMessageId, msg.id].filter(Boolean);
+
                 const { data: alreadyProcessed } = await supabase
                     .from('chat_messages')
                     .select('id')
                     .eq('session_id', 'PROCESSED_EMAIL')
-                    .eq('content', msg.id)
-                    .maybeSingle();
+                    .in('content', checkIds)
+                    .limit(1);
 
-                if (alreadyProcessed) continue;
+                if (alreadyProcessed && alreadyProcessed.length > 0) continue;
 
                 const receivedDate = new Date(msg.receivedDateTime);
                 const oneDayAgo = new Date();
@@ -257,7 +260,7 @@ ${currentMessageText}`;
                             await supabase.from('chat_messages').insert({
                                 session_id: 'PROCESSED_EMAIL',
                                 role: 'assistant',
-                                content: msg.id
+                                content: uniqueId
                             });
                             console.log('Marked email as processed in database silently');
                             processedCount++;
