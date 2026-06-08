@@ -13,14 +13,12 @@ const AiUsage: React.FC = () => {
         const fetchLogs = async () => {
             setLoading(true);
             try {
-                // Fetch last 1000 logs, ordered by newest
-                const { data, error } = await supabase
-                    .from('ai_usage_logs')
-                    .select('*')
-                    .order('created_at', { ascending: false })
-                    .limit(1000);
-
-                if (error) throw error;
+                // Fetch from the serverless endpoint to bypass RLS policies
+                const response = await fetch('/api/ai_usage');
+                if (!response.ok) {
+                    throw new Error(`Error: ${response.statusText}`);
+                }
+                const data = await response.json();
                 if (data) setLogs(data);
             } catch (err) {
                 console.error("Failed to fetch usage logs", err);
