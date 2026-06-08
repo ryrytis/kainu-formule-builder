@@ -390,6 +390,7 @@ export const PricingService = {
 
         // Fetch Material Details upfront
         let materialName = '';
+        let materialCategory = '';
         let materialUnitPrice = 0;
         let materialWidth: number | null = null;
         let materialHeight: number | null = null;
@@ -397,7 +398,7 @@ export const PricingService = {
         if (material_id) {
             const { data: mat, error } = await (supabase as any)
                 .from('materials')
-                .select('name, unit_price, width, height')
+                .select('name, unit_price, width, height, category')
                 .eq('id', material_id)
                 .maybeSingle();
 
@@ -405,15 +406,17 @@ export const PricingService = {
                 // Graceful fallback if columns width/height don't exist in DB yet
                 const { data: fallbackMat } = await (supabase as any)
                     .from('materials')
-                    .select('name, unit_price')
+                    .select('name, unit_price, category')
                     .eq('id', material_id)
                     .maybeSingle();
                 if (fallbackMat) {
                     materialName = fallbackMat.name || '';
+                    materialCategory = fallbackMat.category || '';
                     materialUnitPrice = fallbackMat.unit_price || 0;
                 }
             } else {
                 materialName = mat.name || '';
+                materialCategory = mat.category || '';
                 materialUnitPrice = mat.unit_price || 0;
                 materialWidth = mat.width || null;
                 materialHeight = mat.height || null;
@@ -1259,8 +1262,7 @@ export const PricingService = {
         // 3b-inkjet. Inkjet Click Cost (Canon GP-4600s Skaitiklis A–E)
         // Formula: area_m2 = (W × H) / 1,000,000 → area_A4 = area_m2 × 16 → cost = area_A4 × rate × qty
         const inkjetCounter = (request as any).inkjet_counter;
-        const materialCategory = (material?.category || '').toLowerCase();
-        const isInkjetMaterial = materialCategory.includes('photo');
+        const isInkjetMaterial = materialCategory.toLowerCase().includes('photo');
         if (inkjetCounter && isInkjetMaterial) {
             const clickRules = rules.filter((r: any) =>
                 r.rule_type === RULE_TYPES.INKJET_CLICK_COST &&
