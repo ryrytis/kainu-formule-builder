@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { supabase } from '../lib/supabase';
+
 import { Activity, BarChart, DollarSign, Cpu, Table as TableIcon } from 'lucide-react';
 import { Database } from '../lib/database.types';
 
