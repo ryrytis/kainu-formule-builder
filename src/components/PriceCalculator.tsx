@@ -128,6 +128,34 @@ const PriceCalculator: React.FC<PriceCalculatorProps> = ({
         setClientId(initialClientId || null);
     }, [initialClientId]);
 
+    // Auto-fill dimensions based on product name
+    useEffect(() => {
+        if (!productId || !products.length) return;
+        const selectedProduct = products.find(p => p.id === productId);
+        if (!selectedProduct) return;
+
+        const name = (selectedProduct.name || '').toLowerCase();
+        
+        let newWidth = '';
+        let newHeight = '';
+
+        if (name.includes('a0')) { newWidth = '841'; newHeight = '1189'; }
+        else if (name.includes('a1')) { newWidth = '594'; newHeight = '841'; }
+        else if (name.includes('a2')) { newWidth = '420'; newHeight = '594'; }
+        else if (name.includes('a3')) { newWidth = '297'; newHeight = '420'; }
+        else if (name.includes('a4')) { newWidth = '210'; newHeight = '297'; }
+        else if (name.includes('a5')) { newWidth = '148'; newHeight = '210'; }
+        else if (name.includes('a6')) { newWidth = '105'; newHeight = '148'; }
+        else if (name.includes('dl')) { newWidth = '99'; newHeight = '210'; }
+        else if (name.includes('50x90') || name.includes('90x50')) { newWidth = '90'; newHeight = '50'; }
+        else if (name.includes('85x55') || name.includes('55x85')) { newWidth = '85'; newHeight = '55'; }
+        
+        if (newWidth && newHeight) {
+            setWidth(newWidth);
+            setHeight(newHeight);
+        }
+    }, [productId, products]);
+
     // Inkjet products/materials only support one-sided printing
     useEffect(() => {
         if (isInkjet) {
