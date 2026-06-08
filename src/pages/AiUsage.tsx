@@ -14,7 +14,7 @@ const AiUsage: React.FC = () => {
             setLoading(true);
             try {
                 // Fetch from the serverless endpoint to bypass RLS policies
-                const response = await fetch('/api/ai_usage');
+                const response = await fetch('/api/portal?action=ai_usage');
                 if (!response.ok) {
                     throw new Error(`Error: ${response.statusText}`);
                 }
