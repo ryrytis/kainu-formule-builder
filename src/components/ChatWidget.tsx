@@ -76,7 +76,8 @@ const ChatWidget: React.FC = () => {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     message: userMsg,
-                    sessionId: user.id
+                    sessionId: user.id,
+                    userName: user.email
                 })
             });
 

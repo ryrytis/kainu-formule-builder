@@ -218,7 +218,7 @@ ${currentMessageText}`;
                     const emailAgent = new CoreAgent(
                         [customPriceTool, InternalKnowledgeBaseTool],
                         SYSTEM_PROMPT,
-                        `email_draft|${senderAddress}|${msg.subject || 'No Subject'}`,
+                        `email_draft|${capitalizedOwner}|${msg.subject || 'No Subject'}`,
                         supabase
                     );
 

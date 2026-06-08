@@ -10,7 +10,7 @@ const supabase = createClient(
 export default async function handler(req, res) {
     if (req.method !== 'POST') return res.status(405).send('Method Not Allowed');
 
-    const { message, sessionId } = req.body;
+    const { message, sessionId, userName } = req.body;
 
     if (!message || !sessionId) {
         return res.status(400).json({ error: 'Missing message or sessionId' });
@@ -18,7 +18,7 @@ export default async function handler(req, res) {
 
     try {
         // Optional: Verify user session here if needed (via Authorization header)
-        const response = await processAiMessage(sessionId, message, true);
+        const response = await processAiMessage(sessionId, message, true, userName);
         return res.status(200).json({ response });
     } catch (error) {
         console.error("App Chat Error:", error);

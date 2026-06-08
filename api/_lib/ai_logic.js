@@ -11,7 +11,7 @@ const supabaseUrl = process.env.VITE_SUPABASE_URL || 'https://wnogzzwrsxlyowxwdc
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-export async function processAiMessage(sender_id, message_text, isInternal = false) {
+export async function processAiMessage(sender_id, message_text, isInternal = false, userName = '') {
     console.log("=== AI LOGIC START (V2 CORE AGENT) ===");
     console.log("Sender ID:", sender_id, "| Internal:", isInternal);
     console.log("Message:", message_text);
@@ -70,7 +70,7 @@ export async function processAiMessage(sender_id, message_text, isInternal = fal
             }
         }
 
-        const agent = new CoreAgent(tools, finalSystemPrompt, `web_chat|${sender_id}|-`, supabase);
+        const agent = new CoreAgent(tools, finalSystemPrompt, `web_chat|${userName || sender_id}|-`, supabase);
 
         // Map history to the format CoreAgent expects (oldest first)
         let chatHistory = [];
