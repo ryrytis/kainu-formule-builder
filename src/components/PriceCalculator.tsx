@@ -101,9 +101,8 @@ const PriceCalculator: React.FC<PriceCalculatorProps> = ({
     const isCanonMaterialSelected = useMemo(() => {
         const selectedMaterial = materials.find(m => m.id === materialId);
         if (!selectedMaterial) return false;
-        const mName = (selectedMaterial.name || '').toLowerCase();
         const mCat = (selectedMaterial.category || '').toLowerCase();
-        return mName.includes('canon') || mCat.includes('photo') || mCat.includes('inkjet');
+        return mCat.includes('photo');
     }, [materialId, materials]);
 
     const isRollSticker = useMemo(() => {
