@@ -1259,8 +1259,9 @@ export const PricingService = {
         // 3b-inkjet. Inkjet Click Cost (Canon GP-4600s Skaitiklis A–E)
         // Formula: area_m2 = (W × H) / 1,000,000 → area_A4 = area_m2 × 16 → cost = area_A4 × rate × qty
         const inkjetCounter = (request as any).inkjet_counter;
-        const isCanonMaterial = materialName.toLowerCase().includes('canon');
-        if (inkjetCounter && isCanonMaterial) {
+        const materialCategory = (material?.category || '').toLowerCase();
+        const isInkjetMaterial = materialCategory.includes('photo');
+        if (inkjetCounter && isInkjetMaterial) {
             const clickRules = rules.filter((r: any) =>
                 r.rule_type === RULE_TYPES.INKJET_CLICK_COST &&
                 matchesProduct(r)
