@@ -9,13 +9,16 @@ export class CoreAgent {
     private systemPrompt: string;
     private agentType: string;
 
-    constructor(tools: AgentTool[], systemPrompt: string, agentType: string = 'unknown') {
+    private supabaseClient: any;
+
+    constructor(tools: AgentTool[], systemPrompt: string, agentType: string = 'unknown', supabaseClient?: any) {
         this.tools = tools;
         this.systemPrompt = systemPrompt;
         this.agentType = agentType;
         this.openai = new OpenAI({
             apiKey: process.env.OPENAI_API_KEY,
         });
+        this.supabaseClient = supabaseClient || supabase;
     }
 
     public async processRequest(userMessage: string, chatHistory: {role: 'user'|'assistant', content: string}[] = []): Promise<AgentResponse> {
@@ -135,7 +138,7 @@ export class CoreAgent {
         const totalCost = promptCost + completionCost;
 
         try {
-            await (supabase as any).from('ai_usage_logs').insert({
+            await this.supabaseClient.from('ai_usage_logs').insert({
                 agent_type: this.agentType,
                 model_name: modelName,
                 prompt_tokens: promptTokens,
