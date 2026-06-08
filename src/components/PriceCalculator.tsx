@@ -89,7 +89,8 @@ const PriceCalculator: React.FC<PriceCalculatorProps> = ({
         const selectedMaterial = materials.find(m => m.id === materialId);
         if (selectedMaterial) {
             const mName = (selectedMaterial.name || '').toLowerCase();
-            if (mName.includes('canon')) {
+            const mCat = (selectedMaterial.category || '').toLowerCase();
+            if (mName.includes('canon') || mCat.includes('photo') || mCat.includes('inkjet')) {
                 return true;
             }
         }
@@ -101,7 +102,8 @@ const PriceCalculator: React.FC<PriceCalculatorProps> = ({
         const selectedMaterial = materials.find(m => m.id === materialId);
         if (!selectedMaterial) return false;
         const mName = (selectedMaterial.name || '').toLowerCase();
-        return mName.includes('canon');
+        const mCat = (selectedMaterial.category || '').toLowerCase();
+        return mName.includes('canon') || mCat.includes('photo') || mCat.includes('inkjet');
     }, [materialId, materials]);
 
     const isRollSticker = useMemo(() => {
