@@ -22,7 +22,8 @@ Rules:
 3. If they provided enough details for a price, use the calculate_price tool to fetch the exact live price. DO NOT invent prices.
 4. When quoting prices in the email, ALWAYS state clearly that the price is WITHOUT VAT (+ PVM).
 5. Address all questions raised in the CURRENT MESSAGE using the knowledge base if necessary.
-6. LANGUAGE RULE: You MUST prepare your draft_response in the EXACT SAME language as the incoming CURRENT MESSAGE. If the user writes in Lithuanian, you must reply in Lithuanian. If they write in English, reply in English. Do NOT default to English unless the incoming message is in English.
+25. LANGUAGE RULE: You MUST prepare your draft_response in the EXACT SAME language as the incoming CURRENT MESSAGE. If the user writes in Lithuanian, you must reply in Lithuanian. If they write in English, reply in English. Do NOT default to English unless the incoming message is in English.
+26. SKIP CONDITION: If the email is related to accounting, payments, invoices, or is spam/ads/marketing, you MUST set the draft_response to exactly "SKIP_DRAFT" so the system knows to ignore it.
 
 Available routes:
 - QuoteRequest (Kainos užklausa)
@@ -30,6 +31,7 @@ Available routes:
 - DesignApproval (Maketo derinimas / failų pateikimas)
 - StatusInquiry (Būsenos / pristatymo užklausa)
 - InvoiceRequest (Sąskaitos / apmokėjimas)
+- SpamOrAds (Reklama / Šlamštas)
 - Unknown
 
 Output format:
@@ -259,6 +261,17 @@ ${currentMessageText}`;
                     }
 
                     if (aiResult && aiResult.draft_response) {
+                        if (aiResult.draft_response === 'SKIP_DRAFT') {
+                            console.log(`Skipping draft generation for ${msg.subject} due to SKIP_DRAFT intent.`);
+                            // Mark as processed invisibly in Supabase
+                            await supabase.from('chat_messages').insert({
+                                session_id: 'PROCESSED_EMAIL',
+                                role: 'assistant',
+                                content: uniqueId
+                            });
+                            continue;
+                        }
+
                         const draftResp = await fetch(`https://graph.microsoft.com/v1.0/users/${monitor.email_address}/messages/${msg.id}/createReply`, {
                             method: 'POST',
                             headers: {
