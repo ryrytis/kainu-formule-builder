@@ -148,7 +148,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                     senderAddress.endsWith('@insurancebee.lt') || 
                     senderAddress.endsWith('@microsoft.com') ||
                     senderAddress.includes('paslaugos.lt') ||
-                    senderAddress.includes('proapskaita')
+                    senderAddress.includes('proapskaita') ||
+                    senderAddress.includes('vygeja')
                 ) continue;
 
                 const subject = (msg.subject || '').toLowerCase();
