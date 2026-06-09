@@ -145,6 +145,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 if (
                     !senderAddress || 
                     senderAddress.endsWith('@keturiprint.lt') || 
+                    senderAddress.endsWith('@insurancebee.lt') || 
                     senderAddress.endsWith('@microsoft.com') ||
                     senderAddress.includes('paslaugos.lt') ||
                     senderAddress.includes('proapskaita')
@@ -180,12 +181,31 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 console.log(`Processing email ID: ${msg.id} | Subject: ${msg.subject}`);
 
                 try {
-                    const historyResp = await fetch(`https://graph.microsoft.com/v1.0/users/${monitor.email_address}/messages?$filter=conversationId eq '${msg.conversationId}'&$top=5`, {
+                    const historyResp = await fetch(`https://graph.microsoft.com/v1.0/users/${monitor.email_address}/messages?$filter=conversationId eq '${msg.conversationId}'&$orderby=receivedDateTime desc&$top=5`, {
                         headers: { 'Authorization': `Bearer ${accessToken}` }
                     });
                     const historyData = await historyResp.json();
                     const historyArray = historyData.value || [];
                     
+                    // Check if the user already replied or forwarded this email
+                    const msgTime = new Date(msg.receivedDateTime).getTime();
+                    const alreadyHandled = historyArray.some((h: any) => {
+                        const hTime = new Date(h.receivedDateTime).getTime();
+                        const hSender = h.from?.emailAddress?.address?.toLowerCase() || '';
+                        return hTime > msgTime && (hSender.endsWith('@keturiprint.lt') || hSender.endsWith('@insurancebee.lt'));
+                    });
+
+                    if (alreadyHandled) {
+                        console.log(`Skipping draft for ${msg.subject} because user already replied or forwarded it.`);
+                        // Mark as processed so we don't check it again
+                        await supabase.from('chat_messages').insert({
+                            session_id: 'PROCESSED_EMAIL',
+                            role: 'assistant',
+                            content: uniqueId
+                        });
+                        continue;
+                    }
+
                     const formattedHistory = historyArray.map((h: any) => 
                         `Sender: ${h.from?.emailAddress?.name || h.from?.emailAddress?.address}\nDate: ${h.receivedDateTime}\nSummary: ${h.bodyPreview}`
                     ).join('\n---Next Message---\n');
