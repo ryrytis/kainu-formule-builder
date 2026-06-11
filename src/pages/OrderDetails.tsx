@@ -15,6 +15,11 @@ import { generateOrderNumber } from '../lib/orderUtils';
 import TaskList, { Task } from '../components/TaskList';
 import CreateTaskModal from '../components/CreateTaskModal';
 import ChangeClientModal from '../components/ChangeClientModal';
+import { InternalInvoiceService, InternalInvoice } from '../lib/InternalInvoiceService';
+import { StorageService } from '../lib/StorageService';
+import { EmailService } from '../lib/EmailService';
+// @ts-ignore
+import html2pdf from 'html2pdf.js';
 
 type Order = Database['public']['Tables']['orders']['Row'] & {
     clients: {
@@ -49,6 +54,15 @@ const OrderDetails: React.FC = () => {
     const [tasks, setTasks] = useState<Task[]>([]);
     const [users, setUsers] = useState<{ id: string, email: string }[]>([]);
     const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
+
+    // Internal Invoices State
+    const [internalInvoices, setInternalInvoices] = useState<InternalInvoice[]>([]);
+    const [generatingInternalInvoice, setGeneratingInternalInvoice] = useState(false);
+    const [viewingInvoice, setViewingInvoice] = useState<InternalInvoice | undefined>(undefined);
+    
+    // Auto PDF generation state
+    const [hiddenInvoiceForPdf, setHiddenInvoiceForPdf] = useState<InternalInvoice | null>(null);
+    const hiddenPdfRef = React.useRef<HTMLDivElement>(null);
 
     const fetchOrderDetails = React.useCallback(async () => {
         if (!id) return;
@@ -99,11 +113,63 @@ const OrderDetails: React.FC = () => {
         setUsers(data || []);
     };
 
+    const fetchInternalInvoices = React.useCallback(async () => {
+        if (!id) return;
+        const invoices = await InternalInvoiceService.getInvoicesForOrder(id);
+        setInternalInvoices(invoices);
+    }, [id]);
+
     useEffect(() => {
         fetchOrderDetails();
         fetchTasks();
         fetchUsers();
-    }, [fetchOrderDetails, fetchTasks]);
+        fetchInternalInvoices();
+    }, [fetchOrderDetails, fetchTasks, fetchInternalInvoices]);
+
+    useEffect(() => {
+        if (hiddenInvoiceForPdf && hiddenPdfRef.current) {
+            const generateAndSend = async () => {
+                try {
+                    const invoiceNumber = hiddenInvoiceForPdf.invoice_number;
+                    const clientData = hiddenInvoiceForPdf.client_snapshot as any;
+                    
+                    const opt = {
+                        margin:       0.5,
+                        filename:     `invoice_${invoiceNumber}.pdf`,
+                        image:        { type: 'jpeg', quality: 0.98 },
+                        html2canvas:  { scale: 2 },
+                        jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
+                    };
+
+                    const pdfBlob = await html2pdf().set(opt).from(hiddenPdfRef.current).output('blob');
+                    const file = new File([pdfBlob], `invoice_${invoiceNumber}.pdf`, { type: 'application/pdf' });
+                    
+                    await StorageService.uploadFile(order!.id, file);
+                    const url = StorageService.getDownloadUrl(order!.id, file.name);
+                    
+                    const res = await EmailService.sendInvoiceEmail(clientData?.name || 'Client', invoiceNumber, url, invoiceNumber);
+                    
+                    if (!res.success) {
+                        console.error("Failed to send email webhook:", res.error);
+                        alert("Failed to auto-email the internal invoice. " + res.error);
+                    } else {
+                        alert("Invoice sent to Saskaita123 and Internal Invoice auto-emailed!");
+                    }
+                } catch (err) {
+                    console.error("Error auto-generating PDF:", err);
+                    alert("Error auto-generating PDF.");
+                } finally {
+                    setHiddenInvoiceForPdf(null);
+                    setSendingInvoice(false);
+                    fetchOrderDetails();
+                    fetchInternalInvoices();
+                }
+            };
+            
+            // Wait for React to render the hidden div
+            setTimeout(generateAndSend, 100);
+        }
+    }, [hiddenInvoiceForPdf, order, fetchOrderDetails, fetchInternalInvoices]);
 
     const handleDuplicateOrder = async () => {
         if (!order) return;
@@ -195,19 +261,42 @@ const OrderDetails: React.FC = () => {
                 if (error) {
                     console.error('Failed to update order status:', error);
                     alert(`Invoice sent (ID: ${response.invoiceId}), but failed to update status locally.`);
+                    setSendingInvoice(false);
                 } else {
-                    alert(`Invoice Sent! ID: ${response.invoiceId}`);
-                    // Refresh order details
-                    fetchOrderDetails();
+                    // Automatically generate internal invoice
+                    const internalRes = await InternalInvoiceService.generateInvoice(order);
+                    if (internalRes.success && internalRes.data) {
+                        setHiddenInvoiceForPdf(internalRes.data);
+                        // setSendingInvoice(false) will be called inside the useEffect
+                    } else {
+                        console.error('Failed to auto-generate internal invoice:', internalRes.error);
+                        alert(`Invoice Sent to Saskaita! ID: ${response.invoiceId}. But failed to auto-generate internal invoice.`);
+                        setSendingInvoice(false);
+                        fetchOrderDetails();
+                    }
                 }
             } else {
                 alert(`Failed: ${response.message}`);
+                setSendingInvoice(false);
             }
         } catch (error: any) {
             console.error('Failed to send invoice:', error);
             alert(`Error: ${error.message || 'Unknown error'}`);
-        } finally {
             setSendingInvoice(false);
+        }
+    };
+
+    const handleGenerateInternalInvoice = async () => {
+        if (!order) return;
+        setGeneratingInternalInvoice(true);
+        const res = await InternalInvoiceService.generateInvoice(order);
+        setGeneratingInternalInvoice(false);
+        if (res.success) {
+            alert('Internal invoice generated successfully: ' + res.data?.invoice_number);
+            fetchInternalInvoices();
+            fetchOrderDetails();
+        } else {
+            alert('Error generating invoice: ' + res.error);
         }
     };
 
@@ -446,9 +535,12 @@ const OrderDetails: React.FC = () => {
                     </div>
 
                     <button
-                        onClick={() => setIsInvoiceModalOpen(true)}
+                        onClick={() => {
+                            setViewingInvoice(undefined);
+                            setIsInvoiceModalOpen(true);
+                        }}
                         className="btn-secondary flex items-center gap-2"
-                        title="Preview Invoice"
+                        title="Preview Order as Invoice"
                     >
                         <FileText size={18} />
                     </button>
@@ -652,18 +744,91 @@ const OrderDetails: React.FC = () => {
                         <div className="bg-white rounded-lg shadow ring-1 ring-gray-900/5 sm:rounded-lg divide-y divide-gray-200">
                             <div className="p-4 flex items-center justify-between bg-gray-50">
                                 <h3 className="text-base font-semibold text-gray-900">Invoices</h3>
-                                <button
-                                    onClick={handleSendToSaskaita}
-                                    disabled={sendingInvoice}
-                                    className="btn-accent text-sm flex items-center gap-2"
-                                >
-                                    {sendingInvoice ? <Loader2 size={14} className="animate-spin" /> : <Share2 size={14} />}
-                                    Send to Saskaita123
-                                </button>
+                                <div className="flex gap-2">
+                                    <button
+                                        onClick={handleGenerateInternalInvoice}
+                                        disabled={generatingInternalInvoice}
+                                        className="btn-accent bg-indigo-600 hover:bg-indigo-700 text-sm flex items-center gap-2"
+                                    >
+                                        {generatingInternalInvoice ? <Loader2 size={14} className="animate-spin" /> : <FileText size={14} />}
+                                        Generate Internal Invoice
+                                    </button>
+                                    <button
+                                        onClick={handleSendToSaskaita}
+                                        disabled={sendingInvoice}
+                                        className="btn-accent text-sm flex items-center gap-2"
+                                    >
+                                        {sendingInvoice ? <Loader2 size={14} className="animate-spin" /> : <Share2 size={14} />}
+                                        Send to Saskaita123
+                                    </button>
+                                </div>
                             </div>
-                            <div className="p-8 text-center text-gray-500">
-                                <FileText className="mx-auto h-12 w-12 text-gray-400 mb-2" />
-                                <p>No invoices generated yet.</p>
+                            <div className="p-0">
+                                {internalInvoices.length > 0 ? (
+                                    <table className="min-w-full divide-y divide-gray-300">
+                                        <thead className="bg-gray-50">
+                                            <tr>
+                                                <th className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900">Invoice Number</th>
+                                                <th className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Issue Date</th>
+                                                <th className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Status</th>
+                                                <th className="px-3 py-3.5 text-right text-sm font-semibold text-gray-900">Total</th>
+                                                <th className="px-3 py-3.5 text-right text-sm font-semibold text-gray-900">Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-gray-200 bg-white">
+                                            {internalInvoices.map((inv) => (
+                                                <tr key={inv.id}>
+                                                    <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900">
+                                                        {inv.invoice_number}
+                                                    </td>
+                                                    <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                                                        {new Date(inv.issue_date).toLocaleDateString()}
+                                                    </td>
+                                                    <td className="whitespace-nowrap px-3 py-4 text-sm">
+                                                        <span className={clsx(
+                                                            "px-2 inline-flex text-xs leading-5 font-semibold rounded-full",
+                                                            inv.status === 'Paid' ? 'bg-green-100 text-green-800' :
+                                                            inv.status === 'Cancelled' ? 'bg-red-100 text-red-800' :
+                                                            'bg-blue-100 text-blue-800'
+                                                        )}>
+                                                            {inv.status}
+                                                        </span>
+                                                    </td>
+                                                    <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-900 font-medium text-right">
+                                                        €{Number(inv.total).toFixed(2)}
+                                                    </td>
+                                                    <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500 text-right space-x-3">
+                                                        <button 
+                                                            onClick={() => {
+                                                                setViewingInvoice(inv);
+                                                                setIsInvoiceModalOpen(true);
+                                                            }}
+                                                            className="text-indigo-600 hover:text-indigo-900"
+                                                        >
+                                                            View/Print
+                                                        </button>
+                                                        {inv.status !== 'Paid' && inv.status !== 'Cancelled' && (
+                                                            <button 
+                                                                onClick={async () => {
+                                                                    await InternalInvoiceService.updateInvoiceStatus(inv.id, 'Paid');
+                                                                    fetchInternalInvoices();
+                                                                }}
+                                                                className="text-green-600 hover:text-green-900"
+                                                            >
+                                                                Mark Paid
+                                                            </button>
+                                                        )}
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                ) : (
+                                    <div className="p-8 text-center text-gray-500">
+                                        <FileText className="mx-auto h-12 w-12 text-gray-400 mb-2" />
+                                        <p>No internal invoices generated yet.</p>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     )
@@ -694,6 +859,84 @@ const OrderDetails: React.FC = () => {
                 )}
             </div >
 
+            {/* Hidden Invoice for Auto-PDF Generation */}
+            {hiddenInvoiceForPdf && (
+                <div style={{ position: 'absolute', left: '-9999px', top: '-9999px' }}>
+                    <div ref={hiddenPdfRef} className="bg-white p-12 w-[800px] text-black font-sans">
+                        <div className="flex justify-between items-start mb-12">
+                            <div>
+                                <h1 className="text-4xl font-bold text-gray-900 mb-2">INVOICE</h1>
+                                <p className="text-gray-500">#{hiddenInvoiceForPdf.invoice_number}</p>
+                            </div>
+                            <div className="text-right">
+                                <h3 className="text-xl font-bold text-gray-800">Keturi Print</h3>
+                                <p className="text-gray-600 text-sm mt-1">
+                                    Įmonės kodas: 304445555<br />
+                                    PVM kodas: LT100010000<br />
+                                    Vilnius, Lithuania<br />
+                                    info@keturiprint.lt
+                                </p>
+                            </div>
+                        </div>
+
+                        <div className="flex justify-between mb-12 border-b border-gray-100 pb-8">
+                            <div>
+                                <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Bill To</h4>
+                                <p className="font-bold text-gray-800">{(hiddenInvoiceForPdf.client_snapshot as any)?.name}</p>
+                                <p className="text-gray-600 text-sm mt-1">
+                                    {(hiddenInvoiceForPdf.client_snapshot as any)?.company && <span className="block">{(hiddenInvoiceForPdf.client_snapshot as any).company}</span>}
+                                    {(hiddenInvoiceForPdf.client_snapshot as any)?.email}
+                                </p>
+                            </div>
+                            <div className="text-right">
+                                <div>
+                                    <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block">Invoice Date</span>
+                                    <span className="font-semibold text-gray-800">{new Date(hiddenInvoiceForPdf.issue_date).toLocaleDateString()}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <table className="w-full mb-8">
+                            <thead>
+                                <tr className="border-b-2 border-gray-100">
+                                    <th className="text-left py-3 text-sm font-bold text-gray-600 uppercase">Item</th>
+                                    <th className="text-right py-3 text-sm font-bold text-gray-600 uppercase">Qty</th>
+                                    <th className="text-right py-3 text-sm font-bold text-gray-600 uppercase">Price</th>
+                                    <th className="text-right py-3 text-sm font-bold text-gray-600 uppercase">Total</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-50">
+                                {(hiddenInvoiceForPdf.items_snapshot as any[])?.map((item: any) => (
+                                    <tr key={item.id}>
+                                        <td className="py-4 text-sm text-gray-800">{item.product_type}</td>
+                                        <td className="py-4 text-right text-sm text-gray-600">{item.quantity}</td>
+                                        <td className="py-4 text-right text-sm text-gray-600">€{item.unit_price}</td>
+                                        <td className="py-4 text-right text-sm font-medium text-gray-800">€{item.total_price?.toFixed(2)}</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+
+                        <div className="flex justify-end">
+                            <div className="w-64">
+                                <div className="flex justify-between py-2 text-sm text-gray-600">
+                                    <span>Subtotal:</span>
+                                    <span>€{Number(hiddenInvoiceForPdf.subtotal).toFixed(2)}</span>
+                                </div>
+                                <div className="flex justify-between py-2 text-sm text-gray-600">
+                                    <span>VAT (21%):</span>
+                                    <span>€{Number(hiddenInvoiceForPdf.vat_amount).toFixed(2)}</span>
+                                </div>
+                                <div className="flex justify-between py-3 border-t-2 border-gray-100 text-lg font-bold text-gray-900 mt-2">
+                                    <span>Total:</span>
+                                    <span>€{Number(hiddenInvoiceForPdf.total).toFixed(2)}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             <CreateOrderItemModal
                 isOpen={isAddItemModalOpen}
                 onClose={() => {
@@ -717,8 +960,12 @@ const OrderDetails: React.FC = () => {
 
             <InvoicePreviewModal
                 isOpen={isInvoiceModalOpen}
-                onClose={() => setIsInvoiceModalOpen(false)}
+                onClose={() => {
+                    setIsInvoiceModalOpen(false);
+                    setViewingInvoice(undefined);
+                }}
                 order={order}
+                internalInvoice={viewingInvoice}
             />
 
             {order && (

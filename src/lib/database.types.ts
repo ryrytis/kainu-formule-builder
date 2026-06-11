@@ -710,6 +710,53 @@ export interface Database {
                     created_at?: string
                     updated_at?: string
                 }
+            },
+            internal_invoices: {
+                Row: {
+                    id: string
+                    order_id: string
+                    invoice_number: string
+                    issue_date: string
+                    due_date: string | null
+                    status: string
+                    subtotal: number
+                    vat_amount: number
+                    total: number
+                    client_snapshot: Json
+                    items_snapshot: Json
+                    pdf_url: string | null
+                    created_at: string
+                }
+                Insert: {
+                    id?: string
+                    order_id: string
+                    invoice_number: string
+                    issue_date?: string
+                    due_date?: string | null
+                    status?: string
+                    subtotal?: number
+                    vat_amount?: number
+                    total?: number
+                    client_snapshot: Json
+                    items_snapshot: Json
+                    pdf_url?: string | null
+                    created_at?: string
+                }
+                Update: {
+                    id?: string
+                    order_id?: string
+                    invoice_number?: string
+                    issue_date?: string
+                    due_date?: string | null
+                    status?: string
+                    subtotal?: number
+                    vat_amount?: number
+                    total?: number
+                    client_snapshot?: Json
+                    items_snapshot?: Json
+                    pdf_url?: string | null
+                    created_at?: string
+                }
             }
         }
     }
