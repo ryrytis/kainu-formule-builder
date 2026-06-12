@@ -1,5 +1,4 @@
 import { supabase } from './supabase';
-import { Database } from './database.types';
 
 export interface InternalInvoice {
     id: string;
@@ -50,7 +49,7 @@ export const InternalInvoiceService = {
             due_date.setDate(due_date.getDate() + 14); // 14 days payment term
 
             // 5. Insert the invoice
-            const { data: invoice, error: insertError } = await supabase
+            const { data: invoice, error: insertError } = await (supabase as any)
                 .from('internal_invoices')
                 .insert([{
                     order_id: order.id,
@@ -74,7 +73,7 @@ export const InternalInvoiceService = {
 
             // Also mark the order as internally invoiced if needed (we can just rely on the table existing though)
             // But let's keep order status updated
-            await supabase.from('orders').update({ status: 'Invoiced' }).eq('id', order.id);
+            await (supabase as any).from('orders').update({ status: 'Invoiced' }).eq('id', order.id);
 
             return { success: true, data: invoice as InternalInvoice };
 
@@ -89,7 +88,7 @@ export const InternalInvoiceService = {
      */
     getInvoicesForOrder: async (orderId: string): Promise<InternalInvoice[]> => {
         try {
-            const { data, error } = await supabase
+            const { data, error } = await (supabase as any)
                 .from('internal_invoices')
                 .select('*')
                 .eq('order_id', orderId)
@@ -108,7 +107,7 @@ export const InternalInvoiceService = {
      */
     updateInvoiceStatus: async (invoiceId: string, status: 'Draft' | 'Issued' | 'Paid' | 'Cancelled'): Promise<boolean> => {
         try {
-            const { error } = await supabase
+            const { error } = await (supabase as any)
                 .from('internal_invoices')
                 .update({ status })
                 .eq('id', invoiceId);

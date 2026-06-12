@@ -18,6 +18,7 @@ import ChangeClientModal from '../components/ChangeClientModal';
 import { InternalInvoiceService, InternalInvoice } from '../lib/InternalInvoiceService';
 import { StorageService } from '../lib/StorageService';
 import { EmailService } from '../lib/EmailService';
+import { InvoiceTemplate } from '../components/InvoiceTemplate';
 // @ts-ignore
 import html2pdf from 'html2pdf.js';
 
@@ -136,12 +137,12 @@ const OrderDetails: React.FC = () => {
                     const opt = {
                         margin:       0.5,
                         filename:     `invoice_${invoiceNumber}.pdf`,
-                        image:        { type: 'jpeg', quality: 0.98 },
+                        image:        { type: 'jpeg' as const, quality: 0.98 },
                         html2canvas:  { scale: 2 },
-                        jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
+                        jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' as const }
                     };
 
-                    const pdfBlob = await html2pdf().set(opt).from(hiddenPdfRef.current).output('blob');
+                    const pdfBlob = await html2pdf().set(opt).from(hiddenPdfRef.current as HTMLElement).output('blob');
                     const file = new File([pdfBlob], `invoice_${invoiceNumber}.pdf`, { type: 'application/pdf' });
                     
                     await StorageService.uploadFile(order!.id, file);
@@ -862,77 +863,12 @@ const OrderDetails: React.FC = () => {
             {/* Hidden Invoice for Auto-PDF Generation */}
             {hiddenInvoiceForPdf && (
                 <div style={{ position: 'absolute', left: '-9999px', top: '-9999px' }}>
-                    <div ref={hiddenPdfRef} className="bg-white p-12 w-[800px] text-black font-sans">
-                        <div className="flex justify-between items-start mb-12">
-                            <div>
-                                <h1 className="text-4xl font-bold text-gray-900 mb-2">INVOICE</h1>
-                                <p className="text-gray-500">#{hiddenInvoiceForPdf.invoice_number}</p>
-                            </div>
-                            <div className="text-right">
-                                <h3 className="text-xl font-bold text-gray-800">Keturi Print</h3>
-                                <p className="text-gray-600 text-sm mt-1">
-                                    Įmonės kodas: 304445555<br />
-                                    PVM kodas: LT100010000<br />
-                                    Vilnius, Lithuania<br />
-                                    info@keturiprint.lt
-                                </p>
-                            </div>
-                        </div>
-
-                        <div className="flex justify-between mb-12 border-b border-gray-100 pb-8">
-                            <div>
-                                <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Bill To</h4>
-                                <p className="font-bold text-gray-800">{(hiddenInvoiceForPdf.client_snapshot as any)?.name}</p>
-                                <p className="text-gray-600 text-sm mt-1">
-                                    {(hiddenInvoiceForPdf.client_snapshot as any)?.company && <span className="block">{(hiddenInvoiceForPdf.client_snapshot as any).company}</span>}
-                                    {(hiddenInvoiceForPdf.client_snapshot as any)?.email}
-                                </p>
-                            </div>
-                            <div className="text-right">
-                                <div>
-                                    <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block">Invoice Date</span>
-                                    <span className="font-semibold text-gray-800">{new Date(hiddenInvoiceForPdf.issue_date).toLocaleDateString()}</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <table className="w-full mb-8">
-                            <thead>
-                                <tr className="border-b-2 border-gray-100">
-                                    <th className="text-left py-3 text-sm font-bold text-gray-600 uppercase">Item</th>
-                                    <th className="text-right py-3 text-sm font-bold text-gray-600 uppercase">Qty</th>
-                                    <th className="text-right py-3 text-sm font-bold text-gray-600 uppercase">Price</th>
-                                    <th className="text-right py-3 text-sm font-bold text-gray-600 uppercase">Total</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-gray-50">
-                                {(hiddenInvoiceForPdf.items_snapshot as any[])?.map((item: any) => (
-                                    <tr key={item.id}>
-                                        <td className="py-4 text-sm text-gray-800">{item.product_type}</td>
-                                        <td className="py-4 text-right text-sm text-gray-600">{item.quantity}</td>
-                                        <td className="py-4 text-right text-sm text-gray-600">€{item.unit_price}</td>
-                                        <td className="py-4 text-right text-sm font-medium text-gray-800">€{item.total_price?.toFixed(2)}</td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-
-                        <div className="flex justify-end">
-                            <div className="w-64">
-                                <div className="flex justify-between py-2 text-sm text-gray-600">
-                                    <span>Subtotal:</span>
-                                    <span>€{Number(hiddenInvoiceForPdf.subtotal).toFixed(2)}</span>
-                                </div>
-                                <div className="flex justify-between py-2 text-sm text-gray-600">
-                                    <span>VAT (21%):</span>
-                                    <span>€{Number(hiddenInvoiceForPdf.vat_amount).toFixed(2)}</span>
-                                </div>
-                                <div className="flex justify-between py-3 border-t-2 border-gray-100 text-lg font-bold text-gray-900 mt-2">
-                                    <span>Total:</span>
-                                    <span>€{Number(hiddenInvoiceForPdf.total).toFixed(2)}</span>
-                                </div>
-                            </div>
-                        </div>
+                    <div className="w-max bg-white">
+                        <InvoiceTemplate 
+                            ref={hiddenPdfRef}
+                            order={order}
+                            internalInvoice={hiddenInvoiceForPdf}
+                        />
                     </div>
                 </div>
             )}
