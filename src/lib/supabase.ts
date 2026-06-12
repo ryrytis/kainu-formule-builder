@@ -20,7 +20,7 @@ const getEnv = (key: string) => {
 };
 
 const supabaseUrl = getEnv('VITE_SUPABASE_URL') || getEnv('SUPABASE_URL');
-const supabaseAnonKey = getEnv('VITE_SUPABASE_ANON_KEY') || getEnv('SUPABASE_ANON_KEY') || getEnv('SUPABASE_SERVICE_ROLE_KEY');
+const supabaseAnonKey = getEnv('VITE_SUPABASE_ANON_KEY') || getEnv('SUPABASE_ANON_KEY');
 
 if (!supabaseUrl || !supabaseAnonKey) {
     console.warn('Missing Supabase credentials. Checked VITE_SUPABASE_URL/ANON_KEY and fallbacks.');
