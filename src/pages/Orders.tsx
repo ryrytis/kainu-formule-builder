@@ -164,6 +164,18 @@ const Orders: React.FC = () => {
                 .eq('id', orderId);
 
             if (error) throw error;
+            
+            // Auto-create task for Rytis if status is Pjovimas or Afinia
+            if (newStatus === 'Pjovimas' || newStatus === 'Afinia') {
+                const order = orders.find(o => o.id === orderId);
+                const orderNo = order ? order.order_number : 'Unknown';
+                await (supabase as any).from('tasks').insert([{
+                    description: `Užsakymas ${orderNo}: ${newStatus}`,
+                    status: 'To Do',
+                    assigned_to: '62934848-e320-4447-8439-7f3bd3f100e2', // Rytis
+                    order_id: orderId
+                }]);
+            }
 
             // Update local state
             setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: newStatus } : o));
