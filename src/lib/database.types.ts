@@ -354,6 +354,35 @@ export interface Database {
                     updated_at?: string
                 }
             }
+            material_transactions: {
+                Row: {
+                    id: string
+                    material_id: string
+                    type: string
+                    quantity: number
+                    transaction_date: string
+                    reference_id: string | null
+                    created_at: string
+                }
+                Insert: {
+                    id?: string
+                    material_id: string
+                    type: string
+                    quantity: number
+                    transaction_date: string
+                    reference_id?: string | null
+                    created_at?: string
+                }
+                Update: {
+                    id?: string
+                    material_id?: string
+                    type?: string
+                    quantity?: number
+                    transaction_date?: string
+                    reference_id?: string | null
+                    created_at?: string
+                }
+            }
             products: {
                 Row: {
                     id: string

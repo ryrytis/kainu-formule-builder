@@ -1,13 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
-import { Plus, Search, Edit, Trash2, Package, AlertTriangle } from 'lucide-react';
+import { Plus, Search, Edit, Trash2, Package, AlertTriangle, Upload } from 'lucide-react';
 import CreateMaterialModal from '../components/CreateMaterialModal';
+import { SupplierInvoiceUploadModal } from '../components/SupplierInvoiceUploadModal';
 
 const Materials: React.FC = () => {
     const [materials, setMaterials] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
     const [selectedMaterial, setSelectedMaterial] = useState<any | null>(null);
 
     useEffect(() => {
@@ -54,13 +56,22 @@ const Materials: React.FC = () => {
                     <h1 className="text-3xl font-bold text-primary tracking-tight">Materials</h1>
                     <p className="text-gray-500 mt-1">Manage inventory and pricing</p>
                 </div>
-                <button
-                    onClick={() => setIsModalOpen(true)}
-                    className="btn-accent flex items-center gap-2"
-                >
-                    <Plus size={18} />
-                    New Material
-                </button>
+                <div className="flex gap-2">
+                    <button
+                        onClick={() => setIsUploadModalOpen(true)}
+                        className="btn-secondary flex items-center gap-2 bg-white text-gray-700 border border-gray-300 hover:bg-gray-50"
+                    >
+                        <Upload size={18} />
+                        Upload Invoice
+                    </button>
+                    <button
+                        onClick={() => setIsModalOpen(true)}
+                        className="btn-accent flex items-center gap-2"
+                    >
+                        <Plus size={18} />
+                        New Material
+                    </button>
+                </div>
             </div>
 
             {/* Search and Filters */}
@@ -173,6 +184,12 @@ const Materials: React.FC = () => {
                 onClose={() => { setIsModalOpen(false); setSelectedMaterial(null); }}
                 onSuccess={closeAndRefresh}
                 materialToEdit={selectedMaterial}
+            />
+
+            <SupplierInvoiceUploadModal
+                isOpen={isUploadModalOpen}
+                onClose={() => setIsUploadModalOpen(false)}
+                onSuccess={() => { setIsUploadModalOpen(false); fetchMaterials(); }}
             />
         </div>
     );

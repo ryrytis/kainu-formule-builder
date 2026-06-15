@@ -1,6 +1,6 @@
 import React from 'react';
 import { Outlet, NavLink } from 'react-router-dom';
-import { LayoutDashboard, Users, ShoppingCart, Box, Settings, LogOut, Ruler, BarChart3, Calculator, ListTodo, Lightbulb, Stamp, UserCheck, List, Activity } from 'lucide-react';
+import { LayoutDashboard, Users, ShoppingCart, Box, Settings, LogOut, Ruler, BarChart3, Calculator, ListTodo, Lightbulb, Stamp, UserCheck, List, Activity, PieChart } from 'lucide-react';
 import clsx from 'clsx';
 import { useAuth } from '../contexts/AuthContext';
 import UpdatePasswordModal from '../components/UpdatePasswordModal';
@@ -81,7 +81,8 @@ const SidebarLayout: React.FC = () => {
         { icon: Users, label: 'Clients', to: '/clients', adminOnly: true },
         { icon: ShoppingCart, label: 'Products', to: '/products', adminOnly: true },
         { icon: List, label: 'Kainynai', to: '/price-lists', adminOnly: true },
-        {icon: Box, label: 'Materials', to: '/materials', adminOnly: true },
+        { icon: Box, label: 'Materials', to: '/materials', adminOnly: true },
+        { icon: PieChart, label: 'Monthly Report', to: '/monthly-report', adminOnly: true },
         { icon: Ruler, label: 'Calc Rules', to: '/rules', adminOnly: true },
         { icon: Calculator, label: 'Calculator', to: '/calculator' },
         { icon: BarChart3, label: 'Reporting', to: '/reporting', adminOnly: true },

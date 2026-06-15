@@ -25,6 +25,7 @@ import AiUsage from './pages/AiUsage';
 import MetalografijaOrder from './pages/MetalografijaOrder';
 import PriceLists from './pages/PriceLists';
 import ClientPortal from './pages/ClientPortal';
+import { MonthlyReportPage } from './pages/MonthlyReportPage';
 
 function App() {
     return (
@@ -46,6 +47,7 @@ function App() {
                             <Route element={<AdminRoute />}>
                                 <Route path="tasks" element={<Tasks />} />
                                 <Route path="orders/:id" element={<OrderDetails />} />
+                                <Route path="monthly-report" element={<MonthlyReportPage />} />
                                 <Route path="clients" element={<Clients />} />
                                 <Route path="materials" element={<Materials />} />
                                 <Route path="products" element={<Products />} />
