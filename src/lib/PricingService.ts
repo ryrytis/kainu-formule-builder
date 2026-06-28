@@ -973,7 +973,7 @@ export const PricingService = {
 
             const isCutOnly = production_mode === 'cut_only';
             const basePrintCost = isCutOnly ? 0 : getRuleVal(RULE_TYPES.SHEET_PRINT_PRICE, 0.00);
-            const baseOpCost = isCutOnly ? 0 : getRuleVal(RULE_TYPES.SHEET_PRINT_OPERATION, 0.05);
+            const baseOpCost = isCutOnly ? 0 : getRuleVal(RULE_TYPES.SHEET_PRINT_OPERATION, 0.00);
             
             const sheetPrintCost = basePrintCost * printMultiplier;
             const sheetOperationCost = baseOpCost * printMultiplier;
