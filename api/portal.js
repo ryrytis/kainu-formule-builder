@@ -12,6 +12,79 @@ export default async function handler(req, res) {
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     try {
+        // ─── POST: Send Internal Invoice via MS Graph ────────────────────────
+        if (req.method === 'POST' && req.body?.action === 'send_internal_invoice') {
+            const { clientName, orderNo, fileUrl, tracking } = req.body;
+            if (!fileUrl) return res.status(400).json({ error: 'Missing fileUrl' });
+
+            const { data: graphSettings, error: graphErr } = await supabase
+                .from('graph_settings')
+                .select('*')
+                .limit(1)
+                .maybeSingle();
+
+            if (graphErr || !graphSettings || !graphSettings.tenant_id) {
+                return res.status(500).json({ error: 'Graph credentials not configured in DB' });
+            }
+
+            const tokenUrl = `https://login.microsoftonline.com/${graphSettings.tenant_id}/oauth2/v2.0/token`;
+            const tokenBody = new URLSearchParams({
+                client_id: graphSettings.client_id,
+                client_secret: graphSettings.client_secret,
+                scope: 'https://graph.microsoft.com/.default',
+                grant_type: 'client_credentials'
+            });
+
+            const tokenResp = await fetch(tokenUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: tokenBody.toString()
+            });
+
+            if (!tokenResp.ok) return res.status(500).json({ error: 'Failed to authenticate with MS Graph' });
+            const accessToken = (await tokenResp.json()).access_token;
+
+            const fileResp = await fetch(fileUrl);
+            if (!fileResp.ok) return res.status(500).json({ error: 'Failed to download PDF attachment' });
+            
+            const arrayBuffer = await fileResp.arrayBuffer();
+            const base64Content = Buffer.from(arrayBuffer).toString('base64');
+            const filename = `Invoice_${tracking}.pdf`;
+
+            const senderEmail = 'rytis@keturiprint.lt';
+            const mailEndpoint = `https://graph.microsoft.com/v1.0/users/${senderEmail}/sendMail`;
+
+            const mailPayload = {
+                message: {
+                    subject: `New Invoice ${tracking} for ${clientName}`,
+                    body: {
+                        contentType: "HTML",
+                        content: `<p>A new internal invoice has been generated for order <b>${orderNo}</b> (Client: ${clientName}).</p><p>The PDF is attached to this email.</p>`
+                    },
+                    toRecipients: [{ emailAddress: { address: senderEmail } }],
+                    attachments: [{
+                        "@odata.type": "#microsoft.graph.fileAttachment",
+                        name: filename,
+                        contentType: "application/pdf",
+                        contentBytes: base64Content
+                    }]
+                },
+                saveToSentItems: "false"
+            };
+
+            const mailResp = await fetch(mailEndpoint, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(mailPayload)
+            });
+
+            if (!mailResp.ok) return res.status(500).json({ error: 'Failed to send mail via MS Graph' });
+            return res.status(200).json({ success: true });
+        }
+
         // ─── GET: Fetch Portal Data ───────────────────────────────────────────
         if (req.method === 'GET') {
             if (req.query.action === 'ai_usage') {

@@ -75,10 +75,11 @@ export const EmailService = {
         try {
             console.log(`EmailService: Sending invoice email via MS Graph for ${trackingId}`);
             
-            const response = await fetch('/api/send_internal_invoice', {
+            const response = await fetch('/api/portal', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
+                    action: 'send_internal_invoice',
                     clientName,
                     orderNo: orderNumber,
                     fileUrl: invoiceUrl,
