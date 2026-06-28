@@ -162,6 +162,7 @@ const OrderDetails: React.FC = () => {
                 } finally {
                     setHiddenInvoiceForPdf(null);
                     setGeneratingInternalInvoice(false);
+                    setSendingInvoice(false);
                     fetchOrderDetails();
                     fetchInternalInvoices();
                 }
@@ -262,11 +263,20 @@ const OrderDetails: React.FC = () => {
                 if (error) {
                     console.error('Failed to update order status:', error);
                     alert(`Invoice sent (ID: ${response.invoiceId}), but failed to update status locally.`);
+                    setSendingInvoice(false);
+                    fetchOrderDetails();
                 } else {
-                    alert(`Invoice sent successfully to Saskaita123! (ID: ${response.invoiceId})`);
+                    // Start Internal Invoice Generation
+                    const internalRes = await InternalInvoiceService.generateInvoice(order);
+                    if (internalRes.success && internalRes.data) {
+                        setHiddenInvoiceForPdf(internalRes.data);
+                        // setSendingInvoice(false) will be called inside the useEffect
+                    } else {
+                        alert(`Invoice sent to Saskaita123 (ID: ${response.invoiceId}), but failed to generate internal invoice: ${internalRes.error}`);
+                        setSendingInvoice(false);
+                        fetchOrderDetails();
+                    }
                 }
-                setSendingInvoice(false);
-                fetchOrderDetails();
             } else {
                 alert(`Failed: ${response.message}`);
                 setSendingInvoice(false);
