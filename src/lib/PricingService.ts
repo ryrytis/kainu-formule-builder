@@ -539,6 +539,7 @@ export const PricingService = {
                 isBox = (catLower.includes('dėžut') || nameLower.includes('dėžut')) && !isInsert;
                 isSleeve = catLower.includes('mov') || nameLower.includes('mov') || nameLower.includes('įmaut') || nameLower.includes('imaut');
                 isKarulis = catLower.includes('karul') || nameLower.includes('karul') || isInsert;
+                isBooklet = nameLower.includes('buklet') || nameLower.includes('katalog') || nameLower.includes('knyg') || nameLower.includes('leidin') || catLower.includes('buklet') || catLower.includes('knyg') || catLower.includes('leidin');
 
                 // Auto-detect dimensions from name if missing
                 if (!itemW || !itemH) {
@@ -1008,7 +1009,14 @@ export const PricingService = {
             if (spacing > 0) appliedRules.push(`Layout: Added ${spacing}mm gap between blanks.`);
 
             let totalCostPerBox = 0;
-            let bodyGrossSheets = bodyYield > 0 ? Math.ceil(Math.ceil(quantity / bodyYield) * setupMultiplier) : 0;
+            let bodyGrossSheets = 0;
+            if (isBooklet && (!cover_material_id || !inner_material_id)) {
+                const totalPages = pages || 8;
+                bodyGrossSheets = bodyYield > 0 ? Math.ceil(Math.ceil((quantity * totalPages) / bodyYield) * setupMultiplier) : 0;
+                appliedRules.push(`Layout Booklet: ${totalPages} pages. Sheets calculated for all pages.`);
+            } else {
+                bodyGrossSheets = bodyYield > 0 ? Math.ceil(Math.ceil(quantity / bodyYield) * setupMultiplier) : 0;
+            }
 
             if (isBooklet && cover_material_id && inner_material_id) {
                 // 1. Cover Cost
@@ -1039,9 +1047,15 @@ export const PricingService = {
                 appliedRules.push(`BOM Model Calculation: €${totalSheetCost.toFixed(4)}/sheet × ${bodyGrossSheets} sheets = €${(totalSheetCost * bodyGrossSheets).toFixed(2)} total cost`);
             }
 
-            const pricePerUnit = totalCostPerBox * sheetMarginMultiplier;
-            const itemLabel = isBooklet ? 'Bukletas' : (isKarulis ? 'Karulis' : 'Pakuotė');
-            appliedRules.push(`Final ${itemLabel} Base: €${totalCostPerBox.toFixed(4)} (cost) × Margin ${sheetMarginMultiplier} = €${pricePerUnit.toFixed(4)}/unit`);
+            let pricePerUnit = 0;
+            if (isBooklet) {
+                pricePerUnit = totalCostPerBox + 1.00;
+                appliedRules.push(`Final Bukletas Base: €${totalCostPerBox.toFixed(4)} (cost) + €1.00 Margin = €${pricePerUnit.toFixed(4)}/unit`);
+            } else {
+                pricePerUnit = totalCostPerBox * sheetMarginMultiplier;
+                const itemLabel = isKarulis ? 'Karulis' : 'Pakuotė';
+                appliedRules.push(`Final ${itemLabel} Base: €${totalCostPerBox.toFixed(4)} (cost) × Margin ${sheetMarginMultiplier} = €${pricePerUnit.toFixed(4)}/unit`);
+            }
 
             basePrice = pricePerUnit;
             isPerUnit = true;

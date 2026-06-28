@@ -1,0 +1,125 @@
+.professionals-section {
+  padding: 8rem 0;
+  background-color: #fafafa;
+}
+
+.prof-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4rem;
+  align-items: center;
+}
+
+.prof-desc {
+  color: var(--text-secondary);
+  font-size: 1.125rem;
+  margin-bottom: 3rem;
+}
+
+.prof-stats {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  margin-bottom: 3rem;
+  padding-bottom: 3rem;
+  border-bottom: 1px solid #eaeaea;
+}
+
+.avatars {
+  display: flex;
+}
+
+.avatar-placeholder {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background-color: #e0e0e0;
+  border: 3px solid white;
+  margin-left: -15px;
+}
+
+.avatar-placeholder:first-child {
+  margin-left: 0;
+  background-color: var(--accent-color);
+}
+.avatar-placeholder:nth-child(2) { background-color: #0f4c81; }
+.avatar-placeholder:nth-child(3) { background-color: #1a62ff; }
+.avatar-placeholder:nth-child(4) { background-color: #558aff; }
+
+.stat-num {
+  font-size: 1.5rem;
+  color: var(--text-primary);
+  margin-bottom: 0.25rem;
+}
+
+.stat-text-wrapper p {
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  max-width: 200px;
+}
+
+.prof-actions {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+}
+
+.btn-text {
+  font-weight: 600;
+  color: var(--accent-color);
+  transition: var(--transition-fast);
+}
+
+.btn-text:hover {
+  color: var(--accent-hover);
+}
+
+.prof-features {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+}
+
+.prof-feature-card {
+  background-color: white;
+  padding: 2rem;
+  border-radius: 16px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.03);
+  transition: var(--transition-normal);
+  border: 1px solid transparent;
+}
+
+.prof-feature-card:hover {
+  transform: translateY(-5px);
+  border-color: rgba(26, 98, 255, 0.2);
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.08);
+}
+
+.prof-feature-title {
+  font-size: 1.125rem;
+  margin-bottom: 1rem;
+  color: var(--text-primary);
+}
+
+.prof-feature-desc {
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
+
+@media (max-width: 991px) {
+  .prof-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 576px) {
+  .prof-features {
+    grid-template-columns: 1fr;
+  }
+  
+  .prof-actions {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
