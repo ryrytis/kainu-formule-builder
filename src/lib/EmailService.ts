@@ -69,17 +69,32 @@ export const EmailService = {
     },
 
     /**
-     * Sends a notification about a new invoice.
+     * Sends a notification about a new internal invoice using MS Graph API.
      */
     async sendInvoiceEmail(clientName: string, orderNumber: string, invoiceUrl: string, trackingId: string) {
-        return this.sendWebhook({
-            type: 'invoice',
-            email: 'rytis@keturiprint.lt', // Per admin rule
-            clientName,
-            orderNo: orderNumber,
-            fileUrl: invoiceUrl,
-            tracking: trackingId,
-            message: `New Invoice ${trackingId} for ${clientName}`
-        }, 'webhook_invoice', 'enable_invoice');
+        try {
+            console.log(`EmailService: Sending invoice email via MS Graph for ${trackingId}`);
+            
+            const response = await fetch('/api/send_internal_invoice', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    clientName,
+                    orderNo: orderNumber,
+                    fileUrl: invoiceUrl,
+                    tracking: trackingId
+                })
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => null);
+                throw new Error(`Graph API Email failed: ${response.status} ${errorData?.error || ''}`);
+            }
+
+            return { success: true };
+        } catch (error: any) {
+            console.error('EmailService Error:', error);
+            return { success: false, error: error.message };
+        }
     }
 };

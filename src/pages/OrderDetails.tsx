@@ -151,17 +151,17 @@ const OrderDetails: React.FC = () => {
                     const res = await EmailService.sendInvoiceEmail(clientData?.name || 'Client', invoiceNumber, url, invoiceNumber);
                     
                     if (!res.success) {
-                        console.error("Failed to send email webhook:", res.error);
-                        alert("Failed to auto-email the internal invoice. " + res.error);
+                        console.error("Failed to send MS Graph email:", res.error);
+                        alert("Failed to email the internal invoice. " + res.error);
                     } else {
-                        alert("Invoice sent to Saskaita123 and Internal Invoice auto-emailed!");
+                        alert("Internal Invoice successfully generated and emailed!");
                     }
                 } catch (err) {
                     console.error("Error auto-generating PDF:", err);
                     alert("Error auto-generating PDF.");
                 } finally {
                     setHiddenInvoiceForPdf(null);
-                    setSendingInvoice(false);
+                    setGeneratingInternalInvoice(false);
                     fetchOrderDetails();
                     fetchInternalInvoices();
                 }
@@ -262,20 +262,11 @@ const OrderDetails: React.FC = () => {
                 if (error) {
                     console.error('Failed to update order status:', error);
                     alert(`Invoice sent (ID: ${response.invoiceId}), but failed to update status locally.`);
-                    setSendingInvoice(false);
                 } else {
-                    // Automatically generate internal invoice
-                    const internalRes = await InternalInvoiceService.generateInvoice(order);
-                    if (internalRes.success && internalRes.data) {
-                        setHiddenInvoiceForPdf(internalRes.data);
-                        // setSendingInvoice(false) will be called inside the useEffect
-                    } else {
-                        console.error('Failed to auto-generate internal invoice:', internalRes.error);
-                        alert(`Invoice Sent to Saskaita! ID: ${response.invoiceId}. But failed to auto-generate internal invoice.`);
-                        setSendingInvoice(false);
-                        fetchOrderDetails();
-                    }
+                    alert(`Invoice sent successfully to Saskaita123! (ID: ${response.invoiceId})`);
                 }
+                setSendingInvoice(false);
+                fetchOrderDetails();
             } else {
                 alert(`Failed: ${response.message}`);
                 setSendingInvoice(false);
@@ -291,13 +282,19 @@ const OrderDetails: React.FC = () => {
         if (!order) return;
         setGeneratingInternalInvoice(true);
         const res = await InternalInvoiceService.generateInvoice(order);
-        setGeneratingInternalInvoice(false);
-        if (res.success) {
-            alert('Internal invoice generated successfully: ' + res.data?.invoice_number);
+        if (res.success && res.data) {
+            alert('Internal invoice generated successfully: ' + res.data.invoice_number);
+            setHiddenInvoiceForPdf(res.data);
+            // setGeneratingInternalInvoice(false) can be omitted here, as setting hiddenInvoice 
+            // starts the PDF effect. However, for visual clarity, we'll keep the spinner until PDF finishes,
+            // but the useEffect doesn't clear `setGeneratingInternalInvoice`.
+            // Let's clear it here since the old effect cleared `setSendingInvoice`.
+            setGeneratingInternalInvoice(false);
             fetchInternalInvoices();
             fetchOrderDetails();
         } else {
-            alert('Error generating invoice: ' + res.error);
+            setGeneratingInternalInvoice(false);
+            alert('Error generating invoice: ' + res?.error);
         }
     };
 

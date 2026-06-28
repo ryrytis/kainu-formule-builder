@@ -17,7 +17,8 @@ const numberToLithuanianWords = (num: number) => {
         if (n >= 11 && n <= 19) return n11_19[n - 10];
         if (n < 100) return dešimtys[Math.floor(n / 10)] + (n % 10 !== 0 ? ' ' + vienetai[n % 10] : '');
         if (n < 1000) {
-            let res = vienetai[Math.floor(n / 100)] + ' šimtai';
+            const simtai = Math.floor(n / 100);
+            let res = vienetai[simtai] + (simtai === 1 ? ' šimtas' : ' šimtai');
             if (n % 100 !== 0) res += ' ' + convert(n % 100);
             return res;
         }
