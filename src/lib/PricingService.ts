@@ -972,12 +972,12 @@ export const PricingService = {
             const printMultiplier = isDoubleSided ? 2 : 1;
 
             const isCutOnly = production_mode === 'cut_only';
-            const basePrintCost = isCutOnly ? 0 : getRuleVal(RULE_TYPES.SHEET_PRINT_PRICE, 0.10);
+            const basePrintCost = isCutOnly ? 0 : getRuleVal(RULE_TYPES.SHEET_PRINT_PRICE, 0.00);
             const baseOpCost = isCutOnly ? 0 : getRuleVal(RULE_TYPES.SHEET_PRINT_OPERATION, 0.05);
             
             const sheetPrintCost = basePrintCost * printMultiplier;
             const sheetOperationCost = baseOpCost * printMultiplier;
-            const sheetCuttingCost = getRuleVal(RULE_TYPES.SHEET_CUTTING_PRICE, 0.05);
+            const sheetCuttingCost = getRuleVal(RULE_TYPES.SHEET_CUTTING_PRICE, 0.00);
             const sheetMarginMultiplier = getRuleVal(RULE_TYPES.SHEET_MARGIN, 1.5);
             
             appliedRules.push(`BOM Model: ${isBooklet ? 'Bukletas' : (isKarulis ? 'Karuliai' : 'Packaging')} logic (${isCutOnly ? 'Cut Only' : (print_type || '4+0')})`);
