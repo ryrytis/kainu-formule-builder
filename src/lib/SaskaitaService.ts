@@ -6,6 +6,7 @@ type Order = Database['public']['Tables']['orders']['Row'] & {
     clients: {
         name: string;
         email: string;
+        additional_emails?: string | null;
         phone: string | null;
         company: string | null;
         address: string | null;
@@ -308,7 +309,7 @@ export const SaskaitaService = {
                                 clientName: clientName,
                                 orderNo: order.order_number,
                                 invoiceId: String(invoiceId),
-                                email: order.clients?.email || CRM_CONFIG.company.adminEmail,
+                                email: [order.clients?.email, order.clients?.additional_emails].filter(Boolean).join(', ') || CRM_CONFIG.company.adminEmail,
                                 pdfUrl: `https://app.invoice123.com/invoice/${invoiceId}/pdf/lt`
                             })
                         });

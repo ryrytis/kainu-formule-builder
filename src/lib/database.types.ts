@@ -110,6 +110,7 @@ export interface Database {
                     created_at: string
                     updated_at: string
                     discount_koef: number | null
+                    additional_emails: string | null
                     City: string | null
                     person_type: string | null
                     delivery_method: string | null
@@ -132,6 +133,7 @@ export interface Database {
                     created_at?: string
                     updated_at?: string
                     discount_koef?: number | null
+                    additional_emails?: string | null
                     City?: string | null
                     person_type?: string | null
                     delivery_method?: string | null
@@ -154,6 +156,7 @@ export interface Database {
                     created_at?: string
                     updated_at?: string
                     discount_koef?: number | null
+                    additional_emails?: string | null
                     City?: string | null
                     person_type?: string | null
                     delivery_method?: string | null

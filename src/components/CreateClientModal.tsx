@@ -15,6 +15,7 @@ const CreateClientModal: React.FC<CreateClientModalProps> = ({ isOpen, onClose, 
     const [formData, setFormData] = useState({
         name: '',
         email: '',
+        additional_emails: '',
         phone: '',
         company: '',
         company_code: '',
@@ -88,6 +89,7 @@ const CreateClientModal: React.FC<CreateClientModalProps> = ({ isOpen, onClose, 
             setFormData({
                 name: clientToEdit.name || '',
                 email: clientToEdit.email || '',
+                additional_emails: clientToEdit.additional_emails || '',
                 phone: clientToEdit.phone || '',
                 company: clientToEdit.company || '',
                 company_code: clientToEdit.company_code || '',
@@ -109,6 +111,7 @@ const CreateClientModal: React.FC<CreateClientModalProps> = ({ isOpen, onClose, 
             setFormData({
                 name: '',
                 email: '',
+                additional_emails: '',
                 phone: '',
                 company: '',
                 company_code: '',
@@ -248,6 +251,16 @@ const CreateClientModal: React.FC<CreateClientModalProps> = ({ isOpen, onClose, 
                                 required
                                 value={formData.email}
                                 onChange={e => setFormData({ ...formData, email: e.target.value })}
+                                className="w-full border-b-2 border-gray-200 p-2 focus:border-accent-teal outline-none transition-colors"
+                            />
+                        </div>
+                        <div className="space-y-1">
+                            <label htmlFor="client-additional-emails" className="text-xs font-bold text-gray-500 uppercase">Additional Emails (comma separated)</label>
+                            <input
+                                id="client-additional-emails"
+                                type="text"
+                                value={formData.additional_emails}
+                                onChange={e => setFormData({ ...formData, additional_emails: e.target.value })}
                                 className="w-full border-b-2 border-gray-200 p-2 focus:border-accent-teal outline-none transition-colors"
                             />
                         </div>

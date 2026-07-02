@@ -26,6 +26,7 @@ type Order = Database['public']['Tables']['orders']['Row'] & {
     clients: {
         name: string;
         email: string;
+        additional_emails?: string | null;
         phone: string | null;
         company: string | null;
         address: string | null;
@@ -73,7 +74,7 @@ const OrderDetails: React.FC = () => {
                 .from('orders')
                 .select(`
           *,
-          clients (name, email, phone, company, address, vat_code, city, post_code, company_code, person_type, parcel_locker, delivery_method, price_list_id),
+          clients (name, email, additional_emails, phone, company, address, vat_code, city, post_code, company_code, person_type, parcel_locker, delivery_method, price_list_id),
           order_items (*)
         `)
                 .eq('id', id)
@@ -617,7 +618,10 @@ const OrderDetails: React.FC = () => {
                         </div>
                         <div>
                             <p className="label">Contact Info</p>
-                            <p className="text-gray-900">{order.clients?.email}</p>
+                            <p className="text-gray-900">
+                                {order.clients?.email}
+                                {order.clients?.additional_emails && `, ${order.clients.additional_emails}`}
+                            </p>
                             <p className="text-gray-900">{order.clients?.phone}</p>
                         </div>
                         <div className="col-span-2">

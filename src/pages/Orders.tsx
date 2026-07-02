@@ -31,6 +31,7 @@ type Order = Database['public']['Tables']['orders']['Row'] & {
     clients: {
         name: string;
         email: string;
+        additional_emails?: string | null;
         phone: string | null;
         company: string | null;
         address: string | null;
